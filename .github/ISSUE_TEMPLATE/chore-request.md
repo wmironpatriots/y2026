@@ -1,7 +1,7 @@
 ---
 name: Chore Request
 about: Suggestion for project maintaince (build files, docs, etc.)
-title: chore/name
+title: "[chore] name"
 labels: ''
 assignees: arsamulyak, dabeycorn
 

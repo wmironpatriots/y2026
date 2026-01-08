@@ -1,7 +1,7 @@
 ---
 name: Fix Request
 about: Report a bug or issue
-title: fix/name
+title: "[fix] name"
 labels: ''
 assignees: arsamulyak, dabeycorn
 
