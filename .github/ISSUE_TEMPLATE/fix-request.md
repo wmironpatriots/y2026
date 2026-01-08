@@ -1,5 +1,5 @@
 ---
-name: Bug Report
+name: Fix Request
 about: Report a bug or issue
 title: fix/name
 labels: ''
@@ -8,7 +8,7 @@ assignees: arsamulyak, dabeycorn
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+Describe the bug you need to fix, the fix proposed, and rate importance on a scale of 1-10
 
 **To Reproduce**
 Steps to reproduce the behavior:
