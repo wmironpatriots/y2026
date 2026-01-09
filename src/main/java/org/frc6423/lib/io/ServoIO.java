@@ -27,6 +27,8 @@ import java.util.function.UnaryOperator;
 
 /** A I/O interface for controlling a servo */
 public abstract class ServoIO {
+  public static final Temperature DEFAULT_SHUTDOWN_TEMPERATURE = Celsius.of(75);
+
   public final String name;
 
   private final Temperature maxTemp;
@@ -42,7 +44,7 @@ public abstract class ServoIO {
    * @param name friendly "nickname" for servo
    */
   protected ServoIO(String name) {
-    this(name, Celsius.of(75));
+    this(name, DEFAULT_SHUTDOWN_TEMPERATURE);
   }
 
   /**
