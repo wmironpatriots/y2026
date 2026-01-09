@@ -12,6 +12,8 @@ java {
 
 def ROBOT_MAIN_CLASS = "org.frc6423.robot.Main"
 
+version = '0.0.0d'
+
 // Define my targets (RoboRIO) and artifacts (deployable files)
 // This is added by GradleRIO's backing project DeployUtils.
 deploy {
