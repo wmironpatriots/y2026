@@ -185,3 +185,6 @@ compile_commands.json
 
 # Eclipse generated file for annotation processors
 .factorypath
+
+# Gversion files
+src/main/java/org/frc6423/robot/BuildConstants.java
