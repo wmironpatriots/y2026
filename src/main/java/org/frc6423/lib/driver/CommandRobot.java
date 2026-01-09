@@ -82,7 +82,7 @@ public abstract class CommandRobot extends TimedRobot {
     autonCommand = getAutonCommand();
 
     if (autonCommand != null) {
-      autonCommand.schedule();
+      scheduler.schedule(autonCommand);
     }
   }
 
