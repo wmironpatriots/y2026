@@ -1,2 +1,5 @@
 # y2026
-Competition Robot Code for our 2026 Robot
+> I'm building it
+
+![img-info](./assets/banner.png)
+A repository containing FRC 6423's Robot code for the 2026 FRC game: Rebuilt
