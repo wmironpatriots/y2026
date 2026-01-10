@@ -47,8 +47,8 @@ import java.util.function.UnaryOperator;
  * @see https://v6.docs.ctr-electronics.com/en/latest/docs/hardware-reference/talonfx/index.html
  */
 public class ServoIOTalonFx extends ServoIO {
-  private final TalonFX servo;
-  private final TalonFXConfiguration config;
+  protected final TalonFX servo;
+  protected final TalonFXConfiguration config;
 
   private final BaseStatusSignal voltageSignal,
       inCurrentSignal,
