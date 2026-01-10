@@ -42,9 +42,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.UnaryOperator;
 
 /**
- * Implementation of {@link ServoIO} for TalonFX Servos {@see
- * https://v6.docs.ctr-electronics.com/en/latest/docs/hardware-reference/talonfx/index.html} for
- * more
+ * Implementation of {@link ServoIO} for TalonFX Servos
+ *
+ * @see https://v6.docs.ctr-electronics.com/en/latest/docs/hardware-reference/talonfx/index.html
  */
 public class ServoIOTalonFx extends ServoIO {
   private final TalonFX servo;
@@ -195,21 +195,27 @@ public class ServoIOTalonFx extends ServoIO {
   }
 
   /**
-   * Enable Field-Oriented Control (FOC) {@see
-   * https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control}
-   * <strong>WARNING</strong>: FOC control calculates a Torque Current system input (in Amps). This
-   * means gains that work with voltage based control will never work with FOC based control
+   * Enable Field-Oriented Control (FOC)
+   *
+   * <p><strong>WARNING</strong>: FOC control calculates a Torque Current system input (in Amps).
+   * This means gains that work with voltage based control will never work with FOC based control
+   *
+   * @see
+   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
    */
   public void enableFoc() {
     focEnabled = true;
   }
 
   /**
-   * Disable Field-Oriented Control (FOC) {@see
-   * https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control}
-   * <strong>WARNING</strong>: Disabling FOC will use voltage based control for all controll methods
-   * and will produce a Voltage system input (in Volts). This means gains that work with FOC based
-   * control will never work with voltage based control
+   * Disable Field-Oriented Control (FOC)
+   *
+   * <p><strong>WARNING</strong>: Disabling FOC will use voltage based control for all controll
+   * methods and will produce a Voltage system input (in Volts). This means gains that work with FOC
+   * based control will never work with voltage based control
+   *
+   * @see
+   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
    */
   public void disableFoc() {
     focEnabled = false;
