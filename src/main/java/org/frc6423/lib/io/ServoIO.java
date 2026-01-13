@@ -22,7 +22,6 @@ import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj.DriverStation;
 import java.util.function.UnaryOperator;
 
 /** A I/O interface for controlling a servo */
@@ -36,7 +35,7 @@ public abstract class ServoIO {
       new Alert(getName() + " is overheating! SHUTTING DOWN to prevent damage!", AlertType.kError);
 
   private Setpoint currentSetpoint = Setpoint.stop();
-  private boolean enabled = false;
+  private boolean enabled = true;
 
   /**
    * Create new {@link ServoIO}
@@ -61,10 +60,11 @@ public abstract class ServoIO {
 
   /** Periodic Logic Should be called every robot loop */
   public void periodic() {
-    // Disables and alerts drive team if servo is overheating
+    // Disables, coasts, and alerts drive team if servo is overheating
     if (getTemperature().gt(maxTemp)) {
       shutdownAlert.set(true);
       disable();
+      disableBrake();
     } else if (shutdownAlert.get()) {
       shutdownAlert.set(false);
       enable();
@@ -144,23 +144,12 @@ public abstract class ServoIO {
 
   /** Enable servo control Servo will only enable if DriverStation is enabled */
   public void enable() {
-    if (!DriverStation.isEnabled()) {
-      enabled = true;
-    }
-
-    // Reapply setpoint
-    applySetpoint(currentSetpoint);
+    enabled = true;
   }
 
   /** Disable servo control */
   public void disable() {
     enabled = false;
-
-    // Set idle mode to brake
-    enableBrake();
-
-    // stop all movement
-    idle();
   }
 
   /**
@@ -171,7 +160,7 @@ public abstract class ServoIO {
   public void applySetpoint(Setpoint setpoint) {
     this.currentSetpoint = setpoint;
 
-    if (enabled) {
+    if (isEnabled()) {
       setpoint.applySetpoint(this);
     }
   }
