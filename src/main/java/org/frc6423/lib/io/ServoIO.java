@@ -35,7 +35,7 @@ public abstract class ServoIO {
       new Alert(getName() + " is overheating! SHUTTING DOWN to prevent damage!", AlertType.kError);
 
   private Setpoint currentSetpoint = Setpoint.stop();
-  private boolean enabled = true;
+  private boolean isOverheated = false;
 
   /**
    * Create new {@link ServoIO}
@@ -60,14 +60,17 @@ public abstract class ServoIO {
 
   /** Periodic Logic Should be called every robot loop */
   public void periodic() {
-    // Disables, coasts, and alerts drive team if servo is overheating
+    // TODO put overheating motors in coast
     if (getTemperature().gt(maxTemp)) {
       shutdownAlert.set(true);
-      disable();
-      disableBrake();
+
+      isOverheated = true;
+      idle();
     } else if (shutdownAlert.get()) {
       shutdownAlert.set(false);
-      enable();
+
+      isOverheated = false;
+      applySetpoint(currentSetpoint);
     }
   }
 
@@ -80,16 +83,17 @@ public abstract class ServoIO {
   }
 
   /**
-   * @return true if servo control is enabled
+   * @return true if servo has been disabled due to overheating
    */
-  @Logged(name = "Is Enabled", importance = Importance.INFO)
-  public boolean isEnabled() {
-    return enabled;
+  @Logged(name = "Overheated", importance = Importance.INFO)
+  public boolean isOverheated() {
+    return isOverheated;
   }
 
   /**
    * @return current {@link Setpoint}
    */
+  @Logged(name = "Setpoint", importance = Importance.INFO)
   public Setpoint getCurrentSetpoint() {
     return currentSetpoint;
   }
@@ -142,16 +146,6 @@ public abstract class ServoIO {
   @Logged(name = "Temperature", importance = Importance.INFO)
   public abstract Temperature getTemperature();
 
-  /** Enable servo control Servo will only enable if DriverStation is enabled */
-  public void enable() {
-    enabled = true;
-  }
-
-  /** Disable servo control */
-  public void disable() {
-    enabled = false;
-  }
-
   /**
    * Run {@link Setpoint}
    *
@@ -160,7 +154,7 @@ public abstract class ServoIO {
   public void applySetpoint(Setpoint setpoint) {
     this.currentSetpoint = setpoint;
 
-    if (isEnabled()) {
+    if (!isOverheated) {
       setpoint.applySetpoint(this);
     }
   }
