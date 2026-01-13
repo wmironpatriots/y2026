@@ -8,6 +8,9 @@ package org.frc6423.lib.io;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Celsius;
+import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Revolutions;
+import static edu.wpi.first.units.Units.RevolutionsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import edu.wpi.first.epilogue.Logged;
@@ -382,6 +385,164 @@ public abstract class ServoIO {
           };
 
       return new Setpoint(dutycycle, ControlType.VOLTAGE, applier);
+    }
+
+    /**
+     * Create new Position {@link Setpoint}
+     *
+     * @param angle {@link Angle} representing desired position
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createPositionSetpoint(Angle angle) {
+      return createPositionSetpoint(angle, 0);
+    }
+
+    /**
+     * Create new Position {@link Setpoint}
+     *
+     * @param angle {@link Angle} representing desired position
+     * @param slot integer representing gains slot to use
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createPositionSetpoint(Angle angle, int slot) {
+      UnaryOperator<ServoIO> applier =
+          (ServoIO io) -> {
+            io.setPositionSetpoint(angle, slot);
+            return io;
+          };
+
+      return new Setpoint(angle.in(Revolutions), ControlType.POSITION, applier);
+    }
+
+    /**
+     * Create new Velocity {@link Setpoint}
+     *
+     * @param velocity {@link AngularVelocity} representing desired velocity
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createVelocitySetpoint(AngularVelocity velocity) {
+      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), 0);
+    }
+
+    /**
+     * Create new Velocity {@link Setpoint}
+     *
+     * @param velocity {@link AngularVelocity} representing desired velocity
+     * @param acceleration {@link AngularAcceleration} representing the acceleration limit
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createVelocitySetpoint(
+        AngularVelocity velocity, AngularAcceleration acceleration) {
+      return createVelocitySetpoint(velocity, acceleration, 0);
+    }
+
+    /**
+     * Create new Velocity {@link Setpoint}
+     *
+     * @param velocity {@link AngularVelocity} representing desired velocity
+     * @param slot integer representing gains slot to use
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createVelocitySetpoint(AngularVelocity velocity, int slot) {
+      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), slot);
+    }
+
+    /**
+     * Create new Velocity {@link Setpoint}
+     *
+     * @param velocity {@link AngularVelocity} representing desired velocity
+     * @param acceleration {@link AngularAcceleration} representing the acceleration limit
+     * @param slot integer representing gains slot to use
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createVelocitySetpoint(
+        AngularVelocity velocity, AngularAcceleration acceleration, int slot) {
+      UnaryOperator<ServoIO> applier =
+          (ServoIO io) -> {
+            io.setVelocitySetpoint(velocity, acceleration, slot);
+            return io;
+          };
+
+      return new Setpoint(velocity.in(RevolutionsPerSecond), ControlType.VELOCITY, applier);
+    }
+
+    /**
+     * Create new Motion Profiled Position {@link Setpoint}
+     *
+     * @param angle {@link Angle} representing desired position
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createProfiledPositionSetpoint(Angle angle) {
+      return createProfiledPositionSetpoint(angle, 0);
+    }
+
+    /**
+     * Create new Motion Profiled Position {@link Setpoint}
+     *
+     * @param angle {@link Angle} representing desired position
+     * @param slot integer representing gains slot to use
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createProfiledPositionSetpoint(Angle angle, int slot) {
+      UnaryOperator<ServoIO> applier =
+          (ServoIO io) -> {
+            io.setPositionProfiledSetpoint(angle, slot);
+            return io;
+          };
+
+      return new Setpoint(angle.in(Revolutions), ControlType.POSITION, applier);
+    }
+
+    /**
+     * Create new Motion Profiled Velocity {@link Setpoint}
+     *
+     * @param velocity {@link AngularVelocity} representing desired velocity
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createProfiledVelocitySetpoint(AngularVelocity velocity) {
+      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), 0);
+    }
+
+    /**
+     * Create new Motion Profiled Velocity {@link Setpoint}
+     *
+     * @param velocity {@link AngularVelocity} representing desired velocity
+     * @param acceleration {@link AngularAcceleration} representing the acceleration limit
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createProfiledVelocitySetpoint(
+        AngularVelocity velocity, AngularAcceleration acceleration) {
+      return createVelocitySetpoint(velocity, acceleration, 0);
+    }
+
+    /**
+     * Create new Motion Profiled Velocity {@link Setpoint}
+     *
+     * @param velocity {@link AngularVelocity} representing desired velocity
+     * @param slot integer representing gains slot to use
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createProfiledVelocitySetpoint(AngularVelocity velocity, int slot) {
+      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), slot);
+    }
+
+    /**
+     * Create new Motion Profiled Velocity {@link Setpoint}
+     *
+     * @param velocity {@link AngularVelocity} representing desired velocity
+     * @param acceleration {@link AngularAcceleration} representing the acceleration limit
+     * @param slot integer representing gains slot to use
+     * @return {@link Setpoint}
+     */
+    public static Setpoint createProfiledVelocitySetpoint(
+        AngularVelocity velocity, AngularAcceleration acceleration, int slot) {
+      UnaryOperator<ServoIO> applier =
+          (ServoIO io) -> {
+            io.setVelocityProfiledSetpoint(velocity, acceleration, slot);
+            return io;
+          };
+
+      return new Setpoint(velocity.in(RevolutionsPerSecond), ControlType.VELOCITY, applier);
     }
 
     /**
