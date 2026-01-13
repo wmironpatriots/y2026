@@ -88,6 +88,18 @@ public class ServoIOTalonFx extends ServoIO {
    * @param canDeviceId integer representing the CAN identification
    * @param canBusId {@link CANBus} representing the CAN bus device is on
    * @param config {@link TalonFXConfiguration} representing servo config
+   */
+  public ServoIOTalonFx(String name, int canDeviceId, CANBus canBus, TalonFXConfiguration config) {
+    this(name, canDeviceId, canBus, config, DEFAULT_SHUTDOWN_TEMPERATURE);
+  }
+
+  /**
+   * Create new {@link ServoIOTalonFx}
+   *
+   * @param name friendly "nickname" for servo
+   * @param canDeviceId integer representing the CAN identification
+   * @param canBusId {@link CANBus} representing the CAN bus device is on
+   * @param config {@link TalonFXConfiguration} representing servo config
    * @param temperature {@link Temperature} representing the maximum temperature a servo can be at
    *     before shutting down
    */
@@ -111,6 +123,20 @@ public class ServoIOTalonFx extends ServoIO {
     this.velocitySignal = servo.getVelocity(true);
     this.accelerationSignal = servo.getAcceleration(true);
     this.temperatureSignal = servo.getDeviceTemp(true);
+  }
+
+  @Override
+  public void periodic() {
+    super.periodic();
+    BaseStatusSignal.refreshAll(
+        voltageSignal,
+        inCurrentSignal,
+        outCurrentSignal,
+        torqueCurrentSignal,
+        angleSignal,
+        velocitySignal,
+        accelerationSignal,
+        temperatureSignal);
   }
 
   /**
