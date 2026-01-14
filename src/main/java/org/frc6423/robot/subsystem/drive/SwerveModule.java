@@ -27,7 +27,7 @@ import org.frc6423.lib.io.ServoIO.Setpoint;
  * <p>@see {@link Drive.java}
  */
 @Logged
-public class Module {
+public class SwerveModule {
   private final ServoIO drive, pivot;
 
   private final Distance wheelRadius;
@@ -35,15 +35,15 @@ public class Module {
   private SwerveModuleState currentSetpoint;
 
   /**
-   * Create new {@link Module}
+   * Create new {@link SwerveModule}
    *
-   * @param drive {@link ServeIO} representing the drive motor of module
    * @param pivot {@link ServoIO} representing the pivot motor of module
+   * @param drive {@link ServeIO} representing the drive motor of module
    * @param wheelRadius
    */
-  public Module(ServoIO drive, ServoIO pivot, Distance wheelRadius) {
-    this.drive = drive;
+  public SwerveModule(ServoIO pivot, ServoIO drive, Distance wheelRadius) {
     this.pivot = pivot;
+    this.drive = drive;
 
     this.wheelRadius = wheelRadius;
   }

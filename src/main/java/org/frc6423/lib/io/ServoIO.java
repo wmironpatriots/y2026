@@ -68,7 +68,7 @@ public abstract class ServoIO {
       shutdownAlert.set(true);
 
       isOverheated = true;
-      idle();
+      stop();
     } else if (shutdownAlert.get()) {
       shutdownAlert.set(false);
 
@@ -169,7 +169,7 @@ public abstract class ServoIO {
   public abstract void disableBrake();
 
   /** Stop all servo control */
-  protected abstract void idle();
+  public abstract void stop();
 
   /**
    * Set voltage setpoint
@@ -332,7 +332,7 @@ public abstract class ServoIO {
     public static Setpoint stop() {
       UnaryOperator<ServoIO> applier =
           (ServoIO io) -> {
-            io.idle();
+            io.stop();
             return io;
           };
 

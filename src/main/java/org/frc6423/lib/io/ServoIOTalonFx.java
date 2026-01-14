@@ -248,7 +248,7 @@ public class ServoIOTalonFx extends ServoIO {
   }
 
   @Override
-  protected void idle() {
+  public void stop() {
     servo.stopMotor();
   }
 
