@@ -11,9 +11,11 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Distance;
@@ -143,4 +145,27 @@ public class SwerveModule {
     pivot.disableBrake();
     drive.disableBrake();
   }
+
+  /**
+   * Represents a configuration for a {@link SwerveModule}
+   *
+   * @param id friendly "nickname" for module
+   * @param pivot {@link ServoIO} representing pivot motor of module
+   * @param drive {@link ServoIO} representing drive motor of module
+   * @param pivotConfig {@link TalonFXConfiguration} representing the hardware config for pivot
+   *     motor
+   * @param driveConfig {@link TalonFXConfiguration} representing the hardware config for drive
+   *     motor
+   * @param wheelRadius {@link Distance} representing the wheel radius of module
+   * @param displacementWrtRobot {@link Translation2d} representing displacement of module relative
+   *     to chassis's center of rotation
+   */
+  public static final record SwerveModuleConfig(
+      String id,
+      ServoIO pivot,
+      ServoIO drive,
+      TalonFXConfiguration pivotConfig,
+      TalonFXConfiguration driveConfig,
+      Distance wheelRadius,
+      Translation2d displacementWrtRobot) {}
 }
