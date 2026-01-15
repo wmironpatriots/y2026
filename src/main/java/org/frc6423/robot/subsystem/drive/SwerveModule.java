@@ -11,7 +11,6 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -28,32 +27,35 @@ import org.frc6423.lib.io.ServoIO.Setpoint;
  *
  * <p>@see {@link Drive.java}
  */
-@Logged
 public class SwerveModule {
+  private final SwerveModuleConfig config;
+
   private final ServoIO drive, pivot;
 
   private final Distance wheelRadius;
 
   private SwerveModuleState currentSetpoint;
 
-  /**
-   * Create new {@link SwerveModule}
-   *
-   * @param pivot {@link ServoIO} representing the pivot motor of module
-   * @param drive {@link ServeIO} representing the drive motor of module
-   * @param wheelRadius
-   */
-  public SwerveModule(ServoIO pivot, ServoIO drive, Distance wheelRadius) {
-    this.pivot = pivot;
-    this.drive = drive;
+  public SwerveModule(SwerveModuleConfig config) {
+    this.config = config;
+    this.pivot = config.pivot;
+    this.drive = config.drive;
 
-    this.wheelRadius = wheelRadius;
+    this.wheelRadius = config.wheelRadius;
   }
 
   /** Update hardware */
   public void periodic() {
     drive.periodic();
     pivot.periodic();
+  }
+
+  /**
+   * @return String representing the name of module
+   */
+  @Logged(name = "ID", importance = Importance.INFO)
+  public String getId() {
+    return config.id;
   }
 
   /**
@@ -152,10 +154,6 @@ public class SwerveModule {
    * @param id friendly "nickname" for module
    * @param pivot {@link ServoIO} representing pivot motor of module
    * @param drive {@link ServoIO} representing drive motor of module
-   * @param pivotConfig {@link TalonFXConfiguration} representing the hardware config for pivot
-   *     motor
-   * @param driveConfig {@link TalonFXConfiguration} representing the hardware config for drive
-   *     motor
    * @param wheelRadius {@link Distance} representing the wheel radius of module
    * @param displacementWrtRobot {@link Translation2d} representing displacement of module relative
    *     to chassis's center of rotation
@@ -164,8 +162,6 @@ public class SwerveModule {
       String id,
       ServoIO pivot,
       ServoIO drive,
-      TalonFXConfiguration pivotConfig,
-      TalonFXConfiguration driveConfig,
       Distance wheelRadius,
       Translation2d displacementWrtRobot) {}
 }
