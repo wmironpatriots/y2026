@@ -19,6 +19,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.VecBuilder;
@@ -34,6 +35,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.DoubleSupplier;
@@ -202,12 +204,19 @@ public class Drive extends SubsystemBase {
     return config;
   }
 
-  public static CANcoderConfiguration getEncoderCANcoderConfiguration() {
-    return new CANcoderConfiguration();
+  public static CANcoderConfiguration getEncoderCANcoderConfiguration(Rotation2d offset) {
+    var config = new CANcoderConfiguration();
+
+    config.MagnetSensor.MagnetOffset = offset.getRotations();
+    config.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive; // TODO
+
+    return config;
   }
 
   public static Pigeon2Configuration getPigeon2Configuration() {
-    return new Pigeon2Configuration();
+    var config = new Pigeon2Configuration();
+
+    return config;
   }
 
   private final SwerveModule[] modules;
@@ -236,8 +245,8 @@ public class Drive extends SubsystemBase {
             gyro.getRotation3d(),
             null,
             new Pose3d(),
-            VecBuilder.fill(0.0, 0.0, 0.0, 0.0),
-            VecBuilder.fill(0.0, 0.0, 0.0, 0.0)); // TODO fill vecs
+            VecBuilder.fill(0.6, 0.6, 0.0, 0.07),
+            VecBuilder.fill(0.9, 0.9, 0.0, 0.4)); // TODO fill vecs
   }
 
   @Override
@@ -249,6 +258,10 @@ public class Drive extends SubsystemBase {
     }
 
     gyro.periodic();
+
+    if (DriverStation.isDisabled()) {
+      stop();
+    }
   }
 
   /**
@@ -308,10 +321,12 @@ public class Drive extends SubsystemBase {
     return getRotation3d().toRotation2d();
   }
 
+  @Logged(name = "Rotation3d", importance = Importance.INFO)
   public Rotation3d getRotation3d() {
     return getPose3d().getRotation();
   }
 
+  @Logged(name = "Pose3d", importance = Importance.INFO)
   public Pose3d getPose3d() {
     return poseEstimator.getEstimatedPosition();
   }
