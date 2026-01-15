@@ -16,11 +16,16 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator3d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -29,7 +34,9 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.DoubleSupplier;
 import org.frc6423.lib.io.EncoderIOCancoder;
 import org.frc6423.lib.io.GyroIO;
 import org.frc6423.lib.io.GyroIOPigeon;
@@ -69,32 +76,40 @@ public class Drive extends SubsystemBase {
 
   public static final Distance kWheelRadius = Inches.of(2);
 
+  public static final double kPivotReduction = 26 / 1;
+
+  public static final double kDriveReduction = 6.03 / 1;
+
   public static final SwerveModuleConfig[] kModuleConfigs =
       new SwerveModuleConfig[] {
         new SwerveModuleConfig(
             "BL Module",
-            new ServoIOTalonFx("BL Pivot", kBlPivot, kDriveCanbus, getPivotTalonFXConfiguration()),
+            new ServoIOTalonFx(
+                "BL Pivot", kBlPivot, kDriveCanbus, getPivotTalonFXConfiguration(kBlAbsEncoder)),
             new ServoIOTalonFx("BL Drive", kBlDrive, kDriveCanbus, getDriveTalonFXConfiguration()),
             new EncoderIOCancoder(kBlAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration()),
             kWheelRadius,
             new Translation2d(kCenterToEdge, kCenterToEdge).times(-1)),
         new SwerveModuleConfig(
             "FL Module",
-            new ServoIOTalonFx("FL Pivot", kFlPivot, kDriveCanbus, getPivotTalonFXConfiguration()),
+            new ServoIOTalonFx(
+                "FL Pivot", kFlPivot, kDriveCanbus, getPivotTalonFXConfiguration(kFlAbsEncoder)),
             new ServoIOTalonFx("FL Drive", kFlDrive, kDriveCanbus, getDriveTalonFXConfiguration()),
             new EncoderIOCancoder(kFlAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration()),
             kWheelRadius,
             new Translation2d(kCenterToEdge.times(-1), kCenterToEdge)),
         new SwerveModuleConfig(
             "FR Module",
-            new ServoIOTalonFx("FR Pivot", kFrPivot, kDriveCanbus, getPivotTalonFXConfiguration()),
+            new ServoIOTalonFx(
+                "FR Pivot", kFrPivot, kDriveCanbus, getPivotTalonFXConfiguration(kFrAbsEncoder)),
             new ServoIOTalonFx("FR Drive", kFrDrive, kDriveCanbus, getDriveTalonFXConfiguration()),
             new EncoderIOCancoder(kFrAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration()),
             kWheelRadius,
             new Translation2d(kCenterToEdge, kCenterToEdge)),
         new SwerveModuleConfig(
             "BR Module",
-            new ServoIOTalonFx("BR Pivot", kBrPivot, kDriveCanbus, getPivotTalonFXConfiguration()),
+            new ServoIOTalonFx(
+                "BR Pivot", kBrPivot, kDriveCanbus, getPivotTalonFXConfiguration(kBrAbsEncoder)),
             new ServoIOTalonFx("BR Drive", kBrDrive, kDriveCanbus, getDriveTalonFXConfiguration()),
             new EncoderIOCancoder(kBrAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration()),
             kWheelRadius,
@@ -109,18 +124,82 @@ public class Drive extends SubsystemBase {
   public static final AngularVelocity kMaxAngularVelocity =
       RadiansPerSecond.of(kMaxLinearVelocity.in(InchesPerSecond) / kRotationRadius.in(Inches));
 
+  public static final double kMaxFocVelocityNorm = 0.9;
+
   static {
     for (int i = 0; i < kModuleConfigs.length; i++) {
       kModuleDisplacementsWrtCenter[i] = kModuleConfigs[i].displacementWrtCenter();
     }
   }
 
-  public static TalonFXConfiguration getPivotTalonFXConfiguration() {
-    return new TalonFXConfiguration();
+  public static TalonFXConfiguration getPivotTalonFXConfiguration(int cancoderId) {
+    var config = new TalonFXConfiguration();
+
+    config.Audio.BeepOnBoot = false;
+    config.Audio.BeepOnConfig = true;
+
+    config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; // TODO
+
+    config.CurrentLimits.StatorCurrentLimit = 40.0;
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
+
+    config.TorqueCurrent.PeakForwardTorqueCurrent = 40.0;
+    config.TorqueCurrent.PeakReverseTorqueCurrent = -40.0;
+
+    config.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+    config.Feedback.FeedbackRemoteSensorID = cancoderId;
+    config.Feedback.RotorToSensorRatio = kPivotReduction;
+
+    config.ClosedLoopGeneral.ContinuousWrap = true;
+
+    // Torque Current configs
+    config.Slot0.kS = 600.0;
+    config.Slot0.kV = 50.0;
+    config.Slot0.kA = 0.0;
+    config.Slot0.kP = 10.0;
+    config.Slot0.kD = 0.014;
+
+    // Voltage Configs
+    config.Slot1.kS = 0.0;
+    config.Slot1.kV = 0.0;
+    config.Slot1.kA = 0.0;
+    config.Slot1.kP = 0.0;
+    config.Slot1.kD = 0.0;
+
+    return config;
   }
 
   public static TalonFXConfiguration getDriveTalonFXConfiguration() {
-    return new TalonFXConfiguration();
+    var config = new TalonFXConfiguration();
+
+    config.Audio.BeepOnBoot = false;
+    config.Audio.BeepOnConfig = true;
+
+    config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; // TODO
+
+    config.CurrentLimits.StatorCurrentLimit = 80.0;
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
+
+    config.TorqueCurrent.PeakForwardTorqueCurrent = 80.0;
+    config.TorqueCurrent.PeakReverseTorqueCurrent = -80.0;
+
+    // Torque Current configs
+    config.Slot0.kS = 35.0;
+    config.Slot0.kV = 0.0;
+    config.Slot0.kA = 0.0;
+    config.Slot0.kP = 0.0;
+    config.Slot0.kD = 5.0;
+
+    // Voltage Configs
+    config.Slot1.kS = 0.0;
+    config.Slot1.kV = 0.0;
+    config.Slot1.kA = 0.0;
+    config.Slot1.kP = 0.0;
+    config.Slot1.kD = 0.0;
+
+    return config;
   }
 
   public static CANcoderConfiguration getEncoderCANcoderConfiguration() {
@@ -172,11 +251,20 @@ public class Drive extends SubsystemBase {
     gyro.periodic();
   }
 
-  /** Stop all movement */
-  public void stop() {
-    for (var module : modules) {
-      module.stop();
-    }
+  /**
+   * Drive based on speeds
+   *
+   * @param xMagSupplier {@link DoubleSupplier} representing x velocity input stream
+   * @param yMagSupplier {@link DoubleSupplier} representing y velocity input stream
+   * @param omegaMagSupplier {@link DoubleSupplier} representing omega velocity input stream
+   * @return {@link Command}
+   */
+  public Command driveFromSpeedsCmd(
+      DoubleSupplier xMagSupplier, DoubleSupplier yMagSupplier, DoubleSupplier omegaMagSupplier) {
+    return this.run(
+        () ->
+            ChassisSpeeds.fromFieldRelativeSpeeds(
+                kMaxLinearVelocity, kMaxLinearVelocity, kMaxAngularVelocity, getRotation2d()));
   }
 
   /**
@@ -200,11 +288,32 @@ public class Drive extends SubsystemBase {
         Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond);
 
     boolean focEnabled =
-        (currentVelocity >= kMaxLinearVelocity.times(0.9).in(MetersPerSecond)) ? false : true;
+        (currentVelocity >= kMaxLinearVelocity.times(kMaxFocVelocityNorm).in(MetersPerSecond))
+            ? false
+            : true;
 
     for (int i = 0; i < modules.length; i++) {
       modules[i].runSwerveModuleState(states[i], focEnabled);
     }
+  }
+
+  /** Stop all movement */
+  public void stop() {
+    for (var module : modules) {
+      module.stop();
+    }
+  }
+
+  public Rotation2d getRotation2d() {
+    return getRotation3d().toRotation2d();
+  }
+
+  public Rotation3d getRotation3d() {
+    return getPose3d().getRotation();
+  }
+
+  public Pose3d getPose3d() {
+    return poseEstimator.getEstimatedPosition();
   }
 
   /**

@@ -123,15 +123,18 @@ public class SwerveModule {
     state.cosineScale(getRotation2d());
 
     // TODO
+    int slot;
     if (focEnabled) {
       drive.enableFoc();
+      slot = 0;
     } else {
       drive.disableFoc();
+      slot = 1;
     }
 
     var driveSetpoint =
         Setpoint.createProfiledVelocitySetpoint(
-            RadiansPerSecond.of(state.speedMetersPerSecond / wheelRadius.in(Meters)));
+            RadiansPerSecond.of(state.speedMetersPerSecond / wheelRadius.in(Meters)), slot);
     drive.applySetpoint(driveSetpoint);
 
     var pivotSetpoint = Setpoint.createProfiledPositionSetpoint(state.angle.getMeasure());
