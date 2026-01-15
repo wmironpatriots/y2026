@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -20,6 +21,7 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.VecBuilder;
@@ -36,8 +38,11 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.DoubleSupplier;
 import org.frc6423.lib.io.EncoderIOCancoder;
 import org.frc6423.lib.io.GyroIO;
@@ -230,6 +235,10 @@ public class Drive extends SubsystemBase {
 
   private final SwerveDrivePoseEstimator3d poseEstimator;
 
+  private final SysIdRoutine pivotMotorCharacterization,
+      linearCharacterization,
+      angularCharacterization;
+
   public Drive() {
     modules =
         new SwerveModule[] {
@@ -251,6 +260,85 @@ public class Drive extends SubsystemBase {
             new Pose3d(),
             VecBuilder.fill(0.6, 0.6, 0.0, 0.07),
             VecBuilder.fill(0.9, 0.9, 0.0, 0.4));
+
+    pivotMotorCharacterization =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                Volts.of(4),
+                null,
+                state -> Epilogue.getConfig().backend.log("SysIdPivotState", state)),
+            new SysIdRoutine.Mechanism(
+                volts -> {
+                  for (int i = 0; i < modules.length; i++) {
+                    modules[i].runPivotCharacterizationVolts(volts);
+                  }
+                },
+                null,
+                this));
+
+    angularCharacterization =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                Volts.of(4),
+                null,
+                state -> Epilogue.getConfig().backend.log("SysIdAngularState", state)),
+            new SysIdRoutine.Mechanism(
+                volts -> {
+                  var states =
+                      kinematics.toSwerveModuleStates(
+                          new ChassisSpeeds(0.0, 0.0, kMaxAngularVelocity.in(RadiansPerSecond)));
+
+                  for (int i = 0; i < modules.length; i++) {
+                    modules[i].runDriveCharacterizationVolts(states[i].angle, volts);
+                  }
+                },
+                null,
+                this));
+
+    linearCharacterization =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                Volts.of(4),
+                null,
+                state -> Epilogue.getConfig().backend.log("SysIdLinearState", state)),
+            new SysIdRoutine.Mechanism(
+                volts -> {
+                  for (int i = 0; i < modules.length; i++) {
+                    modules[i].runDriveCharacterizationVolts(Rotation2d.kZero, volts);
+                  }
+                },
+                null,
+                this));
+
+    SmartDashboard.putData(
+        "transQuasistaticForward", linearCharacterization.quasistatic(Direction.kForward));
+    SmartDashboard.putData(
+        "transQuasistaticReverse", linearCharacterization.quasistatic(Direction.kReverse));
+    SmartDashboard.putData(
+        "transDynamicForward", linearCharacterization.dynamic(Direction.kForward));
+    SmartDashboard.putData(
+        "transDynamicReverse", linearCharacterization.dynamic(Direction.kReverse));
+
+    SmartDashboard.putData(
+        "AngularQuasistaticForward", angularCharacterization.quasistatic(Direction.kForward));
+    SmartDashboard.putData(
+        "AngularQuasistaticReverse", angularCharacterization.quasistatic(Direction.kReverse));
+    SmartDashboard.putData(
+        "AngularDynamicForward", angularCharacterization.dynamic(Direction.kForward));
+    SmartDashboard.putData(
+        "AngularDynamicReverse", angularCharacterization.dynamic(Direction.kReverse));
+
+    SmartDashboard.putData(
+        "PivotQuasistaticForward", pivotMotorCharacterization.quasistatic(Direction.kForward));
+    SmartDashboard.putData(
+        "PivotQuasistaticReverse", pivotMotorCharacterization.quasistatic(Direction.kReverse));
+    SmartDashboard.putData(
+        "PivotDynamicForward", pivotMotorCharacterization.dynamic(Direction.kForward));
+    SmartDashboard.putData(
+        "PivotDynamicReverse", pivotMotorCharacterization.dynamic(Direction.kReverse));
   }
 
   @Override

@@ -19,6 +19,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIO.Setpoint;
@@ -143,6 +144,23 @@ public class SwerveModule {
     currentSetpoint = state;
 
     return state;
+  }
+
+  public void runPivotCharacterizationVolts(Voltage volts) {
+    var setpoint = Setpoint.createVoltageSetpoint(volts);
+
+    pivot.disableFoc();
+    pivot.applySetpoint(setpoint);
+  }
+
+  public void runDriveCharacterizationVolts(Rotation2d pivotRotation2d, Voltage volts) {
+    var psetpoint = Setpoint.createProfiledPositionSetpoint(pivotRotation2d.getMeasure());
+    var dsetpoint = Setpoint.createVoltageSetpoint(volts);
+
+    pivot.enableFoc();
+    drive.disableFoc();
+    drive.applySetpoint(psetpoint);
+    pivot.applySetpoint(dsetpoint);
   }
 
   /** Stop Module */
