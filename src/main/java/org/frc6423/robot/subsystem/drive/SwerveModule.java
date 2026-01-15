@@ -19,6 +19,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIO.Setpoint;
 
@@ -31,6 +32,7 @@ public class SwerveModule {
   private final SwerveModuleConfig config;
 
   private final ServoIO drive, pivot;
+  private final EncoderIO encoder;
 
   private final Distance wheelRadius;
 
@@ -38,8 +40,10 @@ public class SwerveModule {
 
   public SwerveModule(SwerveModuleConfig config) {
     this.config = config;
+
     this.pivot = config.pivot;
     this.drive = config.drive;
+    this.encoder = config.encoder;
 
     this.wheelRadius = config.wheelRadius;
   }
@@ -92,7 +96,7 @@ public class SwerveModule {
   }
 
   /**
-   * @return {@link SwerveModuleState} representing the current setpoints of module
+   * @return {@link SwerveModuleState} representing the setpoint velocity state of module
    */
   public SwerveModuleState getSetpointSwerveModuleState() {
     return currentSetpoint;
@@ -114,9 +118,16 @@ public class SwerveModule {
    * @param state {@link SwerveModuleState} setpoint to optimize and apply
    * @return {@link SwerveModuleState} (optimized)
    */
-  public SwerveModuleState runSwerveModuleState(SwerveModuleState state) {
+  public SwerveModuleState runSwerveModuleState(SwerveModuleState state, boolean focEnabled) {
     state.optimize(getRotation2d());
     state.cosineScale(getRotation2d());
+
+    // TODO
+    if (focEnabled) {
+      drive.enableFoc();
+    } else {
+      drive.disableFoc();
+    }
 
     var driveSetpoint =
         Setpoint.createProfiledVelocitySetpoint(
@@ -154,14 +165,16 @@ public class SwerveModule {
    * @param id friendly "nickname" for module
    * @param pivot {@link ServoIO} representing pivot motor of module
    * @param drive {@link ServoIO} representing drive motor of module
+   * @param encoder {@link EncoderIO} representing abs pivot encoder of module
    * @param wheelRadius {@link Distance} representing the wheel radius of module
-   * @param displacementWrtRobot {@link Translation2d} representing displacement of module relative
+   * @param displacementWrtCenter {@link Translation2d} representing displacement of module relative
    *     to chassis's center of rotation
    */
   public static final record SwerveModuleConfig(
       String id,
       ServoIO pivot,
       ServoIO drive,
+      EncoderIO encoder,
       Distance wheelRadius,
-      Translation2d displacementWrtRobot) {}
+      Translation2d displacementWrtCenter) {}
 }
