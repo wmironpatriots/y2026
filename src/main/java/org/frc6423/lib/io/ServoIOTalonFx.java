@@ -114,6 +114,8 @@ public class ServoIOTalonFx extends ServoIO {
     this.servo = new TalonFX(canDeviceId, canBus);
     this.config = config;
 
+    servo.getConfigurator().apply(config);
+
     this.voltageSignal = servo.getMotorVoltage(true);
     this.inCurrentSignal = servo.getSupplyCurrent(true);
     this.outCurrentSignal = servo.getStatorCurrent(true);
