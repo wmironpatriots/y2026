@@ -89,7 +89,8 @@ public class Drive extends SubsystemBase {
             new ServoIOTalonFx(
                 "BL Pivot", kBlPivot, kDriveCanbus, getPivotTalonFXConfiguration(kBlAbsEncoder)),
             new ServoIOTalonFx("BL Drive", kBlDrive, kDriveCanbus, getDriveTalonFXConfiguration()),
-            new EncoderIOCancoder(kBlAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration()),
+            new EncoderIOCancoder(
+                kBlAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration(new Rotation2d())),
             kWheelRadius,
             new Translation2d(kCenterToEdge, kCenterToEdge).times(-1)),
         new SwerveModuleConfig(
@@ -97,7 +98,8 @@ public class Drive extends SubsystemBase {
             new ServoIOTalonFx(
                 "FL Pivot", kFlPivot, kDriveCanbus, getPivotTalonFXConfiguration(kFlAbsEncoder)),
             new ServoIOTalonFx("FL Drive", kFlDrive, kDriveCanbus, getDriveTalonFXConfiguration()),
-            new EncoderIOCancoder(kFlAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration()),
+            new EncoderIOCancoder(
+                kFlAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration(new Rotation2d())),
             kWheelRadius,
             new Translation2d(kCenterToEdge.times(-1), kCenterToEdge)),
         new SwerveModuleConfig(
@@ -105,7 +107,8 @@ public class Drive extends SubsystemBase {
             new ServoIOTalonFx(
                 "FR Pivot", kFrPivot, kDriveCanbus, getPivotTalonFXConfiguration(kFrAbsEncoder)),
             new ServoIOTalonFx("FR Drive", kFrDrive, kDriveCanbus, getDriveTalonFXConfiguration()),
-            new EncoderIOCancoder(kFrAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration()),
+            new EncoderIOCancoder(
+                kFrAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration(new Rotation2d())),
             kWheelRadius,
             new Translation2d(kCenterToEdge, kCenterToEdge)),
         new SwerveModuleConfig(
@@ -113,7 +116,8 @@ public class Drive extends SubsystemBase {
             new ServoIOTalonFx(
                 "BR Pivot", kBrPivot, kDriveCanbus, getPivotTalonFXConfiguration(kBrAbsEncoder)),
             new ServoIOTalonFx("BR Drive", kBrDrive, kDriveCanbus, getDriveTalonFXConfiguration()),
-            new EncoderIOCancoder(kBrAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration()),
+            new EncoderIOCancoder(
+                kBrAbsEncoder, kDriveCanbus, getEncoderCANcoderConfiguration(new Rotation2d())),
             kWheelRadius,
             new Translation2d(kCenterToEdge, kCenterToEdge.times(-1))),
       };
@@ -246,7 +250,7 @@ public class Drive extends SubsystemBase {
             null,
             new Pose3d(),
             VecBuilder.fill(0.6, 0.6, 0.0, 0.07),
-            VecBuilder.fill(0.9, 0.9, 0.0, 0.4)); // TODO fill vecs
+            VecBuilder.fill(0.9, 0.9, 0.0, 0.4));
   }
 
   @Override

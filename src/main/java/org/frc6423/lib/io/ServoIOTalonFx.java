@@ -50,7 +50,7 @@ public class ServoIOTalonFx extends ServoIO {
   protected final TalonFX servo;
   protected final TalonFXConfiguration config;
 
-  private final BaseStatusSignal voltageSignal,
+  protected final BaseStatusSignal voltageSignal,
       inCurrentSignal,
       outCurrentSignal,
       torqueCurrentSignal,
