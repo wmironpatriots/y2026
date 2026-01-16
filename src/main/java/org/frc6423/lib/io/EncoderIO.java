@@ -10,8 +10,15 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.units.measure.Angle;
 
-/** An {@link IO} for controlling an encoder */
-public abstract class EncoderIO extends IO {
+/**
+ * A Hardware Interface for controlling a servo A {@link EncoderIO} instance <strong>must</strong>
+ * have its <strong>periodic method called every robot loop for values to be properly
+ * logged</strong>
+ */
+public abstract class EncoderIO {
+  /** Update all logged values */
+  public abstract void periodic();
+
   /**
    * Reset encoder to specified angular position
    *
@@ -20,7 +27,7 @@ public abstract class EncoderIO extends IO {
   public abstract void reset(Angle angle);
 
   /**
-   * @return {@link Angle} representing angular posotion of encooder
+   * @return {@link Angle} representing angular position of encoder
    */
   @Logged(name = "Angle", importance = Importance.INFO)
   public abstract Angle getAngle();

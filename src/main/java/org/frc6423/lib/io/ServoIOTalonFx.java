@@ -18,6 +18,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
@@ -29,6 +30,7 @@ import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -47,8 +49,9 @@ import java.util.function.UnaryOperator;
  * @see https://v6.docs.ctr-electronics.com/en/latest/docs/hardware-reference/talonfx/index.html
  */
 public class ServoIOTalonFx extends ServoIO {
-  protected final TalonFX servo;
-  protected final TalonFXConfiguration config;
+  // TODO give this class a cleanup :(
+  protected final TalonFX mServo;
+  protected final TalonFXConfiguration mConfig;
 
   private final BaseStatusSignal voltageSignal,
       inCurrentSignal,
@@ -59,51 +62,49 @@ public class ServoIOTalonFx extends ServoIO {
       accelerationSignal,
       temperatureSignal;
 
-  private final VoltageOut voltageRequest = new VoltageOut(0.0).withEnableFOC(false);
-  private final TorqueCurrentFOC torqueRequest = new TorqueCurrentFOC(0.0);
-  private final DutyCycleOut dutycycleRequest = new DutyCycleOut(0.0).withEnableFOC(false);
-  private final PositionTorqueCurrentFOC focPositionRequest = new PositionTorqueCurrentFOC(0.0);
-  private final PositionVoltage positionRequest = new PositionVoltage(0.0).withEnableFOC(false);
-  private final VelocityTorqueCurrentFOC focVelocityRequest = new VelocityTorqueCurrentFOC(0.0);
-  private final VelocityVoltage velocityRequest = new VelocityVoltage(0.0).withEnableFOC(false);
-  private final MotionMagicTorqueCurrentFOC focProfiledPositionRequest =
-      new MotionMagicTorqueCurrentFOC(0.0);
-  private final MotionMagicVoltage profiledPositionRequest =
-      new MotionMagicVoltage(0.0).withEnableFOC(false);
-  private final MotionMagicVelocityTorqueCurrentFOC focProfiledVelocityRequest =
+  private final VoltageOut mVoltReq = new VoltageOut(0.0).withEnableFOC(false);
+  private final TorqueCurrentFOC mTauReq = new TorqueCurrentFOC(0.0);
+  private final DutyCycleOut mDutycycleReq = new DutyCycleOut(0.0).withEnableFOC(false);
+  private final PositionTorqueCurrentFOC mFocPoseReq = new PositionTorqueCurrentFOC(0.0);
+  private final PositionVoltage mPoseReq = new PositionVoltage(0.0).withEnableFOC(false);
+  private final VelocityTorqueCurrentFOC mFocVelReq = new VelocityTorqueCurrentFOC(0.0);
+  private final VelocityVoltage mVelReq = new VelocityVoltage(0.0).withEnableFOC(false);
+  private final MotionMagicTorqueCurrentFOC mFocProfPoseReq = new MotionMagicTorqueCurrentFOC(0.0);
+  private final MotionMagicVoltage mProfPoseReq = new MotionMagicVoltage(0.0).withEnableFOC(false);
+  private final MotionMagicVelocityTorqueCurrentFOC mFocProfVelReq =
       new MotionMagicVelocityTorqueCurrentFOC(0.0);
-  private final MotionMagicVelocityVoltage profiledVelocityRequest =
+  private final MotionMagicVelocityVoltage mProfVelReq =
       new MotionMagicVelocityVoltage(0.0).withEnableFOC(false);
 
-  private boolean focEnabled = true;
+  private boolean mFocEnabled = true;
 
-  private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
-  private final ThreadPoolExecutor threadPoolExecutor =
-      new ThreadPoolExecutor(1, 1, 5, java.util.concurrent.TimeUnit.MILLISECONDS, queue);
+  private final BlockingQueue<Runnable> mQueue = new LinkedBlockingQueue<>();
+  private final ThreadPoolExecutor mThreadPoolExe =
+      new ThreadPoolExecutor(1, 1, 5, java.util.concurrent.TimeUnit.MILLISECONDS, mQueue);
 
   /**
    * Create new {@link ServoIOTalonFx}
    *
    * @param name friendly "nickname" for servo
-   * @param canDeviceId integer representing the CAN identification
-   * @param canBusId {@link CANBus} representing the CAN bus device is on
+   * @param canDeviceId integer ID on CAN loop
+   * @param canBusId {@link CANBus} representing the CAN loop device is on
    * @param config {@link TalonFXConfiguration} representing servo config
    */
   public ServoIOTalonFx(String name, int canDeviceId, CANBus canBus, TalonFXConfiguration config) {
-    super(name);
+    super(name, canDeviceId);
 
-    this.servo = new TalonFX(canDeviceId, canBus);
-    this.config = config;
+    this.mServo = new TalonFX(canDeviceId, canBus);
+    this.mConfig = config;
 
-    this.voltageSignal = servo.getMotorVoltage(true);
-    this.inCurrentSignal = servo.getSupplyCurrent(true);
-    this.outCurrentSignal = servo.getStatorCurrent(true);
-    this.torqueCurrentSignal = servo.getTorqueCurrent(true);
+    this.voltageSignal = mServo.getMotorVoltage(true);
+    this.inCurrentSignal = mServo.getSupplyCurrent(true);
+    this.outCurrentSignal = mServo.getStatorCurrent(true);
+    this.torqueCurrentSignal = mServo.getTorqueCurrent(true);
 
-    this.angleSignal = servo.getPosition(true);
-    this.velocitySignal = servo.getVelocity(true);
-    this.accelerationSignal = servo.getAcceleration(true);
-    this.temperatureSignal = servo.getDeviceTemp(true);
+    this.angleSignal = mServo.getPosition(true);
+    this.velocitySignal = mServo.getVelocity(true);
+    this.accelerationSignal = mServo.getAcceleration(true);
+    this.temperatureSignal = mServo.getDeviceTemp(true);
   }
 
   @Override
@@ -124,14 +125,14 @@ public class ServoIOTalonFx extends ServoIO {
    *
    * @param configApplier {@link UnaryOperator} that modifies a {@link TalonFXConfiguration}
    */
-  public void applyConfig(UnaryOperator<TalonFXConfiguration> configApplier) {
-    threadPoolExecutor.submit(
+  protected void applyConfig(UnaryOperator<TalonFXConfiguration> configApplier) {
+    mThreadPoolExe.submit(
         () -> {
-          var newConfig = configApplier.apply(config);
+          var newConfig = configApplier.apply(mConfig);
 
-          if (newConfig != config) {
+          if (newConfig != mConfig) {
             for (int i = 0; i < 5; i++) {
-              StatusCode result = servo.getConfigurator().apply(configApplier.apply(config));
+              StatusCode result = mServo.getConfigurator().apply(configApplier.apply(mConfig));
               if (result.isOK()) {
                 break;
               }
@@ -192,82 +193,78 @@ public class ServoIOTalonFx extends ServoIO {
     applyConfig(configApplier);
   }
 
-  /**
-   * Enable Field-Oriented Control (FOC)
-   *
-   * <p><strong>WARNING</strong>: FOC control calculates a Torque Current system input (in Amps).
-   * This means gains that work with voltage based control will never work with FOC based control
-   *
-   * @param active when true, FOC control will be used
-   * @see
-   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
-   */
+  @Override
   public void setFocStatus(boolean active) {
-    focEnabled = true;
+    mFocEnabled = true;
   }
 
   @Override
-  protected void idle() {
-    servo.stopMotor();
+  public void setLeader(ServoIO leader, boolean flipped) {
+    mServo.setControl(
+        new Follower(
+            leader.mCanDeviceId,
+            (flipped) ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned));
+  }
+
+  @Override
+  public void stop() {
+    mServo.stopMotor();
   }
 
   @Override
   protected void setVoltageSetpoint(Voltage voltage) {
-    servo.setControl(voltageRequest.withOutput(voltage).withEnableFOC(focEnabled));
+    mServo.setControl(mVoltReq.withOutput(voltage).withEnableFOC(mFocEnabled));
   }
 
   @Override
   protected void setTorqueCurrentSetpoint(Current current) {
-    servo.setControl(torqueRequest.withOutput(current));
+    mServo.setControl(mTauReq.withOutput(current));
   }
 
   @Override
   protected void setDutycycleSetpoint(double dutycycle) {
-    servo.setControl(dutycycleRequest.withOutput(dutycycle).withEnableFOC(focEnabled));
+    mServo.setControl(mDutycycleReq.withOutput(dutycycle).withEnableFOC(mFocEnabled));
   }
 
   @Override
   protected void setPositionSetpoint(Angle position, int slot) {
-    if (focEnabled) {
-      focPositionRequest.withPosition(position).withSlot(slot);
+    if (mFocEnabled) {
+      mFocPoseReq.withPosition(position).withSlot(slot);
       return;
     }
 
-    positionRequest.withPosition(position).withSlot(slot);
+    mPoseReq.withPosition(position).withSlot(slot);
   }
 
   @Override
   protected void setVelocitySetpoint(
       AngularVelocity velocity, AngularAcceleration acceleration, int slot) {
-    if (focEnabled) {
-      focVelocityRequest.withVelocity(velocity);
+    if (mFocEnabled) {
+      mFocVelReq.withVelocity(velocity);
       return;
     }
 
-    velocityRequest.withVelocity(velocity).withAcceleration(acceleration).withSlot(slot);
+    mVelReq.withVelocity(velocity).withAcceleration(acceleration).withSlot(slot);
   }
 
   @Override
   protected void setPositionProfiledSetpoint(Angle position, int slot) {
-    if (focEnabled) {
-      focProfiledPositionRequest.withPosition(position).withSlot(slot);
+    if (mFocEnabled) {
+      mFocProfPoseReq.withPosition(position).withSlot(slot);
       return;
     }
 
-    profiledPositionRequest.withPosition(position).withSlot(slot);
+    mProfPoseReq.withPosition(position).withSlot(slot);
   }
 
   @Override
   protected void setVelocityProfiledSetpoint(
       AngularVelocity velocity, AngularAcceleration acceleration, int slot) {
-    if (focEnabled) {
-      focProfiledVelocityRequest
-          .withVelocity(velocity)
-          .withAcceleration(acceleration)
-          .withSlot(slot);
+    if (mFocEnabled) {
+      mFocProfVelReq.withVelocity(velocity).withAcceleration(acceleration).withSlot(slot);
       return;
     }
 
-    profiledVelocityRequest.withVelocity(velocity).withAcceleration(acceleration).withSlot(slot);
+    mProfVelReq.withVelocity(velocity).withAcceleration(acceleration).withSlot(slot);
   }
 }
