@@ -29,9 +29,10 @@ import java.util.function.UnaryOperator;
 
 /** A I/O interface for controlling a servo */
 public abstract class ServoIO {
-  public static final Temperature DEFAULT_SHUTDOWN_TEMPERATURE = Celsius.of(75);
+  public static final Temperature kDefaultShutdownTemperature = Celsius.of(75);
 
   public final String name;
+  public final int canDeviceId;
 
   private final Temperature maxTemp;
   private Alert shutdownAlert =
@@ -44,20 +45,23 @@ public abstract class ServoIO {
    * Create new {@link ServoIO}
    *
    * @param name friendly "nickname" for servo
+   * @param canDeviceId integer representing the CAN identification
    */
-  protected ServoIO(String name) {
-    this(name, DEFAULT_SHUTDOWN_TEMPERATURE);
+  protected ServoIO(String name, int canDeviceId) {
+    this(name, canDeviceId, kDefaultShutdownTemperature);
   }
 
   /**
    * Create new {@link ServoIO}
    *
    * @param name friendly "nickname" for servo
+   * @param canDeviceId integer representing the CAN identification
    * @param shutdownTemperature {@link Temperature} representing the maximum temperature a servo can
    *     be at before shutting down
    */
-  protected ServoIO(String name, Temperature shutdownTemperature) {
+  protected ServoIO(String name, int canDeviceId, Temperature shutdownTemperature) {
     this.name = name;
+    this.canDeviceId = canDeviceId;
     this.maxTemp = shutdownTemperature;
   }
 
@@ -68,7 +72,7 @@ public abstract class ServoIO {
       shutdownAlert.set(true);
 
       isOverheated = true;
-      idle();
+      stop();
     } else if (shutdownAlert.get()) {
       shutdownAlert.set(false);
 
@@ -78,7 +82,9 @@ public abstract class ServoIO {
   }
 
   /**
-   * @return friendly nickname for servo
+   * @return friendly nickname for serv
+   * @param name friendly "nickname" for servo
+   * @param canDeviceId integer represento
    */
   @Logged(name = "Servo Name", importance = Importance.INFO)
   public String getName() {
@@ -168,8 +174,39 @@ public abstract class ServoIO {
   /** Disable brake mode */
   public abstract void disableBrake();
 
+  /**
+   * Enable Field-Oriented Control (FOC)
+   *
+   * <p><strong>WARNING</strong>: FOC control calculates a Torque Current system input (in Amps).
+   * This means gains that work with voltage based control will never work with FOC based control
+   *
+   * @see
+   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
+   */
+  public abstract void enableFoc();
+
+  /**
+   * Disable Field-Oriented Control (FOC)
+   *
+   * <p><strong>WARNING</strong>: Disabling FOC will use voltage based control for all controll
+   * methods and will produce a Voltage system input (in Volts). This means gains that work with FOC
+   * based control will never work with voltage based control
+   *
+   * @see
+   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
+   */
+  public abstract void disableFoc();
+
+  /**
+   * Set servo into follower mode
+   *
+   * @param leader {@link ServoIO} to follow
+   * @param flipped when true follower will follow in the opposite direction
+   */
+  public abstract void setLeader(ServoIO leader, boolean flipped);
+
   /** Stop all servo control */
-  protected abstract void idle();
+  public abstract void stop();
 
   /**
    * Set voltage setpoint
@@ -332,7 +369,7 @@ public abstract class ServoIO {
     public static Setpoint stop() {
       UnaryOperator<ServoIO> applier =
           (ServoIO io) -> {
-            io.idle();
+            io.stop();
             return io;
           };
 

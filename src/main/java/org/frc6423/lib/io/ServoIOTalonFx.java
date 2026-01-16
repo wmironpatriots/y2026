@@ -18,6 +18,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
@@ -29,6 +30,7 @@ import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -90,7 +92,7 @@ public class ServoIOTalonFx extends ServoIO {
    * @param config {@link TalonFXConfiguration} representing servo config
    */
   public ServoIOTalonFx(String name, int canDeviceId, CANBus canBus, TalonFXConfiguration config) {
-    this(name, canDeviceId, canBus, config, DEFAULT_SHUTDOWN_TEMPERATURE);
+    this(name, canDeviceId, canBus, config, kDefaultShutdownTemperature);
   }
 
   /**
@@ -109,7 +111,7 @@ public class ServoIOTalonFx extends ServoIO {
       CANBus canBus,
       TalonFXConfiguration config,
       Temperature temperature) {
-    super(name, temperature);
+    super(name, canDeviceId, temperature);
 
     this.servo = new TalonFX(canDeviceId, canBus);
     this.config = config;
@@ -220,35 +222,26 @@ public class ServoIOTalonFx extends ServoIO {
     applyConfig(configApplier);
   }
 
-  /**
-   * Enable Field-Oriented Control (FOC)
-   *
-   * <p><strong>WARNING</strong>: FOC control calculates a Torque Current system input (in Amps).
-   * This means gains that work with voltage based control will never work with FOC based control
-   *
-   * @see
-   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
-   */
+  @Override
   public void enableFoc() {
     focEnabled = true;
   }
 
-  /**
-   * Disable Field-Oriented Control (FOC)
-   *
-   * <p><strong>WARNING</strong>: Disabling FOC will use voltage based control for all controll
-   * methods and will produce a Voltage system input (in Volts). This means gains that work with FOC
-   * based control will never work with voltage based control
-   *
-   * @see
-   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
-   */
+  @Override
   public void disableFoc() {
     focEnabled = false;
   }
 
   @Override
-  protected void idle() {
+  public void setLeader(ServoIO leader, boolean flipped) {
+    servo.setControl(
+        new Follower(
+            leader.canDeviceId,
+            (flipped) ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned));
+  }
+
+  @Override
+  public void stop() {
     servo.stopMotor();
   }
 
