@@ -27,8 +27,8 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import java.util.function.UnaryOperator;
 
-/** A I/O interface for controlling a servo */
-public abstract class ServoIO {
+/** A hardware interface for controlling a servo */
+public abstract class ServoIO extends IO {
   public static final Temperature DEFAULT_SHUTDOWN_TEMPERATURE = Celsius.of(75);
 
   public final String name;
@@ -61,8 +61,8 @@ public abstract class ServoIO {
     this.maxTemp = shutdownTemperature;
   }
 
-  /** Periodic Logic Should be called every robot loop */
-  public void periodic() {
+  @Override
+  protected void periodic() {
     // TODO put overheating motors in coast
     if (getTemperature().gt(maxTemp)) {
       shutdownAlert.set(true);
