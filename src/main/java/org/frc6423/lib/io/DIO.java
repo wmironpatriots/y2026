@@ -15,15 +15,16 @@ import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.Time;
 
 /**
- * An {@link IO} for controlling a DIO device
+ * An {@link IO} for controlling a Digital Input device
  *
  * @see https://docs.wpilib.org/en/stable/docs/hardware/sensors/digital-inputs-hardware.html
+ * @see https://en.wikipedia.org/wiki/Digital_signal
  */
 public abstract class DIO extends IO {
   private final Debouncer debouncer;
 
   /**
-   * Create new {@link DIO} /w a debouncer
+   * Create new {@link DIO} /w a {@link Debouncer}
    *
    * @param debounceTime {@link Time} representing how long signal must be true for state to be true
    * @param debounceType {@link DebounceType} representing which transition the debouncer should be
@@ -35,19 +36,20 @@ public abstract class DIO extends IO {
 
   @Override
   protected void periodic() {
-    // Update debouncer periodically
+    // Update debouncer
     getState();
   }
 
   /**
-   * @return true if state debouncer returns 1
+   * @return true when debouncer calculates signal to be on
    */
+  @Logged(name = "State", importance = Importance.INFO)
   public boolean getState() {
     return debouncer.calculate(getRawState());
   }
 
   /**
-   * @return true if DIO port returns 1
+   * @return true when signal is on
    */
   @Logged(name = "RawState", importance = Importance.INFO)
   public abstract boolean getRawState();

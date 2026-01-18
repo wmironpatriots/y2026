@@ -19,7 +19,7 @@ public class DIORio extends DIO {
   /**
    * Create new {@link DIORio}
    *
-   * @param channel represents the DIO channel device is on
+   * @param channel represents the DIO channel device is on (0-9)
    */
   public DIORio(int channel) {
     this(channel, Seconds.zero(), DebounceType.kBoth);

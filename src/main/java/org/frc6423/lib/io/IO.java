@@ -9,17 +9,22 @@ package org.frc6423.lib.io;
 import java.util.ArrayList;
 
 /**
- * A template hardware interface class
+ * A template class for Hardware Interfaces
  *
- * <p>A Hardware Interface contains methods for interacting with hardware
+ * <p>A Hardware Interface is a layer that handles communication between robot hardware and
+ * subsystem classes. These classes typically contain various public methods to control the
+ * hardware.
  *
- * <p>For {@link IO} devices to actually update every period, the updateDevices method must be
- * called every period in the robot periodic
+ * <p>Objects that inherit this class will automatically register into a static array that can be
+ * updated using the updateDevices method. This method must be called within the robot periodic for
+ * devices to update.
+ *
+ * @see https://docs.advantagekit.org/data-flow/recording-inputs/io-interfaces/
  */
 public abstract class IO {
   private static final ArrayList<IO> devices = new ArrayList<>();
 
-  /** Update all registered {@link IO} devices */
+  /** Run the periodic logic of all registered {@link IO} devices */
   public static void updateDevices() {
     for (IO io : devices) {
       io.periodic();
@@ -27,7 +32,7 @@ public abstract class IO {
   }
 
   /**
-   * Register new {@link IO} device
+   * Register new {@link IO} device to the static {@link IO} array
    *
    * @param device {@link IO} representing device to register
    */
@@ -35,7 +40,7 @@ public abstract class IO {
     devices.add(device);
   }
 
-  /** Periodic ran logic for device */
+  /** Periodically run method */
   protected abstract void periodic();
 
   /** Create new {@link IO} */
