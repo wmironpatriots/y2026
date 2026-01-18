@@ -11,6 +11,8 @@ import java.util.ArrayList;
 /**
  * A template hardware interface class
  *
+ * <p>A Hardware Interface contains methods for interacting with hardware
+ *
  * <p>For {@link IO} devices to actually update every period, the updateDevices method must be
  * called every period in the robot periodic
  */

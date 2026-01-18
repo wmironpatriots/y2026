@@ -6,7 +6,6 @@
 
 package org.frc6423.lib.io;
 
-import static edu.wpi.first.units.Units.Celsius;
 import static edu.wpi.first.units.Units.Radians;
 
 import com.ctre.phoenix6.CANBus;
@@ -48,7 +47,7 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
       CANBus canBus,
       TalonFXConfiguration config,
       double jKgMetersSquared) {
-    super(name, canDeviceId, canBus, config, Celsius.of(9999));
+    super(name, canDeviceId, canBus, config);
 
     sim =
         new DCMotorSim(
