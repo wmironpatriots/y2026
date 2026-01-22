@@ -26,40 +26,48 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N4;
 import edu.wpi.first.math.numbers.N6;
+
 import java.util.Optional;
 
-// TODO javadoc
+import org.frc6423.lib.util.Tracer;
+
+/** 
+ * A class for keeping track of:
+ * 
+ * </p> * The estimated position of robot on field
+ * </p> * The 
+ */
 public class RobotState {
-  // TODO fill
-  public static final Matrix<N4, N1> kPoseEstimateStdevs = new Matrix<>(Nat.N4(), Nat.N1());
+  // * CONSTANTS
+  public static final Matrix<N4, N1> kPoseEstimateStdevs = VecBuilder.fill(0.6, 0.6, 0.07, 0.0);
 
   public static final double kBufferDuration = 1.5;
 
-  public static RobotState instance;
+  public static RobotState kInstance;
 
   /**
    * @return {@link RobotState} singleton instance
    */
-  public RobotState getInstace() {
-    if (instance == null) instance = new RobotState();
+  public static RobotState getInstace() {
+    if (kInstance == null) kInstance = new RobotState();
 
-    return instance;
+    return kInstance;
   }
 
-  private Pose3d previousOdoPose;
-  private Pose3d odoPose;
-  private Pose3d estPose;
-  private final TimeInterpolatableBuffer<Pose3d> odoPoseBuffer =
+  private Pose3d mPreviousOdoPose;
+  private Pose3d mOdoPose;
+  private Pose3d mEstPose;
+  private final TimeInterpolatableBuffer<Pose3d> mOdoPoseBuffer =
       TimeInterpolatableBuffer.createBuffer(kBufferDuration);
 
-  private final SwerveDriveKinematics kinematics;
-  private SwerveModulePosition[] previousSwerveModulePoses;
+  private final SwerveDriveKinematics mKinematics;
+  private SwerveModulePosition[] mPreviousSwerveModulePoses;
 
   /** Create new {@link RobotState} */
   private RobotState() {
-    // TODO get fromm drive constants
+    // TODO values get from drive constants
     var centerToEdge = Inches.of(10);
-    kinematics =
+    mKinematics =
         new SwerveDriveKinematics(
             new Translation2d[] {
               new Translation2d(centerToEdge, centerToEdge).times(-1),
@@ -68,8 +76,7 @@ public class RobotState {
               new Translation2d(centerToEdge, centerToEdge),
             });
 
-    // TODO get fromm drive constants
-    previousSwerveModulePoses = new SwerveModulePosition[4];
+    mPreviousSwerveModulePoses = new SwerveModulePosition[4];
   }
 
   /**
@@ -85,93 +92,99 @@ public class RobotState {
    */
   @Logged(name = "Pose3d", importance = Importance.INFO)
   public Pose3d getPose3d() {
-    return estPose;
+    return mEstPose;
   }
 
   public void addOdometryMeasurement(OdometryMeasurement sample) {
-    // Calculate the change in distance of swerve module poses and apply to odometry pose
-    Twist3d odoPoseTwist =
-        toTwist3d(kinematics.toTwist2d(previousSwerveModulePoses, sample.swerveModulePoses()));
-    previousSwerveModulePoses = sample.swerveModulePoses;
-    odoPose = odoPose.exp(odoPoseTwist);
+    Tracer.traceFunc("RecordOdometryMeasurement", () -> {
+      // Calculate the change in distance of swerve module poses and apply to odometry pose
+      Twist3d odoPoseTwist =
+          toTwist3d(mKinematics.toTwist2d(mPreviousSwerveModulePoses, sample.swerveModulePoses()));
+      mPreviousSwerveModulePoses = sample.swerveModulePoses;
+      mOdoPose = mOdoPose.exp(odoPoseTwist);
 
-    // Utilize gyro measurements if present
-    sample.gyroRotation3d.ifPresent(r -> odoPose = new Pose3d(odoPose.getTranslation(), r));
+      // Utilize gyro measurements if present
+      sample.gyroRotation3d.ifPresent(r -> mOdoPose = new Pose3d(mOdoPose.getTranslation(), r));
 
-    // Add odometry sample of specified timestamp to odo buffer
-    odoPoseBuffer.addSample(kBufferDuration, odoPose);
+      // Add odometry sample of specified timestamp to odo buffer
+      mOdoPoseBuffer.addSample(kBufferDuration, mOdoPose);
 
-    // Calculate change in distance between odometry positions and apply to estimated pose
-    Twist3d estPoseTwist = previousOdoPose.log(odoPose);
-    estPose.exp(estPoseTwist);
+      // Calculate change in distance between odometry positions and apply to estimated pose
+      Twist3d estPoseTwist = mPreviousOdoPose.log(mOdoPose);
+      mEstPose.exp(estPoseTwist);
+    });
   }
 
-  public void addVisionMeasurement(VisionMeasurement measurement) {
-    // exit if sample is too old or there are no recent odometry samples
-    if (odoPoseBuffer.getInternalBuffer().isEmpty()
-        || odoPoseBuffer.getInternalBuffer().lastKey() - kBufferDuration
-            > measurement.timestampeSeconds) {
-      return;
+  public void addVisionMeasurement(VisionMeasurement... measurements) {
+    for (var measurement : measurements) {
+      Tracer.traceFunc("RecordVisionMeasurement", () -> {
+        // exit if sample is too old or there are no recent odometry samples
+        if (mOdoPoseBuffer.getInternalBuffer().isEmpty()
+            || mOdoPoseBuffer.getInternalBuffer().lastKey() - kBufferDuration
+                > measurement.timestampeSeconds) {
+          return;
+        }
+
+        // Get odo sample at timestamp; exit if nonexistant
+        var odoSample = mOdoPoseBuffer.getSample(measurement.timestampeSeconds);
+        if (odoSample.isEmpty()) {
+          return;
+        }
+
+        var odoToSample = new Transform3d(mOdoPose, odoSample.get());
+
+        var estPoseAtTimestamp = mEstPose.plus(odoToSample);
+
+        Matrix<N6, N6> visionK = new Matrix<>(Nat.N6(), Nat.N6());
+
+        var r = new double[3];
+
+        // Solve for closed form Kalman gain for continuous Kalman filter with A = 0
+        // and C = I. See wpimath/algorithms.md.
+        for (int row = 0; row < 4; ++row) {
+          if (kPoseEstimateStdevs.get(row, 0) == 0.0) {
+            visionK.set(row, row, 0.0);
+          } else {
+            visionK.set(
+                row,
+                row,
+                kPoseEstimateStdevs.get(row, 0)
+                    / (kPoseEstimateStdevs.get(row, 0)
+                        + Math.sqrt(kPoseEstimateStdevs.get(row, 0) * r[row])));
+          }
+        }
+        // Fill in the gains for the other components of the rotation vector
+        double angle_gain = visionK.get(3, 3);
+        visionK.set(4, 4, angle_gain);
+        visionK.set(5, 5, angle_gain);
+
+        var transform = new Transform3d(estPoseAtTimestamp, measurement.pose3dMeasurement);
+
+        // Step 5: We should not trust the transform entirely, so instead we scale this transform by a
+        // Kalman
+        // gain matrix representing how much we trust vision measurements compared to our current pose.
+        var transformTimesK =
+            visionK.times(
+                VecBuilder.fill(
+                    transform.getX(),
+                    transform.getY(),
+                    transform.getZ(),
+                    transform.getRotation().getX(),
+                    transform.getRotation().getY(),
+                    transform.getRotation().getZ()));
+
+        // Step 6: Convert back to Transform3d.
+        var scaledTransform =
+            new Transform3d(
+                transformTimesK.get(0, 0),
+                transformTimesK.get(1, 0),
+                transformTimesK.get(2, 0),
+                new Rotation3d(
+                    transformTimesK.get(3, 0), transformTimesK.get(4, 0), transformTimesK.get(5, 0)));
+
+        mEstPose = estPoseAtTimestamp.plus(scaledTransform).plus(transform.inverse());
+      });
     }
-
-    // Get odo sample at timestamp; exit if nonexistant
-    var odoSample = odoPoseBuffer.getSample(measurement.timestampeSeconds);
-    if (odoSample.isEmpty()) {
-      return;
-    }
-
-    var odoToSample = new Transform3d(odoPose, odoSample.get());
-
-    var estPoseAtTimestamp = estPose.plus(odoToSample);
-
-    Matrix<N6, N6> visionK = new Matrix<>(Nat.N6(), Nat.N6());
-
-    var r = new double[3];
-
-    // Solve for closed form Kalman gain for continuous Kalman filter with A = 0
-    // and C = I. See wpimath/algorithms.md.
-    for (int row = 0; row < 4; ++row) {
-      if (kPoseEstimateStdevs.get(row, 0) == 0.0) {
-        visionK.set(row, row, 0.0);
-      } else {
-        visionK.set(
-            row,
-            row,
-            kPoseEstimateStdevs.get(row, 0)
-                / (kPoseEstimateStdevs.get(row, 0)
-                    + Math.sqrt(kPoseEstimateStdevs.get(row, 0) * r[row])));
-      }
-    }
-    // Fill in the gains for the other components of the rotation vector
-    double angle_gain = visionK.get(3, 3);
-    visionK.set(4, 4, angle_gain);
-    visionK.set(5, 5, angle_gain);
-
-    var transform = new Transform3d(estPoseAtTimestamp, measurement.pose3dMeasurement);
-
-    // Step 5: We should not trust the transform entirely, so instead we scale this transform by a
-    // Kalman
-    // gain matrix representing how much we trust vision measurements compared to our current pose.
-    var transformTimesK =
-        visionK.times(
-            VecBuilder.fill(
-                transform.getX(),
-                transform.getY(),
-                transform.getZ(),
-                transform.getRotation().getX(),
-                transform.getRotation().getY(),
-                transform.getRotation().getZ()));
-
-    // Step 6: Convert back to Transform3d.
-    var scaledTransform =
-        new Transform3d(
-            transformTimesK.get(0, 0),
-            transformTimesK.get(1, 0),
-            transformTimesK.get(2, 0),
-            new Rotation3d(
-                transformTimesK.get(3, 0), transformTimesK.get(4, 0), transformTimesK.get(5, 0)));
-
-    estPose = estPoseAtTimestamp.plus(scaledTransform).plus(transform.inverse());
   }
 
   /**
@@ -189,6 +202,15 @@ public class RobotState {
       SwerveModulePosition[] swerveModulePoses,
       Optional<Rotation3d> gyroRotation3d) {}
 
+  /**
+   * TODO redo
+   * Represents a vision position estimation in 3d space
+   *
+   * @param timestampSeconds timestamp estimation was measured at
+   * @param pose3d {@link Pose3d} representing the estimated position in 3d space
+   * @param stdevsMatrix {@link Matrix} of 3x1 dimension representing standard deviations of pose
+   *     estimation
+   */
   public record VisionMeasurement(
       double timestampeSeconds, Pose3d pose3dMeasurement, Matrix<N3, N1> measurementStdevs) {}
 }
