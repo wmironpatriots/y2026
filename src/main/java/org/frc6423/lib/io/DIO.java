@@ -15,15 +15,16 @@ import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.Time;
 
 /**
- * A Hardware Interface for controlling a Digital Input device A {@link ServoIO} instance
- * <strong>must</strong> have its <strong>periodic method called every robot loop for values to be
- * properly logged</strong>
+ * A Hardware Interface for controlling a Digital Input device
+ *
+ * <p>A {@link ServoIO} instance <strong>must</strong> have its <strong>periodic method called every
+ * robot loop for values to be properly logged</strong>
  *
  * @see https://docs.wpilib.org/en/stable/docs/hardware/sensors/digital-inputs-hardware.html
  * @see https://en.wikipedia.org/wiki/Digital_signal
  */
 public abstract class DIO {
-  private final Debouncer debouncer;
+  private final Debouncer mDebouncer;
 
   /**
    * Create new {@link DIO} /w a {@link Debouncer}
@@ -33,7 +34,7 @@ public abstract class DIO {
    *     applied to
    */
   public DIO(Time debounceTime, DebounceType debounceType) {
-    debouncer = new Debouncer(debounceTime.in(Seconds), debounceType);
+    mDebouncer = new Debouncer(debounceTime.in(Seconds), debounceType);
   }
 
   /** Update all logged values */
@@ -47,7 +48,7 @@ public abstract class DIO {
    */
   @Logged(name = "State", importance = Importance.INFO)
   public boolean getState() {
-    return debouncer.calculate(getRawState());
+    return mDebouncer.calculate(getRawState());
   }
 
   /**

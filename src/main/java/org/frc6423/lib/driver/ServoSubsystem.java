@@ -6,30 +6,36 @@
 
 package org.frc6423.lib.driver;
 
-import edu.wpi.first.epilogue.Logged;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Rotations;
+
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularAcceleration;
-import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import java.util.Arrays;
-import java.util.Optional;
 import java.util.function.Supplier;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIO.Setpoint;
 
-/** Base {@link SubsystemBase} for a subsystem that uses at least one {@link ServoIO} */
-public class ServoSubsystem extends SubsystemBase {
-  @Logged protected final ServoIO leader;
-  @Logged protected final Optional<ServoIO[]> followers;
+/**
+ * {@link MotorSubsystem} extension for a subsystem requiring precise positional control
+ *
+ * <p>A {@link ServoSubsystem} instance <strong>CANNOT</strong> run a Velocity {@link Setpoint}
+ */
+public class ServoSubsystem extends MotorSubsystem {
+  public static final Angle kDefaultEpsilon = Degrees.of(0.4);
+
+  public final Angle mEpsilon;
 
   /**
    * Create new {@link ServoSubsystem}
    *
    * @param servo {@link ServoIO} representing servo driving subsystem
+   * @param epsilon {@link Angle} representing largest allowed error for angular position control
    */
-  public ServoSubsystem(ServoIO servo) {
-    this(servo, new ServoIO[] {}, new boolean[] {});
+  public ServoSubsystem(ServoIO servo, Angle epsilon) {
+    super(servo);
+
+    mEpsilon = epsilon;
   }
 
   /**
@@ -41,118 +47,47 @@ public class ServoSubsystem extends SubsystemBase {
    * @param leader {@link ServoIO} representing leader servo
    * @param followers {@link ServoIO} array representing follower servos
    * @param followersFlipped {@link boolean} array storing the follow direction of each follower
+   * @param epsilon {@link Angle} representing largest allowed error for angular position control
    */
-  public ServoSubsystem(ServoIO leader, ServoIO[] followers, boolean[] followersFlipped) {
-    this.leader = leader;
-    if (followers.length > 0) {
-      this.followers = Optional.of(followers);
+  public ServoSubsystem(
+      ServoIO leader, ServoIO[] followers, boolean[] followersFlipped, Angle epsilon) {
+    super(leader, followers, followersFlipped);
 
-      for (int i = 0; i < followers.length; i++) {
-        followers[i].setLeader(leader, followersFlipped[i]);
-      }
-    } else this.followers = Optional.empty();
+    mEpsilon = epsilon;
+  }
+
+  /**
+   * @return {@link Angle} representing the setpoint angular position of subsystem
+   */
+  public Angle getSetpointAngle() {
+    return Rotations.of(getSetpoint().getValue());
+  }
+
+  /**
+   * @return {@link Rotation2d} representing the angular position of subsystem
+   */
+  public Rotation2d getRotation2d() {
+    return new Rotation2d(getAngle());
+  }
+
+  /**
+   * @return true if error between subsystem angle and setpoint is less than epsilon of subsystem
+   */
+  public boolean isNearSetpoint() {
+    return (!getSetpoint().getControlType().isVelocityControl())
+        ? getSetpointAngle().isNear(getAngle(), mEpsilon)
+        : false;
   }
 
   @Override
-  public void periodic() {
-    leader.periodic();
-
-    if (followers.isPresent()) {
-      for (var follower : followers.get()) {
-        follower.periodic();
-      }
-    }
+  protected Command followSetpointCmd(Supplier<Setpoint> setpointSupplier) {
+    return super.followSetpointCmd(setpointSupplier)
+        .onlyIf(() -> (!getSetpoint().getControlType().isVelocityControl()));
   }
 
-  /**
-   * @return true if leader servo is disabled due to overheating
-   */
-  public boolean isLeaderOverheated() {
-    return leader.isOverheated();
-  }
-
-  /**
-   * @return false if any follower servo is disabled due to overheating; Returns false if subsystem
-   *     has no followers
-   */
-  public boolean areFollowersOverheated() {
-    if (followers.isPresent()) {
-      Boolean[] overheated = new Boolean[followers.get().length];
-      for (int i = 0; i < followers.get().length; i++) {
-        overheated[i] = followers.get()[i].isOverheated();
-      }
-
-      return Arrays.asList(overheated).contains(true);
-    }
-
-    return false;
-  }
-
-  /**
-   * @return current {@link Setpoint}
-   */
-  public Setpoint getCurrentSetpoint() {
-    return leader.getCurrentSetpoint();
-  }
-
-  /**
-   * @return {@link Angle} representing the angular position of subsystem
-   */
-  public Angle getAngle() {
-    return leader.getAngle();
-  }
-
-  /**
-   * @return {@link AngularVelocity} representing the angular velocity of servo
-   */
-  public AngularVelocity getAngularVelocity() {
-    return leader.getAngularVelocity();
-  }
-
-  /**
-   * @return {@link AngularAcceleration} representing the angular acceleration of servo
-   */
-  public AngularAcceleration getAngularAcceleration() {
-    return leader.getAngularAcceleration();
-  }
-
-  /**
-   * Run sepcified {@link Setpoint} until interrupted
-   *
-   * @param setpointSupplier {@link Setpoint} representing desired state
-   * @return {@link Command}
-   */
-  public Command runSetpointCmd(Setpoint setpoint) {
-    return runSetpointCmd(() -> setpoint);
-  }
-
-  /**
-   * Run sepcified {@link Setpoint} until interrupted
-   *
-   * @param setpointSupplier {@link Setpoint} representing desired state
-   * @return {@link Command}
-   */
-  protected Command runSetpointCmd(Supplier<Setpoint> setpointSupplier) {
-    return this.runEnd(() -> leader.applySetpoint(setpointSupplier.get()), () -> leader.stop())
-        .withName("Run Setpoint");
-  }
-
-  /**
-   * Set servo setpoint
-   *
-   * @param setpoint {@link Setpoint} representing desired state
-   * @return {@link Command}
-   */
+  @Override
   protected Command setSetpointCmd(Setpoint setpoint) {
-    return this.runOnce(() -> leader.applySetpoint(setpoint)).withName("Set Setpoint");
-  }
-
-  /**
-   * Stop subsystem
-   *
-   * @return {@link Command}
-   */
-  public Command stop() {
-    return this.run(() -> leader.stop());
+    return super.setSetpointCmd(setpoint)
+        .onlyIf(() -> (!getSetpoint().getControlType().isVelocityControl()));
   }
 }

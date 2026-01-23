@@ -60,6 +60,7 @@
   "java.dependency.enableDependencyCheckup": false,
   "cSpell.words": [
     "Debouncer",
-    "dutycycle"
+    "dutycycle",
+    "looptime"
   ]
 }

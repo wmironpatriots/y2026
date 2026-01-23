@@ -25,10 +25,14 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import java.util.function.UnaryOperator;
 
 /**
- * A Hardware Interface for controlling a servo A {@link ServoIO} instance can be given a {@link
- * Setpoint} by using the applySetpoint method A {@link ServoIO} instance <strong>must</strong> have
- * its <strong>periodic method called every robot loop for values to be properly logged</strong>
- * It's recommended to utilize {@link MotorSubsystem} or its extensions to create a servo based
+ * A Hardware Interface for controlling a servo
+ *
+ * <p>A {@link ServoIO} instance can be given a {@link Setpoint} by using the applySetpoint method
+ *
+ * <p>A {@link ServoIO} instance <strong>must</strong> have its <strong>periodic method called every
+ * robot loop for values to be properly logged</strong>
+ *
+ * <p>It's recommended to utilize {@link MotorSubsystem} or its extensions to create a servo based
  * subsystem instead of utilizing this class directly
  */
 public abstract class ServoIO {
@@ -217,8 +221,9 @@ public abstract class ServoIO {
       AngularVelocity velocity, AngularAcceleration acceleration, int slot);
 
   /**
-   * Represents a goal state of a {@link ServoIO} instance A Setpoint has two components: its {@link
-   * ControlType} & its value
+   * Represents a goal state of a {@link ServoIO} instance
+   *
+   * <p>A Setpoint has two components: its {@link ControlType} & its value
    */
   public static class Setpoint implements Sendable {
     /** Represents a method of Motor Control */

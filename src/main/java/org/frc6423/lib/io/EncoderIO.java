@@ -11,9 +11,10 @@ import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.units.measure.Angle;
 
 /**
- * A Hardware Interface for controlling a servo A {@link EncoderIO} instance <strong>must</strong>
- * have its <strong>periodic method called every robot loop for values to be properly
- * logged</strong>
+ * A Hardware Interface for controlling a servo
+ *
+ * <p>A {@link EncoderIO} instance <strong>must</strong> have its <strong>periodic method called
+ * every robot loop for values to be properly logged</strong>
  */
 public abstract class EncoderIO {
   /** Update all logged values */
