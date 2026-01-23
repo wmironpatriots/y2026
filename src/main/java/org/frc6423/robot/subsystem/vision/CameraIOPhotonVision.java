@@ -17,7 +17,6 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import java.util.ArrayList;
 import java.util.Optional;
-
 import org.frc6423.robot.RobotState.VisionMeasurement;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
