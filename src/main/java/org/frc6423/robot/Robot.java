@@ -18,11 +18,19 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
 
 @Logged
 public class Robot extends CommandRobot {
+  private final CommandXboxController driverController, operatorController, devController;
+
   public Robot() {
+    // Initialize Devices
+    driverController = new CommandXboxController(0);
+    operatorController = new CommandXboxController(1);
+    devController = new CommandXboxController(3);
+
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);
 
