@@ -79,7 +79,7 @@ public abstract class CommandRobot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
-    mAutonCmd = getAutonCmd();
+    mAutonCmd = getAutonCommand();
 
     if (mAutonCmd != null) {
       mScheduler.schedule(mAutonCmd);
@@ -108,5 +108,5 @@ public abstract class CommandRobot extends TimedRobot {
   /**
    * @return {@link Command} to schedule on autonomous oppmode initialization
    */
-  protected abstract Command getAutonCmd();
+  protected abstract Command getAutonCommand();
 }

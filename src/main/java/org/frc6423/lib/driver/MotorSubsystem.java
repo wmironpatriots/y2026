@@ -14,7 +14,6 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import java.util.Optional;
 import java.util.function.Supplier;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIO.Setpoint;
@@ -31,7 +30,8 @@ import org.frc6423.lib.io.ServoIO.Setpoint;
  */
 public class MotorSubsystem extends SubsystemBase {
   @Logged protected final ServoIO mLeader;
-  @Logged protected final Optional<ServoIO[]> mFollowers;
+  // TODO figure out a way to log
+  protected final ServoIO[] mFollowers;
 
   /**
    * Create new {@link MotorSubsystem}
@@ -55,20 +55,20 @@ public class MotorSubsystem extends SubsystemBase {
   public MotorSubsystem(ServoIO leader, ServoIO[] followers, boolean[] followersFlipped) {
     this.mLeader = leader;
     if (followers.length > 0) {
-      this.mFollowers = Optional.of(followers);
+      this.mFollowers = followers;
 
       for (int i = 0; i < followers.length; i++) {
         followers[i].setLeader(leader, followersFlipped[i]);
       }
-    } else this.mFollowers = Optional.empty();
+    } else this.mFollowers = new ServoIO[0];
   }
 
   @Override
   public void periodic() {
     mLeader.periodic();
 
-    if (mFollowers.isPresent()) {
-      for (var follower : mFollowers.get()) {
+    if (mFollowers.length > 0) {
+      for (var follower : mFollowers) {
         follower.periodic();
       }
     }

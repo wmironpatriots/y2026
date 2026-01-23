@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import org.frc6423.lib.driver.CommandRobot;
-import org.frc6423.lib.io.IO;
 
 @Logged
 public class Robot extends CommandRobot {
@@ -69,9 +68,6 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "GitBranch", BuildConstants.GIT_BRANCH);
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
-
-    // TODO This is lowkey a stupid way to handle IO devices, look for a better fix later
-    addPeriodic(() -> IO.updateDevices(), 0.02);
 
     configureBindings();
     configureGameBehavior();
