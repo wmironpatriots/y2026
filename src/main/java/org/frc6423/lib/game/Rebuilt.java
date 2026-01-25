@@ -115,7 +115,27 @@ public class Rebuilt {
   public static final Rectangle2d kOpposingAllianceClimbJig =
       new Rectangle2d(kOpposingAllianceClimbJigPose2d, kClimbJigLength, kClimbJigWidth);
 
-  // TODO depot
+  // * DEPOT DIMENSIONS
+
+  /** {@link Distance} representing the length of the depot */
+  public static final Distance kDepotLength = Inches.of(27.00);
+
+  /** {@link Distance} representing the width of the depot */
+  public static final Distance kDepotWidth = Inches.of(42.00);
+
+  /** {@link Pose2d} representing the location of the robot alliance depot */
+  public static final Pose2d kDepotPose2d =
+      new Pose2d(kDepotLength.div(2), kFieldWidth.div(2).plus(Inches.of(75.93)), Rotation2d.kZero);
+
+  /** {@link Pose2d} representing the location of the opposing alliance depot */
+  public static final Pose2d kOpposingAllianceDepotPose2d = allianceFlipPose2d(kDepotPose2d);
+
+  /** {@link Pose2d} representing the area of the robot alliance depot */
+  public static final Rectangle2d kDepot = new Rectangle2d(kDepotPose2d, kDepotLength, kDepotWidth);
+
+  /** {@link Pose2d} representing the area of the opposing alliance depot */
+  public static final Rectangle2d kOpposingAllianceDepot =
+      new Rectangle2d(kOpposingAllianceDepotPose2d, kDepotLength, kDepotWidth);
 
   // * HUB DIMENSIONS
 
@@ -202,7 +222,6 @@ public class Rebuilt {
   // TODO trench area
   // TODO source
   // TODO initial neutral mass
-
   /**
    * Convert specified {@link Pose2d} to its opposing alliance equivalent
    *
