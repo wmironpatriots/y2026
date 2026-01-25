@@ -283,7 +283,20 @@ public class Rebuilt {
   public static final Rectangle2d kOpposingAllianceSource =
       new Rectangle2d(kOpposingAllianceSourcePose2d, kSourceLength, kSourceWidth);
 
-  // TODO initial neutral mass
+  // * INITIAL NEUTRAL MASS DIMENSIONS
+  /** {@link Distance} representing the length of the neutral mass */
+  public static final Distance kNeutralMassLength = Inches.of(71.9);
+
+  /** {@link Distance} representing the width of the neutral mass */
+  public static final Distance kNeutralMassWidth = Inches.of(181.9);
+
+  /** {@link Pose2d} representing the location of the neutral mass */
+  public static final Pose2d kNeutralMassPose2d = kFieldPose2d;
+
+  /** {@link Rectangle2d} representing the neutral mass */
+  public static final Rectangle2d kNeutralMass =
+      new Rectangle2d(kNeutralMassPose2d, kNeutralMassLength, kNeutralMassWidth);
+
   /**
    * Convert specified {@link Pose2d} to its opposing alliance equivalent
    *
