@@ -7,7 +7,6 @@
 package org.frc6423.lib.game;
 
 import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Rotation;
 import static edu.wpi.first.units.Units.Seconds;
 
 import edu.wpi.first.math.geometry.Ellipse2d;
@@ -222,7 +221,7 @@ public class Rebuilt {
 
   // * TRENCH AREA DIMENSIONS
   /** {@link Distance} representing length of trench area */
-  public static final Distance kTrenchLength = Inches.of(47.00); 
+  public static final Distance kTrenchLength = Inches.of(47.00);
 
   /** {@link Distance} representing average width of the two trench areas */
   public static final Distance kTrenchWidth = Inches.of(50.47);
@@ -230,31 +229,37 @@ public class Rebuilt {
   /** {@link Distance} representing height of trench area */
   public static final Distance kTrenchHeight = Inches.of(22.25);
 
-  /** {@link Pose2d} representing the location of robot alliance right trench*/
+  /** {@link Pose2d} representing the location of robot alliance right trench */
   public static final Pose2d kRightTrenchPose2d =
-    new Pose2d(kFieldLength.div(2).minus(Inches.of(143.50)), kTrenchWidth.div(2), Rotation2d.kZero);
+      new Pose2d(
+          kFieldLength.div(2).minus(Inches.of(143.50)), kTrenchWidth.div(2), Rotation2d.kZero);
 
-  /** {@link Pose2d} representing the location of robot alliance left trench*/
+  /** {@link Pose2d} representing the location of robot alliance left trench */
   public static final Pose2d kLeftTrenchPose2d = mirrorPose2d(kRightTrenchPose2d);
 
-  /** {@link Pose2d} representing the location of opposing alliance right trench*/
-  public static final Pose2d kOpposingAllianceRightTrenchPose2d = allianceFlipPose2d(kLeftTrenchPose2d);
+  /** {@link Pose2d} representing the location of opposing alliance right trench */
+  public static final Pose2d kOpposingAllianceRightTrenchPose2d =
+      allianceFlipPose2d(kLeftTrenchPose2d);
 
-  /** {@link Pose2d} representing the location of opposing alliance left trench*/
-  public static final Pose2d kOpposingAllianceLeftTrenchPose2d = allianceFlipPose2d(kRightTrenchPose2d);
+  /** {@link Pose2d} representing the location of opposing alliance left trench */
+  public static final Pose2d kOpposingAllianceLeftTrenchPose2d =
+      allianceFlipPose2d(kRightTrenchPose2d);
 
-  /** {@link Rectangle2d} representing the robot alliance right trench*/
-  public static final Rectangle2d kRightTrench = new Rectangle2d(kRightTrenchPose2d,kTrenchLength,kTrenchWidth);
+  /** {@link Rectangle2d} representing the robot alliance right trench */
+  public static final Rectangle2d kRightTrench =
+      new Rectangle2d(kRightTrenchPose2d, kTrenchLength, kTrenchWidth);
 
-  /** {@link Rectangle2d} representing the robot alliance left trench*/
-  public static final Rectangle2d kLeftTrench = new Rectangle2d(kLeftTrenchPose2d,kTrenchLength,kTrenchWidth);
+  /** {@link Rectangle2d} representing the robot alliance left trench */
+  public static final Rectangle2d kLeftTrench =
+      new Rectangle2d(kLeftTrenchPose2d, kTrenchLength, kTrenchWidth);
 
-  /** {@link Rectangle2d} representing the opposing alliance right trench*/
-  public static final Rectangle2d kOpposingAllianceRightTrench = new Rectangle2d(kOpposingAllianceRightTrenchPose2d,kTrenchLength,kTrenchWidth);
+  /** {@link Rectangle2d} representing the opposing alliance right trench */
+  public static final Rectangle2d kOpposingAllianceRightTrench =
+      new Rectangle2d(kOpposingAllianceRightTrenchPose2d, kTrenchLength, kTrenchWidth);
 
-  /** {@link Rectangle2d} representing the oppposing alliance left trench*/
-  public static final Rectangle2d kOpposingAllianceLeftTrench = new Rectangle2d(kOpposingAllianceLeftTrenchPose2d,kTrenchLength,kTrenchWidth);
-  
+  /** {@link Rectangle2d} representing the oppposing alliance left trench */
+  public static final Rectangle2d kOpposingAllianceLeftTrench =
+      new Rectangle2d(kOpposingAllianceLeftTrenchPose2d, kTrenchLength, kTrenchWidth);
 
   // TODO source
   // TODO initial neutral mass
