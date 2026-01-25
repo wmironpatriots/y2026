@@ -261,7 +261,28 @@ public class Rebuilt {
   public static final Rectangle2d kOpposingAllianceLeftTrench =
       new Rectangle2d(kOpposingAllianceLeftTrenchPose2d, kTrenchLength, kTrenchWidth);
 
-  // TODO source
+  // * SOURCE DIMENSIONS
+  /** {@link Distance} representing length of source area */
+  public static final Distance kSourceLength = Inches.of(20.00);
+
+  /** {@link Distance} representing width of source area */
+  public static final Distance kSourceWidth = Inches.of(49.84);
+
+  /** {@link Pose2d} representing the position of the robot alliance source area */
+  public static final Pose2d kSourcePose2d =
+      new Pose2d(kSourceWidth.div(2), kSourceLength.div(2), Rotation2d.kZero);
+
+  /** {@link Pose2d} representing the position of the opposing alliance source area */
+  public static final Pose2d kOpposingAllianceSourcePose2d = allianceFlipPose2d(kSourcePose2d);
+
+  /** {@link Rectangle2d} representing the robot alliance source area */
+  public static final Rectangle2d kSource =
+      new Rectangle2d(kSourcePose2d, kSourceLength, kSourceWidth);
+
+  /** {@link Rectangle2d} representing the opposing alliance source area */
+  public static final Rectangle2d kOpposingAllianceSource =
+      new Rectangle2d(kOpposingAllianceSourcePose2d, kSourceLength, kSourceWidth);
+
   // TODO initial neutral mass
   /**
    * Convert specified {@link Pose2d} to its opposing alliance equivalent
