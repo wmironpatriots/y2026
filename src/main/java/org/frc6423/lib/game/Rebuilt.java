@@ -9,6 +9,8 @@ package org.frc6423.lib.game;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Seconds;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Ellipse2d;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rectangle2d;
@@ -21,7 +23,7 @@ import edu.wpi.first.wpilibj.Timer;
 import java.util.Optional;
 
 /**
- * TODO description
+ * Game specific constants for the 2026 FRC Game: Rebuilt
  *
  * <p>The term "robot alliance" or just "alliance" is used to describe the alliance the robot is
  * currently on
@@ -39,8 +41,11 @@ import java.util.Optional;
  * assumed to be of the robot alliance
  */
 public class Rebuilt {
+  // * FIELD
 
-  // * FIELD DIMENSIONS
+  /** {@link AprilTagFieldLayout} representing the positions of all field april tags */
+  public static final AprilTagFieldLayout kAprilTagFieldLayout =
+      AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
   /** {@link Distance} representing the length of the field */
   public static final Distance kFieldLength = Inches.of(651.22);
@@ -82,7 +87,7 @@ public class Rebuilt {
   public static final Rectangle2d kOpposingAlliance =
       new Rectangle2d(kOpposingAllianceZonePose2d, kAllianceZoneLength, kFieldWidth);
 
-  // * CLIMB JIG DIMENSIONS
+  // * CLIMB JIG
 
   /** {@link Distance} representing the length of the climb jig */
   public static final Distance kClimbJigLength = Inches.of(40.0 + 3.510);
@@ -115,7 +120,7 @@ public class Rebuilt {
   public static final Rectangle2d kOpposingAllianceClimbJig =
       new Rectangle2d(kOpposingAllianceClimbJigPose2d, kClimbJigLength, kClimbJigWidth);
 
-  // * DEPOT DIMENSIONS
+  // * DEPOT
 
   /** {@link Distance} representing the length of the depot */
   public static final Distance kDepotLength = Inches.of(27.00);
@@ -137,7 +142,7 @@ public class Rebuilt {
   public static final Rectangle2d kOpposingAllianceDepot =
       new Rectangle2d(kOpposingAllianceDepotPose2d, kDepotLength, kDepotWidth);
 
-  // * HUB DIMENSIONS
+  // * HUB
 
   /** {@link Distance} representing the length of the hub side */
   public static final Distance kHubSideLength = Inches.of(47.00);
@@ -179,7 +184,7 @@ public class Rebuilt {
       new Ellipse2d(
           kOpposingAllianceHubPose2d, kHubEffectiveOpeningDiameter, kHubEffectiveOpeningDiameter);
 
-  // * BUMP DIMENSIONS
+  // * BUMP
 
   /** {@link Distance} representing the length of the bump (+x distance) */
   public static final Distance kBumpLength = Inches.of(48.93);
@@ -219,7 +224,8 @@ public class Rebuilt {
   public static final Rectangle2d kOpposingAllianceLeftBump =
       new Rectangle2d(kOpposingAllianceLeftBumpPose2d, kBumpLength, kBumpWidth);
 
-  // * TRENCH AREA DIMENSIONS
+  // * TRENCH
+
   /** {@link Distance} representing length of trench area */
   public static final Distance kTrenchLength = Inches.of(47.00);
 
@@ -257,11 +263,12 @@ public class Rebuilt {
   public static final Rectangle2d kOpposingAllianceRightTrench =
       new Rectangle2d(kOpposingAllianceRightTrenchPose2d, kTrenchLength, kTrenchWidth);
 
-  /** {@link Rectangle2d} representing the oppposing alliance left trench */
+  /** {@link Rectangle2d} representing the opposing alliance left trench */
   public static final Rectangle2d kOpposingAllianceLeftTrench =
       new Rectangle2d(kOpposingAllianceLeftTrenchPose2d, kTrenchLength, kTrenchWidth);
 
-  // * SOURCE DIMENSIONS
+  // * SOURCE
+
   /** {@link Distance} representing length of source area */
   public static final Distance kSourceLength = Inches.of(20.00);
 
@@ -283,19 +290,22 @@ public class Rebuilt {
   public static final Rectangle2d kOpposingAllianceSource =
       new Rectangle2d(kOpposingAllianceSourcePose2d, kSourceLength, kSourceWidth);
 
-  // * INITIAL NEUTRAL MASS DIMENSIONS
-  /** {@link Distance} representing the length of the neutral mass */
+  // * NEUTRAL ZONE FUEL MASS
+
+  /** {@link Distance} representing the length of the initial neutral zone fuel mass */
   public static final Distance kNeutralMassLength = Inches.of(71.9);
 
-  /** {@link Distance} representing the width of the neutral mass */
+  /** {@link Distance} representing the width of the initial neutral zone fuel mass */
   public static final Distance kNeutralMassWidth = Inches.of(181.9);
 
-  /** {@link Pose2d} representing the location of the neutral mass */
+  /** {@link Pose2d} representing the location of the initial neutral zone fuel mass */
   public static final Pose2d kNeutralMassPose2d = kFieldPose2d;
 
-  /** {@link Rectangle2d} representing the neutral mass */
+  /** {@link Rectangle2d} representing the initial neutral zone fuel mass */
   public static final Rectangle2d kNeutralMass =
       new Rectangle2d(kNeutralMassPose2d, kNeutralMassLength, kNeutralMassWidth);
+
+  // TODO these two methods should probably get their own class
 
   /**
    * Convert specified {@link Pose2d} to its opposing alliance equivalent
@@ -320,20 +330,31 @@ public class Rebuilt {
     return pose.rotateAround(kFieldPose2d.getTranslation(), angle.times(2).times(-1));
   }
 
-  // TODO redo everything under
+  // * MATCH TIME
 
+  /** {@link Time} representing the total length of a match */
   public static final Time MATCH_TIME = Seconds.of(2 * 60 + 20);
+
+  /** {@link Time} representing the timestamp when shift zero ends */
   public static final Time SHIFT_ZERO_END = Seconds.of(2 * 60 + 10);
+
+  /** {@link Time} representing the timestamp when shift one ends */
   public static final Time SHIFT_ONE_END = Seconds.of(60 + 45);
+
+  /** {@link Time} representing the timestamp when shift two ends */
   public static final Time SHIFT_TWO_END = Seconds.of(60 + 20);
+
+  /** {@link Time} representing the timestamp when shift three ends */
   public static final Time SHIFT_THREE_END = Seconds.of(55);
+
+  /** {@link Time} representing the timestamp when shift four ends */
   public static final Time SHIFT_FOUR_END = Seconds.of(30);
 
   /**
-   * @return true if the alliance's hub is active
+   * @return true if robot alliance hub is active
    */
-  public static boolean isAllianceHubActive() {
-    var staringAlliance = getStartingInactiveAlliance();
+  public static boolean isHubActive() {
+    var staringAlliance = getFirstInactiveAlliance();
     var alliance = DriverStation.getAlliance();
     var timestamp = Seconds.of(Timer.getFPGATimestamp());
 
@@ -352,14 +373,11 @@ public class Rebuilt {
   }
 
   /**
-   * Returns the first inactive alliance in the match
+   * If autonomous scores have not been processed, this method will return an empty {@link Optional}
    *
-   * <p>If autonomous scores have not been processed, this method will return an empty {@link
-   * Optional}
-   *
-   * @return {@link Optional} of {@link Alliance}
+   * @return {@link Optional} of {@link Alliance} representing the starting inactive alliance
    */
-  public static Optional<Alliance> getStartingInactiveAlliance() {
+  public static Optional<Alliance> getFirstInactiveAlliance() {
     String gameData = DriverStation.getGameSpecificMessage();
 
     if (gameData.length() > 0) {
