@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import java.util.Optional;
+import org.frc6423.lib.util.CoordUtil;
 
 /**
  * Game specific constants for the 2026 FRC Game: Rebuilt
@@ -305,8 +306,6 @@ public class Rebuilt {
   public static final Rectangle2d kNeutralMass =
       new Rectangle2d(kNeutralMassPose2d, kNeutralMassLength, kNeutralMassWidth);
 
-  // TODO these two methods should probably get their own class
-
   /**
    * Convert specified {@link Pose2d} to its opposing alliance equivalent
    *
@@ -314,7 +313,7 @@ public class Rebuilt {
    * @return {@link Pose2d}
    */
   public static final Pose2d allianceFlipPose2d(Pose2d pose) {
-    return pose.rotateAround(kFieldPose2d.getTranslation(), Rotation2d.k180deg);
+    return CoordUtil.allianceFlipPose2d(kFieldPose2d, pose);
   }
 
   /**
@@ -324,10 +323,7 @@ public class Rebuilt {
    * @return {@link Pose2d}
    */
   public static final Pose2d mirrorPose2d(Pose2d pose) {
-    Rotation2d angle = kFieldPose2d.relativeTo(pose).getTranslation().getAngle();
-
-    // I think this should work?
-    return pose.rotateAround(kFieldPose2d.getTranslation(), angle.times(2).times(-1));
+    return CoordUtil.mirrorPose2d(kFieldPose2d, pose);
   }
 
   // * MATCH TIME
