@@ -90,26 +90,7 @@ public class ServoIOTalonFx extends ServoIO {
    * @param config {@link TalonFXConfiguration} representing servo config
    */
   public ServoIOTalonFx(String name, int canDeviceId, CANBus canBus, TalonFXConfiguration config) {
-    this(name, canDeviceId, canBus, config, DEFAULT_SHUTDOWN_TEMPERATURE);
-  }
-
-  /**
-   * Create new {@link ServoIOTalonFx}
-   *
-   * @param name friendly "nickname" for servo
-   * @param canDeviceId integer representing the CAN identification
-   * @param canBusId {@link CANBus} representing the CAN bus device is on
-   * @param config {@link TalonFXConfiguration} representing servo config
-   * @param temperature {@link Temperature} representing the maximum temperature a servo can be at
-   *     before shutting down
-   */
-  public ServoIOTalonFx(
-      String name,
-      int canDeviceId,
-      CANBus canBus,
-      TalonFXConfiguration config,
-      Temperature temperature) {
-    super(name, temperature);
+    super(name);
 
     this.servo = new TalonFX(canDeviceId, canBus);
     this.config = config;
@@ -127,7 +108,6 @@ public class ServoIOTalonFx extends ServoIO {
 
   @Override
   public void periodic() {
-    super.periodic();
     BaseStatusSignal.refreshAll(
         voltageSignal,
         inCurrentSignal,
@@ -147,10 +127,14 @@ public class ServoIOTalonFx extends ServoIO {
   public void applyConfig(UnaryOperator<TalonFXConfiguration> configApplier) {
     threadPoolExecutor.submit(
         () -> {
-          for (int i = 0; i < 5; i++) {
-            StatusCode result = servo.getConfigurator().apply(configApplier.apply(config));
-            if (result.isOK()) {
-              break;
+          var newConfig = configApplier.apply(config);
+
+          if (newConfig != config) {
+            for (int i = 0; i < 5; i++) {
+              StatusCode result = servo.getConfigurator().apply(configApplier.apply(config));
+              if (result.isOK()) {
+                break;
+              }
             }
           }
         });
@@ -197,22 +181,10 @@ public class ServoIOTalonFx extends ServoIO {
   }
 
   @Override
-  public void enableBrake() {
+  public void setBrakeStatus(boolean active) {
     UnaryOperator<TalonFXConfiguration> configApplier =
         (TalonFXConfiguration config) -> {
-          config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-
-          return config;
-        };
-
-    applyConfig(configApplier);
-  }
-
-  @Override
-  public void disableBrake() {
-    UnaryOperator<TalonFXConfiguration> configApplier =
-        (TalonFXConfiguration config) -> {
-          config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+          config.MotorOutput.NeutralMode = active ? NeutralModeValue.Brake : NeutralModeValue.Coast;
 
           return config;
         };
@@ -226,25 +198,12 @@ public class ServoIOTalonFx extends ServoIO {
    * <p><strong>WARNING</strong>: FOC control calculates a Torque Current system input (in Amps).
    * This means gains that work with voltage based control will never work with FOC based control
    *
+   * @param active when true, FOC control will be used
    * @see
    *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
    */
-  public void enableFoc() {
+  public void setFocStatus(boolean active) {
     focEnabled = true;
-  }
-
-  /**
-   * Disable Field-Oriented Control (FOC)
-   *
-   * <p><strong>WARNING</strong>: Disabling FOC will use voltage based control for all controll
-   * methods and will produce a Voltage system input (in Volts). This means gains that work with FOC
-   * based control will never work with voltage based control
-   *
-   * @see
-   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
-   */
-  public void disableFoc() {
-    focEnabled = false;
   }
 
   @Override

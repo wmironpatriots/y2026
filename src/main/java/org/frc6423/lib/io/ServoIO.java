@@ -7,7 +7,6 @@
 package org.frc6423.lib.io;
 
 import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Celsius;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Revolutions;
 import static edu.wpi.first.units.Units.RevolutionsPerSecond;
@@ -23,22 +22,13 @@ import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
-import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.Alert.AlertType;
 import java.util.function.UnaryOperator;
 
-/** A I/O interface for controlling a servo */
-public abstract class ServoIO {
-  public static final Temperature DEFAULT_SHUTDOWN_TEMPERATURE = Celsius.of(75);
-
+/** An {@link IO} for controlling a servo */
+public abstract class ServoIO extends IO {
   public final String name;
 
-  private final Temperature maxTemp;
-  private Alert shutdownAlert =
-      new Alert(getName() + " is overheating! SHUTTING DOWN to prevent damage!", AlertType.kError);
-
   private Setpoint currentSetpoint = Setpoint.stop();
-  private boolean isOverheated = false;
 
   /**
    * Create new {@link ServoIO}
@@ -46,35 +36,7 @@ public abstract class ServoIO {
    * @param name friendly "nickname" for servo
    */
   protected ServoIO(String name) {
-    this(name, DEFAULT_SHUTDOWN_TEMPERATURE);
-  }
-
-  /**
-   * Create new {@link ServoIO}
-   *
-   * @param name friendly "nickname" for servo
-   * @param shutdownTemperature {@link Temperature} representing the maximum temperature a servo can
-   *     be at before shutting down
-   */
-  protected ServoIO(String name, Temperature shutdownTemperature) {
     this.name = name;
-    this.maxTemp = shutdownTemperature;
-  }
-
-  /** Periodic Logic Should be called every robot loop */
-  public void periodic() {
-    // TODO put overheating motors in coast
-    if (getTemperature().gt(maxTemp)) {
-      shutdownAlert.set(true);
-
-      isOverheated = true;
-      idle();
-    } else if (shutdownAlert.get()) {
-      shutdownAlert.set(false);
-
-      isOverheated = false;
-      applySetpoint(currentSetpoint);
-    }
   }
 
   /**
@@ -83,14 +45,6 @@ public abstract class ServoIO {
   @Logged(name = "Servo Name", importance = Importance.INFO)
   public String getName() {
     return name;
-  }
-
-  /**
-   * @return true if servo has been disabled due to overheating
-   */
-  @Logged(name = "Overheated", importance = Importance.INFO)
-  public boolean isOverheated() {
-    return isOverheated;
   }
 
   /**
@@ -157,16 +111,15 @@ public abstract class ServoIO {
   public void applySetpoint(Setpoint setpoint) {
     this.currentSetpoint = setpoint;
 
-    if (!isOverheated) {
-      setpoint.applySetpoint(this);
-    }
+    setpoint.applySetpoint(this);
   }
 
-  /** Enable brake mode */
-  public abstract void enableBrake();
-
-  /** Disable brake mode */
-  public abstract void disableBrake();
+  /**
+   * Set the status of motor brake
+   *
+   * @param active if true motor apply brake when idling, else motor will coast
+   */
+  public abstract void setBrakeStatus(boolean active);
 
   /** Stop all servo control */
   protected abstract void idle();
