@@ -22,7 +22,7 @@ public class CoordUtil {
    * @param pose {@link Pose2d} to convert
    * @return {@link Pose2d}
    */
-  public static final Pose2d allianceFlipPose2d(Pose2d fieldMidpoint, Pose2d pose) {
+  public static Pose2d allianceFlipPose2d(Pose2d fieldMidpoint, Pose2d pose) {
     return pose.rotateAround(fieldMidpoint.getTranslation(), Rotation2d.k180deg);
   }
 
@@ -33,7 +33,7 @@ public class CoordUtil {
    * @param pose {@link Pose2d} to mirror
    * @return {@link Pose2d}
    */
-  public static final Pose2d mirrorPose2d(Pose2d fieldMidpoint, Pose2d pose) {
+  public static Pose2d mirrorPose2d(Pose2d fieldMidpoint, Pose2d pose) {
     Rotation2d angle = fieldMidpoint.relativeTo(pose).getTranslation().getAngle();
 
     // I think this should work?

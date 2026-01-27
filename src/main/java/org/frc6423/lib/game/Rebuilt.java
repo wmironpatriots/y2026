@@ -312,7 +312,7 @@ public class Rebuilt {
    * @param pose {@link Pose2d} to convert
    * @return {@link Pose2d}
    */
-  public static final Pose2d allianceFlipPose2d(Pose2d pose) {
+  public static Pose2d allianceFlipPose2d(Pose2d pose) {
     return CoordUtil.allianceFlipPose2d(kFieldPose2d, pose);
   }
 
@@ -322,7 +322,7 @@ public class Rebuilt {
    * @param pose {@link Pose2d} to mirror
    * @return {@link Pose2d}
    */
-  public static final Pose2d mirrorPose2d(Pose2d pose) {
+  public static Pose2d mirrorPose2d(Pose2d pose) {
     return CoordUtil.mirrorPose2d(kFieldPose2d, pose);
   }
 
