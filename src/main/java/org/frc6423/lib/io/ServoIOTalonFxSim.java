@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /** Simulated extension of {@link ServoIOTalonFx} */
 public class ServoIOTalonFxSim extends ServoIOTalonFx {
+  // TODO cleanup
   private final DCMotorSim sim;
 
   private boolean invertVoltage = false;
@@ -36,7 +37,7 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
    * Create new {@link ServoIOTalonFxSim}
    *
    * @param name friendly "nickname" for servo
-   * @param canDeviceId integer representing the CAN identification
+   * @param canDeviceId integer ID on CAN loop
    * @param canBusId {@link CANBus} representing the CAN bus device is on
    * @param config {@link TalonFXConfiguration} representing servo config
    * @param jKgMetersSquared Moment of Inertia in jKgM^2
@@ -59,7 +60,7 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
             0.001,
             0.001);
 
-    servo.getSimState().Orientation =
+    mServo.getSimState().Orientation =
         config.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive
             ? ChassisReference.CounterClockwise_Positive
             : ChassisReference.Clockwise_Positive;
@@ -70,7 +71,7 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
 
   /** Update {@link DCMotorSim} model and {@link TalonFX} {@link TalonFXSimState} */
   private void updateSimulation() {
-    var simState = servo.getSimState();
+    var simState = mServo.getSimState();
 
     // Calculate voltage /w friction from Talon sim state & apply to DCMotorSim model
     double simVoltage = addFriction(simState.getMotorVoltage(), 0.25);
@@ -85,8 +86,9 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
     simAngle = sim.getAngularPosition();
 
     // Set Talon sim state raw rotor pose and velocity from DCMotorSim model's state
-    simState.setRawRotorPosition(simAngle.div(config.Feedback.SensorToMechanismRatio));
-    simState.setRotorVelocity(sim.getAngularVelocity().div(config.Feedback.SensorToMechanismRatio));
+    simState.setRawRotorPosition(simAngle.div(mConfig.Feedback.SensorToMechanismRatio));
+    simState.setRotorVelocity(
+        sim.getAngularVelocity().div(mConfig.Feedback.SensorToMechanismRatio));
   }
 
   /**
@@ -106,20 +108,13 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
     invertVoltage = enabled;
   }
 
-  /**
-   * @param motorVoltage
-   * @param frictionVoltage
-   * @return
-   */
-  public static final double addFriction(double motorVoltage, double frictionVoltage) {
+  private static final double addFriction(double motorVoltage, double frictionVoltage) {
     if (Math.abs(motorVoltage) < frictionVoltage) {
-      motorVoltage = 0.0;
+      return 0.0;
     } else if (motorVoltage > 0.0) {
-      motorVoltage -= frictionVoltage;
+      return motorVoltage - frictionVoltage;
     } else {
-      motorVoltage += frictionVoltage;
+      return motorVoltage + frictionVoltage;
     }
-
-    return motorVoltage;
   }
 }

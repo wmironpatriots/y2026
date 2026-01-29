@@ -18,12 +18,19 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
-import org.frc6423.lib.io.IO;
 
 @Logged
 public class Robot extends CommandRobot {
+  private final CommandXboxController mDriverController, mOperatorController, mDevController;
+
   public Robot() {
+    // Initialize Devices
+    mDriverController = new CommandXboxController(0);
+    mOperatorController = new CommandXboxController(1);
+    mDevController = new CommandXboxController(3);
+
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);
 
@@ -69,9 +76,6 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "GitBranch", BuildConstants.GIT_BRANCH);
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
-
-    // TODO This is lowkey a stupid way to handle IO devices, look for a better fix later
-    addPeriodic(() -> IO.updateDevices(), 0.02);
 
     configureBindings();
     configureGameBehavior();

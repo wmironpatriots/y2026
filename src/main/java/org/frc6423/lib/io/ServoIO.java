@@ -24,35 +24,51 @@ import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import java.util.function.UnaryOperator;
 
-/** An {@link IO} for controlling a servo */
-public abstract class ServoIO extends IO {
-  public final String name;
+/**
+ * A Hardware Interface for controlling a servo
+ *
+ * <p>A {@link ServoIO} instance can be given a {@link Setpoint} by using the applySetpoint method
+ *
+ * <p>A {@link ServoIO} instance <strong>must</strong> have its <strong>periodic method called every
+ * robot loop for values to be properly logged</strong>
+ *
+ * <p>It's recommended to utilize {@link MotorSubsystem} or its extensions to create a servo based
+ * subsystem instead of utilizing this class directly
+ */
+public abstract class ServoIO {
+  public final String mName;
+  public final int mCanDeviceId;
 
-  private Setpoint currentSetpoint = Setpoint.stop();
+  private Setpoint mCurrentSetpoint = Setpoint.stop();
 
   /**
    * Create new {@link ServoIO}
    *
    * @param name friendly "nickname" for servo
+   * @param canDeviceId integer ID on CAN loop
    */
-  protected ServoIO(String name) {
-    this.name = name;
+  protected ServoIO(String name, int canDeviceId) {
+    mName = name;
+    mCanDeviceId = canDeviceId;
   }
 
+  /** Update all logged values */
+  public abstract void periodic();
+
   /**
-   * @return friendly nickname for servo
+   * @return {@link String} representing the "nickname" for servo
    */
   @Logged(name = "Servo Name", importance = Importance.INFO)
   public String getName() {
-    return name;
+    return mName;
   }
 
   /**
-   * @return current {@link Setpoint}
+   * @return {@link Setpoint} representing the goal of servo
    */
   @Logged(name = "Setpoint", importance = Importance.INFO)
-  public Setpoint getCurrentSetpoint() {
-    return currentSetpoint;
+  public Setpoint getSetpoint() {
+    return mCurrentSetpoint;
   }
 
   /**
@@ -104,12 +120,12 @@ public abstract class ServoIO extends IO {
   public abstract Temperature getTemperature();
 
   /**
-   * Run {@link Setpoint}
+   * Set new {@link Setpoint}
    *
-   * @param setpoint {@link Setpoint} representing desired setpoint
+   * @param setpoint {@link Setpoint} representing desired goal
    */
   public void applySetpoint(Setpoint setpoint) {
-    this.currentSetpoint = setpoint;
+    this.mCurrentSetpoint = setpoint;
 
     setpoint.applySetpoint(this);
   }
@@ -117,12 +133,34 @@ public abstract class ServoIO extends IO {
   /**
    * Set the status of motor brake
    *
-   * @param active if true motor apply brake when idling, else motor will coast
+   * @param active when true motor will apply brake when idling, else motor will coast
    */
   public abstract void setBrakeStatus(boolean active);
 
+  /**
+   * Set the status of Field-Oriented Control (FOC)
+   *
+   * <p><strong>WARNING</strong>: When FOC based control is active, the control output calculated
+   * will be a Torque Current (Amps) in contrast to the control output with foc disabled (Volts).
+   * This means gains that work with voltage based control will never work with FOC based control
+   *
+   * @param active when true motor will utilize FOC based control methods
+   * @see
+   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
+   */
+  public abstract void setFocStatus(boolean active);
+
+  /**
+   * Setup servo for follower mode When in follower mode, servo will mimic the servo set as its
+   * leader
+   *
+   * @param leader {@link ServoIO} to mimic
+   * @param flipped when true follower will mimic actions in the opposite direction
+   */
+  public abstract void setLeader(ServoIO leader, boolean flipped);
+
   /** Stop all servo control */
-  protected abstract void idle();
+  public abstract void stop();
 
   /**
    * Set voltage setpoint
@@ -182,6 +220,11 @@ public abstract class ServoIO extends IO {
   protected abstract void setVelocityProfiledSetpoint(
       AngularVelocity velocity, AngularAcceleration acceleration, int slot);
 
+  /**
+   * Represents a goal state of a {@link ServoIO} instance
+   *
+   * <p>A Setpoint has two components: its {@link ControlType} & its value
+   */
   public static class Setpoint implements Sendable {
     /** Represents a method of Motor Control */
     public static enum ControlType {
@@ -285,7 +328,7 @@ public abstract class ServoIO extends IO {
     public static Setpoint stop() {
       UnaryOperator<ServoIO> applier =
           (ServoIO io) -> {
-            io.idle();
+            io.stop();
             return io;
           };
 

@@ -19,7 +19,7 @@ import org.frc6423.lib.util.Tracer;
 /**
  * {@link CommandRobot} is an extension of {@link TimedRobot}
  *
- * <p>The {@link CommandRobot} class is intendended to subclassed by a user creating a Robot Program
+ * <p>The {@link CommandRobot} class is intended to subclassed by a user creating a Robot Program
  *
  * <p>The {@link CommandScheduler} is automatically called and traced by {@link Tracer} every period
  *
@@ -31,9 +31,9 @@ import org.frc6423.lib.util.Tracer;
  * @see {@link TimedRobot}
  */
 public abstract class CommandRobot extends TimedRobot {
-  private final CommandScheduler scheduler = CommandScheduler.getInstance();
+  private final CommandScheduler mScheduler = CommandScheduler.getInstance();
 
-  private Command autonCommand = Commands.none();
+  private Command mAutonCmd = Commands.none();
 
   private final Timer gcTimer = new Timer();
 
@@ -57,7 +57,7 @@ public abstract class CommandRobot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     // Run and trace CommandScheduler
-    Tracer.traceFunc("CommandScheduler", scheduler::run);
+    Tracer.traceFunc("CommandScheduler", mScheduler::run);
 
     // Run Garbage Collector every 5 seconds
     if (gcTimer.hasElapsed(5)) {
@@ -67,41 +67,41 @@ public abstract class CommandRobot extends TimedRobot {
 
   @Override
   public void disabledInit() {
-    scheduler.cancelAll();
+    mScheduler.cancelAll();
     System.gc();
   }
 
   @Override
   public void disabledExit() {
-    scheduler.cancelAll();
+    mScheduler.cancelAll();
     System.gc();
   }
 
   @Override
   public void autonomousInit() {
-    autonCommand = getAutonCommand();
+    mAutonCmd = getAutonCommand();
 
-    if (autonCommand != null) {
-      scheduler.schedule(autonCommand);
+    if (mAutonCmd != null) {
+      mScheduler.schedule(mAutonCmd);
     }
   }
 
   @Override
   public void autonomousExit() {
-    scheduler.cancelAll();
+    mScheduler.cancelAll();
     System.gc();
   }
 
   @Override
   public void teleopInit() {
-    if (autonCommand != null) {
-      autonCommand.cancel();
+    if (mAutonCmd != null) {
+      mAutonCmd.cancel();
     }
   }
 
   @Override
   public void teleopExit() {
-    scheduler.cancelAll();
+    mScheduler.cancelAll();
     System.gc();
   }
 
