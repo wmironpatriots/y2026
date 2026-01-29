@@ -23,13 +23,13 @@ import org.frc6423.lib.driver.CommandRobot;
 
 @Logged
 public class Robot extends CommandRobot {
-  private final CommandXboxController driverController, operatorController, devController;
+  private final CommandXboxController mDriverController, mOperatorController, mDevController;
 
   public Robot() {
     // Initialize Devices
-    driverController = new CommandXboxController(0);
-    operatorController = new CommandXboxController(1);
-    devController = new CommandXboxController(3);
+    mDriverController = new CommandXboxController(0);
+    mOperatorController = new CommandXboxController(1);
+    mDevController = new CommandXboxController(3);
 
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);

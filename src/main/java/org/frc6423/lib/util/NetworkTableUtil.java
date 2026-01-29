@@ -12,7 +12,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 
 /** Utility methods for interacting with {@link NetworkTable} */
 public class NetworkTableUtil {
-  private static final NetworkTableInstance ntInstance = NetworkTableInstance.getDefault();
+  private static final NetworkTableInstance mNtInstance = NetworkTableInstance.getDefault();
 
   /**
    * Create a new {@link DoubleEntry}
@@ -22,7 +22,7 @@ public class NetworkTableUtil {
    * @return {@link DoubleEntry}
    */
   public static DoubleEntry createEntry(String path, double value) {
-    DoubleEntry entry = ntInstance.getDoubleTopic(path).getEntry(value);
+    DoubleEntry entry = mNtInstance.getDoubleTopic(path).getEntry(value);
     entry.set(value);
 
     return entry;
@@ -36,7 +36,7 @@ public class NetworkTableUtil {
    * @return {@link BooleanEntry}
    */
   public static BooleanEntry createEntry(String path, boolean value) {
-    BooleanEntry entry = ntInstance.getBooleanTopic(path).getEntry(value);
+    BooleanEntry entry = mNtInstance.getBooleanTopic(path).getEntry(value);
     entry.set(value);
 
     return entry;
