@@ -6,6 +6,8 @@
 
 package org.frc6423.lib.io;
 
+import static edu.wpi.first.units.Units.Volts;
+
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -46,20 +48,16 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
             : ChassisReference.Clockwise_Positive;
 
     mUpdater = new Notifier(() -> updateSimulation());
-    // mUpdater.startPeriodic(0.005);
-  }
-
-  @Override
-  public void periodic() {
-    super.periodic();
-    updateSimulation();
+    mUpdater.startPeriodic(0.005);
   }
 
   /** Update {@link DCMotorSim} model and {@link TalonFX} {@link TalonFXSimState} */
   private void updateSimulation() {
+    mServo.getSimState().setSupplyVoltage(12.0);
+
     // Set system model input voltage using simulation input
     mModel.setInputVoltage(
-        mServo.getSimState().getMotorVoltageMeasure().times(getInvertedMultiplier()));
+        MechSim.addFriction(mServo.getSimState().getMotorVoltageMeasure(), Volts.of(0.25)));
 
     // Update system model
     mModel.update();
@@ -67,32 +65,28 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
     // Update simulation using system model
     mServo
         .getSimState()
-        .setRawRotorPosition(mModel.getAngle().div(mConfig.Feedback.SensorToMechanismRatio));
+        .setRawRotorPosition(mModel.getAngle().times(mConfig.Feedback.SensorToMechanismRatio));
     mServo
         .getSimState()
-        .setRotorVelocity(mModel.getAngularVelocity().div(mConfig.Feedback.SensorToMechanismRatio));
-    mServo.getSimState().setSupplyVoltage(12.0);
-  }
-
-  /**
-   * @return double representing the multiplier accounting for the motor's inversion
-   */
-  protected double getInvertedMultiplier() {
-    return mConfig.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive ? 1.0 : -1.0;
+        .setRotorVelocity(
+            mModel.getAngularVelocity().times(mConfig.Feedback.SensorToMechanismRatio));
   }
 
   @Override
   public Voltage getAppliedVoltage() {
-    return mServo.getSimState().getMotorVoltageMeasure().times(getInvertedMultiplier());
+    return mServo.getSimState().getMotorVoltageMeasure();
   }
 
+  /**
+   * @return {@link Current} representing the stator current of the {@link MechSim} model
+   */
   public Current getPhysicsModelStatorCurrent() {
     return mModel.getStatorCurrent();
   }
 
   @Override
   public Current getSupplyCurrent() {
-    return mServo.getSimState().getSupplyCurrentMeasure().times(getInvertedMultiplier());
+    return mServo.getSimState().getSupplyCurrentMeasure();
   }
 
   /**
