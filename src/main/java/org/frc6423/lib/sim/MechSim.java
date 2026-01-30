@@ -20,6 +20,9 @@ import edu.wpi.first.wpilibj.Timer;
 public abstract class MechSim {
   private double mPreviousUpdateTimestamp = 0.0;
 
+  /**
+   * @return {@link Current} representing the stator current of sim
+   */
   public abstract Current getStatorCurrent();
 
   /**
@@ -49,9 +52,9 @@ public abstract class MechSim {
   /**
    * Set the input voltage for the sim
    *
-   * @param volts {@link Voltage} representing the input
+   * @param voltage {@link Voltage} representing the input
    */
-  public abstract void setInputVoltage(Voltage volts);
+  public abstract void setInputVoltage(Voltage voltage);
 
   /**
    * Calculate the input voltage /w friction for a system

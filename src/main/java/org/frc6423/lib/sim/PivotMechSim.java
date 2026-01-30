@@ -46,8 +46,8 @@ public class PivotMechSim extends MechSim {
             config.maxAngle.in(Radians),
             config.simulateGravity,
             config.initAngle.in(Radians),
-            0.0,
-            0.0);
+            0.001,
+            0.901);
   }
 
   @Override
@@ -71,8 +71,8 @@ public class PivotMechSim extends MechSim {
   }
 
   @Override
-  public void setInputVoltage(Voltage volts) {
-    mSim.setInputVoltage(volts.in(Volts));
+  public void setInputVoltage(Voltage voltage) {
+    mSim.setInputVoltage(voltage.in(Volts));
   }
 
   /**
