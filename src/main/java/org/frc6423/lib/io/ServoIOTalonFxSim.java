@@ -6,32 +6,24 @@
 
 package org.frc6423.lib.io;
 
-import static edu.wpi.first.units.Units.Radians;
-
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.ChassisReference;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import org.frc6423.lib.sim.MechSim;
 
 /** Simulated extension of {@link ServoIOTalonFx} */
 public class ServoIOTalonFxSim extends ServoIOTalonFx {
-  // TODO cleanup
-  private final DCMotorSim sim;
-
-  private boolean invertVoltage = false;
-
-  private Angle simAngle = Radians.of(0.0);
-
-  private final Notifier simUpdater;
-  private double previousUpdateTimestamp = 0.0;
+  private final MechSim mModel;
+  private final Notifier mUpdater;
 
   /**
    * Create new {@link ServoIOTalonFxSim}
@@ -40,81 +32,82 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
    * @param canDeviceId integer ID on CAN loop
    * @param canBusId {@link CANBus} representing the CAN bus device is on
    * @param config {@link TalonFXConfiguration} representing servo config
-   * @param jKgMetersSquared Moment of Inertia in jKgM^2
+   * @param sim {@link MechSim} representing the simulation model
    */
   public ServoIOTalonFxSim(
-      String name,
-      int canDeviceId,
-      CANBus canBus,
-      TalonFXConfiguration config,
-      double jKgMetersSquared) {
+      String name, int canDeviceId, CANBus canBus, TalonFXConfiguration config, MechSim sim) {
     super(name, canDeviceId, canBus, config);
 
-    sim =
-        new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(
-                DCMotor.getKrakenX60Foc(1),
-                jKgMetersSquared,
-                1.0 / config.Feedback.SensorToMechanismRatio),
-            DCMotor.getKrakenX60Foc(1),
-            0.001,
-            0.001);
+    mModel = sim;
 
     mServo.getSimState().Orientation =
         config.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive
             ? ChassisReference.CounterClockwise_Positive
             : ChassisReference.Clockwise_Positive;
 
-    simUpdater = new Notifier(() -> updateSimulation());
-    simUpdater.startPeriodic(0.005);
+    mUpdater = new Notifier(() -> updateSimulation());
+    // mUpdater.startPeriodic(0.005);
+  }
+
+  @Override
+  public void periodic() {
+    super.periodic();
+    updateSimulation();
   }
 
   /** Update {@link DCMotorSim} model and {@link TalonFX} {@link TalonFXSimState} */
   private void updateSimulation() {
-    var simState = mServo.getSimState();
+    // Set system model input voltage using simulation input
+    mModel.setInputVoltage(
+        mServo.getSimState().getMotorVoltageMeasure().times(getInvertedMultiplier()));
 
-    // Calculate voltage /w friction from Talon sim state & apply to DCMotorSim model
-    double simVoltage = addFriction(simState.getMotorVoltage(), 0.25);
-    simVoltage *= invertVoltage ? -1 : 1;
-    sim.setInputVoltage(simVoltage);
+    // Update system model
+    mModel.update();
 
-    // Update DCMotorSim
-    double timestamp = Timer.getFPGATimestamp();
-    sim.update(timestamp - previousUpdateTimestamp);
-    previousUpdateTimestamp = timestamp;
-
-    simAngle = sim.getAngularPosition();
-
-    // Set Talon sim state raw rotor pose and velocity from DCMotorSim model's state
-    simState.setRawRotorPosition(simAngle.div(mConfig.Feedback.SensorToMechanismRatio));
-    simState.setRotorVelocity(
-        sim.getAngularVelocity().div(mConfig.Feedback.SensorToMechanismRatio));
+    // Update simulation using system model
+    mServo
+        .getSimState()
+        .setRawRotorPosition(mModel.getAngle().div(mConfig.Feedback.SensorToMechanismRatio));
+    mServo
+        .getSimState()
+        .setRotorVelocity(mModel.getAngularVelocity().div(mConfig.Feedback.SensorToMechanismRatio));
+    mServo.getSimState().setSupplyVoltage(12.0);
   }
 
   /**
-   * @return angle of the {@link DCMotorSim} model
+   * @return double representing the multiplier accounting for the motor's inversion
    */
-  @Logged(name = "Physics Simulation Angle", importance = Importance.INFO)
-  public Angle getPhysicsSimulationAngle() {
-    return simAngle;
+  protected double getInvertedMultiplier() {
+    return mConfig.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive ? 1.0 : -1.0;
+  }
+
+  @Override
+  public Voltage getAppliedVoltage() {
+    return mServo.getSimState().getMotorVoltageMeasure().times(getInvertedMultiplier());
+  }
+
+  public Current getPhysicsModelStatorCurrent() {
+    return mModel.getStatorCurrent();
+  }
+
+  @Override
+  public Current getSupplyCurrent() {
+    return mServo.getSimState().getSupplyCurrentMeasure().times(getInvertedMultiplier());
   }
 
   /**
-   * Enable inverted voltage
-   *
-   * @param enabled boolean representing if inverted voltage should be enabled or disabled
+   * @return {@link Angle} representing the angular position of the {@link MechSim} model
    */
-  public void setInvertedVoltage(boolean enabled) {
-    invertVoltage = enabled;
+  @Logged(name = "Physics Model Angle", importance = Importance.INFO)
+  public Angle getPhysicsModelAngle() {
+    return mModel.getAngle();
   }
 
-  private static final double addFriction(double motorVoltage, double frictionVoltage) {
-    if (Math.abs(motorVoltage) < frictionVoltage) {
-      return 0.0;
-    } else if (motorVoltage > 0.0) {
-      return motorVoltage - frictionVoltage;
-    } else {
-      return motorVoltage + frictionVoltage;
-    }
+  /**
+   * @return {@link AngularVelocity} representing the angular velocity of the {@link MechSim} model
+   */
+  @Logged(name = "Physics Model Angular Velocity", importance = Importance.INFO)
+  public AngularVelocity getPhysicsModelAngularVelocity() {
+    return mModel.getAngularVelocity();
   }
 }

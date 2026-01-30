@@ -11,18 +11,16 @@ import static edu.wpi.first.units.Units.Volts;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Timer;
 
 /** Base class for mechanism simulations */
-public abstract class MechSimulation {
+public abstract class MechSim {
   private double mPreviousUpdateTimestamp = 0.0;
 
-  /**
-   * @return {@link Voltage} representing the voltage input for sim
-   */
-  public abstract Voltage getInputVoltage();
+  public abstract Current getStatorCurrent();
 
   /**
    * @return {@link Angle} representing the angular position of sim
