@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 
 /** Implementation of {@link DIO} for DIO devices wired to RIO */
 public class DIORio extends DIO {
-  private final DigitalInput dio;
+  private final DigitalInput mDio;
 
   /**
    * Create new {@link DIORio}
@@ -36,11 +36,11 @@ public class DIORio extends DIO {
   public DIORio(int channel, Time debounceTime, DebounceType debounceType) {
     super(debounceTime, debounceType);
 
-    dio = new DigitalInput(0);
+    mDio = new DigitalInput(0);
   }
 
   @Override
   public boolean getRawState() {
-    return dio.get();
+    return mDio.get();
   }
 }
