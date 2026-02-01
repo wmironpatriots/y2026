@@ -7,6 +7,7 @@
 package org.frc6423.lib.driver;
 
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -110,6 +111,13 @@ public class MotorSubsystem extends SubsystemBase {
   }
 
   /**
+   * @return {@link Rotation2d} representing the angular position of subsystem
+   */
+  public Rotation2d getRotation2d() {
+    return new Rotation2d(getAngle());
+  }
+
+  /**
    * @return {@link Angle} representing the angular position of subsystem
    */
   public Angle getAngle() {
@@ -166,7 +174,7 @@ public class MotorSubsystem extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command stop() {
+  public Command stopCmd() {
     return this.run(() -> mLeader.stop());
   }
 }

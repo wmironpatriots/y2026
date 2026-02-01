@@ -35,7 +35,7 @@ public abstract class CommandRobot extends TimedRobot {
 
   private Command mAutonCmd = Commands.none();
 
-  private final Timer gcTimer = new Timer();
+  private final Timer mGcTimer = new Timer();
 
   /** Create new {@link CommandRobot} with looptime of 20 milliseconds */
   public CommandRobot() {
@@ -51,7 +51,7 @@ public abstract class CommandRobot extends TimedRobot {
     super(period.in(Seconds));
 
     // Start garbage collection timer
-    gcTimer.start();
+    mGcTimer.start();
   }
 
   @Override
@@ -60,7 +60,7 @@ public abstract class CommandRobot extends TimedRobot {
     Tracer.traceFunc("CommandScheduler", mScheduler::run);
 
     // Run Garbage Collector every 5 seconds
-    if (gcTimer.hasElapsed(5)) {
+    if (mGcTimer.hasElapsed(5)) {
       System.gc();
     }
   }
@@ -106,7 +106,7 @@ public abstract class CommandRobot extends TimedRobot {
   }
 
   /**
-   * @return {@link Command} to schedule on autonomous oppmode initialization
+   * @return {@link Command} to schedule on autonomous opmode initialization
    */
   protected abstract Command getAutonCommand();
 }

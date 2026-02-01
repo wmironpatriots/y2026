@@ -9,7 +9,6 @@ package org.frc6423.lib.driver;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Rotations;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.Command;
 import java.util.function.Supplier;
@@ -61,13 +60,6 @@ public class ServoSubsystem extends MotorSubsystem {
    */
   public Angle getSetpointAngle() {
     return Rotations.of(getSetpoint().getValue());
-  }
-
-  /**
-   * @return {@link Rotation2d} representing the angular position of subsystem
-   */
-  public Rotation2d getRotation2d() {
-    return new Rotation2d(getAngle());
   }
 
   /**
