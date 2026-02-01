@@ -23,8 +23,19 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /** {@link MechSim} implementation for a Flywheel system */
 public class FlywheelSim extends MechSim {
+  /** {@link MomentOfInertia} representing the Rotational Inertia of a generic flywheel system */
+  public static final MomentOfInertia kGenericFlywheelMoi = KilogramSquareMeters.of(0.004);
+
+  /** {@link MomentOfInertia} representing the Rotational Inertia of a generic roller system */
+  public static final MomentOfInertia kGenericRollerMoi = KilogramSquareMeters.of(0.001);
+
   private final DCMotorSim mSim;
 
+  /**
+   * Create new {@link FlywheelSim}
+   *
+   * @param config {@link Config} representing the config of system
+   */
   public FlywheelSim(Config config) {
     mSim =
         new DCMotorSim(

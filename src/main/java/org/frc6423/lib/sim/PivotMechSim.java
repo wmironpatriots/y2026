@@ -27,6 +27,11 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 
 /** {@link MechSim} implementation for a pivot system */
 public class PivotMechSim extends MechSim {
+  /**
+   * {@link MomentOfInertia} representing the Rotational Inertia of a generic pivoting arm system
+   */
+  public static final MomentOfInertia kGenericArmMoi = KilogramSquareMeters.of(0.08);
+
   private final SingleJointedArmSim mSim;
 
   /**
@@ -86,7 +91,6 @@ public class PivotMechSim extends MechSim {
    * @param minAngle {@link Angle} representing the lower angular position limit of system
    * @param maxAngle {@link Angle} representing the high angular position limit of system
    * @param initAngle {@link Angle} representing the angular position the system should start at
-   * @param stdevs represents the error the system should simulate
    */
   public static record Config(
       DCMotor gearbox,
