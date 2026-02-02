@@ -174,7 +174,7 @@ public class MotorSubsystem extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command stopCmd() {
+  protected Command stopCmd() {
     return this.run(() -> mLeader.stop());
   }
 }
