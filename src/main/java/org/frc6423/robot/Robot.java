@@ -17,13 +17,14 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
 
 @Logged
 public class Robot extends CommandRobot {
   private final CommandXboxController mDriverController, mOperatorController, mDevController;
+
+  private final AutonManager mAutonManager = new AutonManager();
 
   public Robot() {
     // Initialize Devices
@@ -89,6 +90,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return Commands.none();
+    return mAutonManager.getAutonomousCommand();
   }
 }
