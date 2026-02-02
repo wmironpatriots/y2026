@@ -82,9 +82,9 @@ public class IntakePivot extends ServoSubsystem {
    *
    * @return {@link Command}
    */
-  public Command stowCmd() {
-    return setSetpointCmd(kDeployedSetpoint)
-        .andThen(setStateCmd(State.STOWING))
+  public Command stow() {
+    return setSetpoint(kDeployedSetpoint)
+        .andThen(setState(State.STOWING))
         .withName("IntakePivot Deploy");
   }
 
@@ -93,9 +93,9 @@ public class IntakePivot extends ServoSubsystem {
    *
    * @return {@link Command}
    */
-  public Command deployCmd() {
-    return setSetpointCmd(kDeployedSetpoint)
-        .andThen(setStateCmd(State.DEPLOYING))
+  public Command deploy() {
+    return setSetpoint(kDeployedSetpoint)
+        .andThen(setState(State.DEPLOYING))
         .withName("IntakePivot Deploy");
   }
 
@@ -104,9 +104,9 @@ public class IntakePivot extends ServoSubsystem {
    *
    * @return {@link Command}
    */
-  public Command riseCmd() {
-    return setSetpointCmd(kRaisedSetpoint)
-        .andThen(setStateCmd(State.RAISED))
+  public Command rise() {
+    return setSetpoint(kRaisedSetpoint)
+        .andThen(setState(State.RAISED))
         .withName("IntakePivot Raised");
   }
 
@@ -116,7 +116,7 @@ public class IntakePivot extends ServoSubsystem {
    * @param state {@link State}
    * @return {@link Command}
    */
-  private Command setStateCmd(State state) {
+  private Command setState(State state) {
     return this.runOnce(() -> mState = state);
   }
 

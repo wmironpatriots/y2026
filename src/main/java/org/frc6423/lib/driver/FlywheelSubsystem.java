@@ -79,12 +79,12 @@ public class FlywheelSubsystem extends MotorSubsystem {
   }
 
   @Override
-  protected Command followSetpointCmd(Supplier<Setpoint> setpointSupplier) {
-    return super.followSetpointCmd(setpointSupplier);
+  protected Command followSetpoint(Supplier<Setpoint> setpointSupplier) {
+    return super.followSetpoint(setpointSupplier);
   }
 
   @Override
-  protected Command setSetpointCmd(Setpoint setpoint) {
-    return super.setSetpointCmd(setpoint);
+  protected Command setSetpoint(Setpoint setpoint) {
+    return super.setSetpoint(setpoint);
   }
 }

@@ -24,9 +24,9 @@ import org.frc6423.lib.io.ServoIO.Setpoint;
  *
  * <p>Control of this subsystem is centered around two Commands:
  *
- * <p>the setSetpointCmd will set a setpoint
+ * <p>the setSetpoint Command will set a setpoint
  *
- * <p>the runSetpointCmd will continuously run a Setpoint from a supplier until the command is
+ * <p>the runSetpoint Command will continuously run a Setpoint from a supplier until the command is
  * interrupted
  */
 public class MotorSubsystem extends SubsystemBase {
@@ -144,8 +144,8 @@ public class MotorSubsystem extends SubsystemBase {
    * @param setpointSupplier {@link Setpoint} representing desired state
    * @return {@link Command}
    */
-  protected Command followSetpointCmd(Setpoint setpoint) {
-    return followSetpointCmd(() -> setpoint);
+  protected Command followSetpoint(Setpoint setpoint) {
+    return followSetpoint(() -> setpoint);
   }
 
   /**
@@ -154,7 +154,7 @@ public class MotorSubsystem extends SubsystemBase {
    * @param setpointSupplier {@link Setpoint} representing desired state
    * @return {@link Command}
    */
-  protected Command followSetpointCmd(Supplier<Setpoint> setpointSupplier) {
+  protected Command followSetpoint(Supplier<Setpoint> setpointSupplier) {
     return this.runEnd(() -> mLeader.applySetpoint(setpointSupplier.get()), () -> mLeader.stop())
         .withName("Run Setpoint");
   }
@@ -165,7 +165,7 @@ public class MotorSubsystem extends SubsystemBase {
    * @param setpoint {@link Setpoint} representing desired state
    * @return {@link Command}
    */
-  protected Command setSetpointCmd(Setpoint setpoint) {
+  protected Command setSetpoint(Setpoint setpoint) {
     return this.runOnce(() -> mLeader.applySetpoint(setpoint)).withName("Set Setpoint");
   }
 
@@ -174,7 +174,7 @@ public class MotorSubsystem extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  protected Command stopCmd() {
+  protected Command stop() {
     return this.run(() -> mLeader.stop());
   }
 }

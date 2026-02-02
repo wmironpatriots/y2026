@@ -22,7 +22,7 @@ import org.frc6423.lib.io.ServoIO.Setpoint;
  *
  * <p>{@link IntakeRoller} is an extension of the {@link FlywheelSubsystem}
  *
- * <p>{@link IntakeRoller} has four states: IDLE, INTAKING, OUTAKING, STUCK
+ * <p>{@link IntakeRoller} has four states: STOPPED, INTAKING, OUTAKING, STUCK
  */
 public class IntakeRoller extends FlywheelSubsystem {
   // * SETPOINTS
@@ -32,7 +32,7 @@ public class IntakeRoller extends FlywheelSubsystem {
       Setpoint.createVelocitySetpoint(RevolutionsPerSecond.of(-10));
 
   // * LOGIC
-  private State mState = State.IDLE;
+  private State mState = State.STOPPED;
 
   /**
    * Create new {@link IntakeRoller} subsystem
@@ -48,7 +48,7 @@ public class IntakeRoller extends FlywheelSubsystem {
   public void periodic() {
     super.periodic();
 
-    if (mState != State.IDLE) {
+    if (mState != State.STOPPED) {
       if (getAngularVelocity().gt(RadiansPerSecond.zero())
           || getAngularVelocity().lt(RadiansPerSecond.zero())) mState = State.STUCK;
       else if (mState == State.STUCK)
@@ -69,8 +69,8 @@ public class IntakeRoller extends FlywheelSubsystem {
    *
    * @return {@link Command}
    */
-  public Command idleCmd() {
-    return stopCmd().andThen(setStateCmd(State.IDLE)).withName("IntakeRoller Idle");
+  public Command stop() {
+    return stop().andThen(setState(State.STOPPED)).withName("IntakeRoller Idle");
   }
 
   /**
@@ -78,9 +78,9 @@ public class IntakeRoller extends FlywheelSubsystem {
    *
    * @return {@link Command}
    */
-  public Command startIntakingCmd() {
-    return setSetpointCmd(kIntakingSetpoint)
-        .andThen(setStateCmd(State.INTAKING))
+  public Command startIntaking() {
+    return setSetpoint(kIntakingSetpoint)
+        .andThen(setState(State.INTAKING))
         .withName("IntakeRoller Intaking");
   }
 
@@ -89,9 +89,9 @@ public class IntakeRoller extends FlywheelSubsystem {
    *
    * @return {@link Command}
    */
-  public Command startOutakingCmd() {
-    return setSetpointCmd(kOutakingSetpoint)
-        .andThen(setStateCmd(State.OUTAKING))
+  public Command startOutaking() {
+    return setSetpoint(kOutakingSetpoint)
+        .andThen(setState(State.OUTAKING))
         .withName("IntakeRoller Outaking");
   }
 
@@ -101,14 +101,14 @@ public class IntakeRoller extends FlywheelSubsystem {
    * @param state {@link State}
    * @return {@link Command}
    */
-  private Command setStateCmd(State state) {
+  private Command setState(State state) {
     return this.runOnce(() -> mState = state);
   }
 
   /** Represents an action an {@link IntakeRoller} subsystem can do */
   public static enum State {
     /** {@link IntakeRoller} is not moving */
-    IDLE,
+    STOPPED,
     /** {@link IntakeRoller} is pulling balls towards the robot */
     INTAKING,
     /** {@link IntakeRoller} is pushing balls away from the robot */

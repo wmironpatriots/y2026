@@ -50,15 +50,15 @@ public class Intake extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command stowCmd() {
+  public Command stow() {
     return Commands.sequence(
-        setStateCmd(State.STOWING),
-        mRoller.idleCmd(),
+        setState(State.STOWING),
+        mRoller.stop(),
         mPivot
-            .stowCmd()
+            .stow()
             .andThen(
                 Commands.waitUntil(() -> mPivot.getState() == IntakePivot.State.STOWED)
-                    .andThen(setStateCmd(State.DEPLOYED))));
+                    .andThen(setState(State.DEPLOYED))));
   }
 
   /**
@@ -66,15 +66,15 @@ public class Intake extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command deployCmd() {
+  public Command deploy() {
     return Commands.sequence(
-        setStateCmd(State.DEPLOYING),
-        mRoller.startIntakingCmd(),
+        setState(State.DEPLOYING),
+        mRoller.startIntaking(),
         mPivot
-            .stowCmd()
+            .stow()
             .andThen(
                 Commands.waitUntil(() -> mPivot.getState() == IntakePivot.State.DEPLOYED)
-                    .andThen(setStateCmd(State.DEPLOYED))));
+                    .andThen(setState(State.DEPLOYED))));
   }
 
   /**
@@ -82,9 +82,8 @@ public class Intake extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command unjamCmd() {
-    return Commands.sequence(
-        setStateCmd(State.UNJAMMING), mRoller.startOutakingCmd(), mPivot.riseCmd());
+  public Command unjam() {
+    return Commands.sequence(setState(State.UNJAMMING), mRoller.startOutaking(), mPivot.rise());
   }
 
   /**
@@ -93,7 +92,7 @@ public class Intake extends SubsystemBase {
    * @param state {@link State}
    * @return {@link Command}
    */
-  private Command setStateCmd(State state) {
+  private Command setState(State state) {
     return this.runOnce(() -> mState = state);
   }
 
