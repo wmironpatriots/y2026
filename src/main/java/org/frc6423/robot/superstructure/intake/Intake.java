@@ -45,6 +45,11 @@ public class Intake extends SubsystemBase {
     return mState;
   }
 
+  /**
+   * Request subsystem to stop rolling and fold inwards
+   *
+   * @return {@link Command}
+   */
   public Command stowCmd() {
     return Commands.sequence(
         setStateCmd(State.STOWING),
@@ -56,6 +61,11 @@ public class Intake extends SubsystemBase {
                     .andThen(setStateCmd(State.DEPLOYED))));
   }
 
+  /**
+   * Request subsystem to start rolling and fold outwards
+   *
+   * @return {@link Command}
+   */
   public Command deployCmd() {
     return Commands.sequence(
         setStateCmd(State.DEPLOYING),
@@ -67,6 +77,11 @@ public class Intake extends SubsystemBase {
                     .andThen(setStateCmd(State.DEPLOYED))));
   }
 
+  /**
+   * Request subsystem to run rollers opposite and rise slightly from a deployed state
+   *
+   * @return {@link Command}
+   */
   public Command unjamCmd() {
     return Commands.sequence(
         setStateCmd(State.UNJAMMING), mRoller.startOutakingCmd(), mPivot.riseCmd());
@@ -84,10 +99,15 @@ public class Intake extends SubsystemBase {
 
   /** Represents an action an {@link Intake} subsystem can do */
   public static enum State {
+    /** {@link Intake} is stopping rollers and folding inwards */
     STOWING,
+    /** {@link Intake} isn't rolling and fully folded inwards */
     STOWED,
+    /** {@link Intake} is starting rollers and unfolding outwards */
     DEPLOYING,
+    /** {@link Intake} is rolling and fully unfolded outwards */
     DEPLOYED,
+    /** {@link Intake} is rolling opposite and slightly raised from deployed position */
     UNJAMMING
   }
 }

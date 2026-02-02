@@ -122,10 +122,15 @@ public class IntakePivot extends ServoSubsystem {
 
   /** Represents an action an {@link IntakePivot} subsystem can do */
   public static enum State {
+    /** {@link IntakePivot} is folding inwards to a stowed position */
     STOWING,
+    /** {@link IntakePivot} is fully folded inwards in a stowed position */
     STOWED,
+    /** {@link IntakePivot} is unfolding outwards to a deployed position */
     DEPLOYING,
+    /** {@link IntakePivot} is fully unfolded outwards in a deployed position */
     DEPLOYED,
+    /** {@link IntakePivot} is raised slightly above deployed position to assist with unjamming */
     RAISED
   }
 }

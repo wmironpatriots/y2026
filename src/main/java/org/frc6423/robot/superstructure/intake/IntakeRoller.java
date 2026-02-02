@@ -107,9 +107,13 @@ public class IntakeRoller extends FlywheelSubsystem {
 
   /** Represents an action an {@link IntakeRoller} subsystem can do */
   public static enum State {
+    /** {@link IntakeRoller} is not moving */
     IDLE,
+    /** {@link IntakeRoller} is pulling balls towards the robot */
     INTAKING,
+    /** {@link IntakeRoller} is pushing balls away from the robot */
     OUTAKING,
+    /** {@link IntakeRoller} is unable to intake/outake */
     STUCK
   }
 }
