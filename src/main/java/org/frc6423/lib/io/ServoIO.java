@@ -496,7 +496,7 @@ public abstract class ServoIO {
      * @return {@link Setpoint}
      */
     public static Setpoint createProfiledVelocitySetpoint(AngularVelocity velocity) {
-      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), 0);
+      return createProfiledVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), 0);
     }
 
     /**
@@ -508,7 +508,7 @@ public abstract class ServoIO {
      */
     public static Setpoint createProfiledVelocitySetpoint(
         AngularVelocity velocity, AngularAcceleration acceleration) {
-      return createVelocitySetpoint(velocity, acceleration, 0);
+      return createProfiledVelocitySetpoint(velocity, acceleration, 0);
     }
 
     /**
@@ -519,7 +519,7 @@ public abstract class ServoIO {
      * @return {@link Setpoint}
      */
     public static Setpoint createProfiledVelocitySetpoint(AngularVelocity velocity, int slot) {
-      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), slot);
+      return createProfiledVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), slot);
     }
 
     /**
