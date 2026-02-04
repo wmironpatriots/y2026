@@ -9,35 +9,35 @@
  "config":{
   "frontLeft":{
    "x":{
-    "exp":"11 in",
-    "val":0.2794
+    "exp":"14.22 in",
+    "val":0.361188
    },
    "y":{
-    "exp":"11 in",
-    "val":0.2794
+    "exp":"14.22 in",
+    "val":0.361188
    }
   },
   "backLeft":{
    "x":{
-    "exp":"-11 in",
-    "val":-0.2794
+    "exp":"14.22 in",
+    "val":0.361188
    },
    "y":{
-    "exp":"11 in",
-    "val":0.2794
+    "exp":"14.22 in",
+    "val":0.361188
    }
   },
   "mass":{
-   "exp":"150 lbs",
-   "val":68.0388555
+   "exp":"99.5 lb",
+   "val":45.132440815
   },
   "inertia":{
-   "exp":"6 kg m ^ 2",
-   "val":6.0
+   "exp":"4.247 m ^ 2 kg",
+   "val":4.247
   },
   "gearing":{
-   "exp":"6.5",
-   "val":6.5
+   "exp":"6.03",
+   "val":6.03
   },
   "radius":{
    "exp":"2 in",
@@ -52,8 +52,8 @@
    "val":1.2
   },
   "cof":{
-   "exp":"1.5",
-   "val":1.5
+   "exp":"2.5",
+   "val":2.5
   },
   "bumper":{
    "front":{
