@@ -91,6 +91,16 @@ public abstract class DriveConstants {
   public abstract double getPivotSensorToMechanismRatio();
 
   /**
+   * @return true if pivot positive direction should be inverted
+   */
+  public abstract boolean getPivotInverted();
+
+  /**
+   * @return gear ratio between drive servo rotor to mechanism
+   */
+  public abstract double getDriveRotorToMechRatio();
+
+  /**
    * @return {@link Distance} representing the radius of the swerve module wheel
    */
   public abstract Distance getWheelRadius();
@@ -110,6 +120,13 @@ public abstract class DriveConstants {
   }
 
   /**
+   * @return {@link CANBus} representing CANbus devices are on
+   */
+  public CANBus getCANBus() {
+    return CANBus.roboRIO();
+  }
+
+  /**
    * @return {@link TalonFXConfiguration} representing servo config for swerve module pivot
    */
   public abstract TalonFXConfiguration getPivotServoConfig(int CANcoderId);
@@ -120,9 +137,10 @@ public abstract class DriveConstants {
   public abstract TalonFXConfiguration getDriveServoConfig();
 
   /**
+   * @param angularOffset {@link Angle} representing the angular position offset of encoder
    * @return {@link CANcoderConfiguration} representing CANcoder config for swerve module encoder
    */
-  public abstract CANcoderConfiguration getCANcoderConfig();
+  public abstract CANcoderConfiguration getCANcoderConfig(Angle angularOffset);
 
   /**
    * @return {@link ModuleConfig} array representing the configs of swerve modules (FR, FL, BL, BR)
