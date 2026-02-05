@@ -27,6 +27,11 @@ public class AutonManager {
 
   /** Create new {@link AutonManager} */
   public AutonManager() {
+    mChooser.setDefaultOption("Do Nothing", Routines.NOTHING);
+    mChooser.addOption("DepotShot", Routines.DEPOT_SHOT);
+    mChooser.addOption("NeutralShot", Routines.NEUTRAL_SHOT);
+    mChooser.addOption("SourceShot", Routines.SOURCE_SHOT);
+
     SmartDashboard.putData(mChooser);
   }
 
@@ -39,23 +44,43 @@ public class AutonManager {
     }
 
     switch (mChooser.getSelected()) {
-      case LEFT:
-        return getLeftRoutineCommand();
+      case DEPOT_SHOT:
+        return getDepotShotRoutineCommand();
+      case NEUTRAL_SHOT:
+        return getNeutralShotRoutineCommand();
+      case SOURCE_SHOT:
+        return getSourceShotRoutineCommand();
       default:
         return Commands.none();
     }
   }
 
   /**
-   * @return {@link Command} representing the left auton routine
+   * @return {@link Command} representing Depot Shot (placeholder until drive integration)
    */
-  public Command getLeftRoutineCommand() {
+  public Command getDepotShotRoutineCommand() {
+    return Commands.none();
+  }
+
+  /**
+   * @return {@link Command} representing Neutral Shot (placeholder until drive integration)
+   */
+  public Command getNeutralShotRoutineCommand() {
+    return Commands.none();
+  }
+
+  /**
+   * @return {@link Command} representing Source Shot (placeholder until drive integration)
+   */
+  public Command getSourceShotRoutineCommand() {
     return Commands.none();
   }
 
   /** Represents a possible routine during autonomous */
   public static enum Routines {
     NOTHING,
-    LEFT
+    DEPOT_SHOT,
+    NEUTRAL_SHOT,
+    SOURCE_SHOT
   }
 }
