@@ -183,7 +183,7 @@ public class SwerveModule extends SubsystemBase {
     setpoint.optimize(getRotation2d());
     setpoint.cosineScale(getRotation2d());
 
-    setPivotSetpoint(getRotation2d());
+    setPivotSetpoint(setpoint.angle);
 
     var speed = MetersPerSecond.of(setpoint.speedMetersPerSecond);
 
