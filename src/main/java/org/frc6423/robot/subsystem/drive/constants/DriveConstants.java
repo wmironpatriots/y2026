@@ -155,7 +155,9 @@ public abstract class DriveConstants {
    * @param pivotDeviceId the CAN device ID of the pivot servo
    * @param driveDeviceId the CAN device ID of the drive servo
    * @param cancoderId the CAN device ID of the encoder
-   * @param cancoderOffset {@link Angle} representing the angular position offset of encoder
+   * @param pivotConfig {@link TalonFXConfiguration} representing servo config for pivot
+   * @param driveConfig {@link TalonFXConfiguration} representing servo config for drive
+   * @param cancoderConfig {@link CANcoderConfiguration} representing cancoder config for encoder
    */
   public static record ModuleConfig(
       String name,
@@ -163,5 +165,7 @@ public abstract class DriveConstants {
       int pivotDeviceId,
       int driveDeviceId,
       int cancoderId,
-      Angle cancoderOffset) {}
+      TalonFXConfiguration pivotConfig,
+      TalonFXConfiguration driveConfig,
+      CANcoderConfiguration cancoderConfig) {}
 }
