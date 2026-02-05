@@ -43,7 +43,7 @@ public class AutonManager {
   /**
    * @return {@link Command} representing the selected autonomous routine
    */
-  public Command getSelectedCommand() {
+  public Command getAutonomousCommand() {
     return mAutoChooser.selectedCommandScheduler();
   }
 
