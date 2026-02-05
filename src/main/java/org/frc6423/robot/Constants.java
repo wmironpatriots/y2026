@@ -6,19 +6,36 @@
 
 package org.frc6423.robot;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.FeetPerSecond;
+import static edu.wpi.first.units.Units.FeetPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -76,7 +93,7 @@ public final class Constants {
      * {@link Distance} representing the width between the centers of swerve module wheels along
      * sides
      */
-    public static final Distance kTrackDistance = Inches.of(20.76);
+    public static final Distance kTrackDistance = Inches.of(23.000);
 
     /**
      * {@link Distance} representing the width between the center of chassis and a swerve module
@@ -88,7 +105,7 @@ public final class Constants {
                 / 2.0);
 
     /** {@link Distance} representing the thickness of the bumpers */
-    public static final Distance kBumperThickness = Inches.of(2.0); // TODO
+    public static final Distance kBumperThickness = Inches.of(5.250); // this is an approximation
 
     /**
      * {@link LinearVelocity} representing the maximum possible velocity of drivetrain /w FOC
@@ -115,7 +132,7 @@ public final class Constants {
 
     /** {@link AngularVelocity} representing the maximum possible velocity of drivetrain */
     public static final AngularVelocity kMaxAngularVelocity =
-        RadiansPerSecond.of(kMaxLinearVelocity.div(kTrackRadius.in(Meters)).baseUnitMagnitude());
+        RadiansPerSecond.of(kMaxLinearVelocity.div(kTrackRadius.in(Feet)).baseUnitMagnitude());
 
     /**
      * {@link AngularAcceleration} representing the maximum possible acceleration drivetrain
@@ -160,31 +177,109 @@ public final class Constants {
       };
     }
 
-    /**
-     * @return {@link TalonFXConfiguration} representing servo config for swerve module pivot
-     */
-    public static final TalonFXConfiguration getPivotConfig() {
-      var config = new TalonFXConfiguration();
-      // ...
-      return config;
+    public static final TalonFXConfiguration getPivotServoConfig(int CANcoderId) {
+      return new TalonFXConfiguration()
+          .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withInverted(
+                      kPivotInverted
+                          ? InvertedValue.Clockwise_Positive
+                          : InvertedValue.CounterClockwise_Positive)
+                  .withNeutralMode(NeutralModeValue.Brake))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withSupplyCurrentLimit(Amps.of(40.0))
+                  .withSupplyCurrentLimitEnable(true)
+                  .withStatorCurrentLimit(Amps.of(120.0))
+                  .withStatorCurrentLimitEnable(true))
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                  .withFeedbackRemoteSensorID(CANcoderId)
+                  .withRotorToSensorRatio(kPivotRotorToSensorRatio))
+          .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(true))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity((5800 / 60) / kPivotRotorToSensorRatio)
+                  .withMotionMagicAcceleration((5800 / 60) / kPivotRotorToSensorRatio * 0.005))
+          .withSlot0(
+              new Slot0Configs()
+                  .withKS(0.014)
+                  .withKV(10.0)
+                  .withKA(0.0)
+                  .withKP(600.0)
+                  .withKD(50.0)); // Torque Based Motion Magic Position Controls
     }
 
     /**
      * @return {@link TalonFXConfiguration} representing servo config for swerve module drive
      */
-    public static final TalonFXConfiguration getDriveConfig() {
-      var config = new TalonFXConfiguration();
-      // ...
-      return config;
+    public static final TalonFXConfiguration getDriveServoConfig() {
+      return new TalonFXConfiguration()
+          .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withInverted(InvertedValue.CounterClockwise_Positive)
+                  .withNeutralMode(NeutralModeValue.Brake))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimit(Amps.of(20.0))
+                  .withStatorCurrentLimitEnable(true))
+          .withTorqueCurrent(new TorqueCurrentConfigs().withTorqueNeutralDeadband(Amps.of(10.0)))
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(kDriveSensorToMechRatio))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(
+                      kMaxLinearVelocity.div(kWheelRadius.in(Feet)).in(FeetPerSecond))
+                  .withMotionMagicAcceleration(
+                      kMaxLinearAcceleration.div(kWheelRadius.in(Feet)).in(FeetPerSecondPerSecond)))
+          .withSlot0(
+              new Slot0Configs()
+                  .withKS(5.0)
+                  .withKV(0.0)
+                  .withKA(0.0)
+                  .withKP(35.0)
+                  .withKD(0.0)) // Torque Based Motion Magic Velocity Controls
+          .withSlot1(
+              new Slot1Configs()
+                  .withKS(0.0)
+                  .withKV(0.0)
+                  .withKA(0.0)
+                  .withKP(0.0)
+                  .withKD(0.0)); // Voltage Based Motion Magic Velocity Controls
     }
 
     /**
      * @return {@link CANcoderConfiguration} representing encoder config for swerve module CANcoder
      */
-    public static final CANcoderConfiguration getEncoderConfig() {
-      var config = new CANcoderConfiguration();
-      // ...
-      return config;
+    public static final CANcoderConfiguration getEncoderConfig(Angle offset) {
+      return new CANcoderConfiguration()
+          .withMagnetSensor(
+              new MagnetSensorConfigs()
+                  .withSensorDirection(
+                      kPivotInverted
+                          ? SensorDirectionValue.CounterClockwise_Positive
+                          : SensorDirectionValue.Clockwise_Positive)
+                  .withMagnetOffset(offset));
     }
+
+    /**
+     * Represents a configuration for a {@link SwerveModule}
+     *
+     * @param name {@link String} nickname for module
+     * @param canBus {@link CANBus} representing the CANbus loop hardware is attached to
+     * @param pivotDeviceId the CAN device ID of the pivot servo
+     * @param driveDeviceId the CAN device ID of the drive servo
+     * @param cancoderId the CAN device ID of the encoder
+     * @param cancoderOffset {@link Angle} representing the angular position offset of encoder
+     */
+    public static record ModuleConfig(
+        String name,
+        CANBus canBus,
+        int pivotDeviceId,
+        int driveDeviceId,
+        int cancoderId,
+        Angle cancoderOffset) {}
   }
 }
