@@ -69,7 +69,7 @@ public class SwerveModule extends SubsystemBase {
               config.pivotConfig(),
               new FlywheelSim(
                   new FlywheelSim.Config(
-                      DCMotor.getKrakenX60Foc(2), 0.005, KilogramSquareMeters.of(0.004))));
+                      DCMotor.getKrakenX60Foc(2), 0.004, KilogramSquareMeters.of(0.004))));
       mDrive =
           new ServoIOTalonFxSim(
               config.name() + "Drive",
@@ -78,7 +78,7 @@ public class SwerveModule extends SubsystemBase {
               config.driveConfig(),
               new FlywheelSim(
                   new FlywheelSim.Config(
-                      DCMotor.getKrakenX60Foc(2), 0.005, KilogramSquareMeters.of(0.025))));
+                      DCMotor.getKrakenX60Foc(2), 0.025, KilogramSquareMeters.of(0.025))));
       mEncoder =
           new EncoderIOCanCoder(config.cancoderId(), config.canBus(), config.cancoderConfig());
     }

@@ -1,0 +1,18 @@
+// Copyright (c) 2026 FRC 6423 - Ward Melville Iron Patriots
+// https://github.com/wmironpatriots
+// 
+// Open Source Software; you can modify and/or share it under the terms of
+// MIT license file in the root directory of this project
+
+package org.frc6423.robot.subsystem.drive;
+
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
+
+public class Drive extends SubsystemBase {
+  private final DriveConstants mConstants;
+
+  public Drive(DriveConstants constants) {
+    mConstants = constants;
+  }
+}
