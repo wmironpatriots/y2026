@@ -14,6 +14,7 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -117,6 +118,13 @@ public abstract class DriveConstants {
       new Translation2d(coord, coord).times(-1),
       new Translation2d(coord, coord.times(-1))
     };
+  }
+
+  /**
+   * @return {@link SwerveDriveKinematics} representing the kinematics solver for the drivetrain
+   */
+  public SwerveDriveKinematics getKinematics() {
+    return new SwerveDriveKinematics(getModuleDisplacements());
   }
 
   /**
