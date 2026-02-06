@@ -40,6 +40,7 @@ import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants.ModuleConfig;
 
 /** Represents a Swerve Module for {@link Drive} Subsystem */
+@Deprecated
 public class SwerveModule extends SubsystemBase {
   private final ModuleConfig mConfig;
   private final DriveConstants mDriveConstants;
