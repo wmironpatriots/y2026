@@ -19,18 +19,20 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
+import org.frc6423.robot.Constants.Flags;
+import org.frc6423.robot.subsystem.drive.Drive;
 
 @Logged
 public class Robot extends CommandRobot {
-  private final CommandXboxController mDriverController, mOperatorController, mDevController;
+  private final CommandXboxController mDriverController;
+
+  private final Drive mDrive = new Drive(Flags.kRobotType.mDriveConstants);
 
   private final AutonManager mAutonManager = new AutonManager();
 
   public Robot() {
     // Initialize Devices
     mDriverController = new CommandXboxController(0);
-    mOperatorController = new CommandXboxController(1);
-    mDevController = new CommandXboxController(3);
 
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);

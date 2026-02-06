@@ -7,6 +7,9 @@
 package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
+import org.frc6423.robot.subsystem.drive.constants.Cascade;
+import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
+import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
 
 /**
  * This is a globally accessible class for storing immutable values.
@@ -17,6 +20,23 @@ import com.ctre.phoenix6.CANBus;
  * subclasses
  */
 public final class Constants {
+  /** Runtime flags determining the robots initialization */
+  public static final class Flags {
+    /** {@link RobotType} representing the robot chassis being used */
+    public static final RobotType kRobotType = RobotType.Y2026;
+
+    /**
+     * When true, subsystems will not be initialized
+     *
+     * <p><strong> WARNING </strong> ~ do NOT remove inline if-statement; Only change the false
+     * condition value
+     */
+    public static final boolean kSubsystemDisabled = (kRobotType != RobotType.Y2026) ? true : false;
+
+    /** When true, drive will not be initialized */
+    public static final boolean kDriveDisabled = false;
+  }
+
   /** The matrix contains the CAN identification information for all devices */
   public static final class Matrix {
     public static final CANBus kDriveCanBus = new CANBus("DRIVE");
@@ -33,6 +53,7 @@ public final class Constants {
     public static final int kDriveBlPivotId = 10;
     public static final int kDriveBlEncoderId = 11;
     public static final int kDriveBlDriveId = 12;
+    public static final int kDriveGyroId = 13;
 
     public static final CANBus kSubsystemCanBus = new CANBus("SOUP");
 
@@ -44,5 +65,19 @@ public final class Constants {
     public static final int kHoodId = 6;
     public static final int kFlywheelLeftId = 7;
     public static final int kFlywheelRightId = 8;
+  }
+
+  /** Represents the type of robot codebase is running on */
+  public static enum RobotType {
+    /** {@link Robot} representing the 2026 competition robot chassis */
+    Y2026(new RebuiltL2()),
+    /** {@link Robot} representing the 2025 competition robot chassis, cascade */
+    Y2025(new Cascade());
+
+    public final DriveConstants mDriveConstants;
+
+    private RobotType(DriveConstants drivetrainConstants) {
+      this.mDriveConstants = drivetrainConstants;
+    }
   }
 }
