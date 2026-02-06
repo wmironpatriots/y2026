@@ -11,7 +11,9 @@ import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Twist2d;
@@ -61,6 +63,8 @@ public class RobotState {
   private final TimeInterpolatableBuffer<Pose3d> mOdoPoseBuffer =
       TimeInterpolatableBuffer.createBuffer(kBufferDuration);
 
+  private Rotation2d mOffset = Rotation2d.kZero;
+
   private final SwerveDriveKinematics mKinematics;
   private SwerveModulePosition[] mPreviousSwerveModulePoses;
 
@@ -84,6 +88,13 @@ public class RobotState {
   @Logged(name = "Pose3d", importance = Importance.INFO)
   public Pose3d getPose3d() {
     return mEstPose;
+  }
+
+  public void resetPose(Pose2d pose) {
+    mOffset = pose.getRotation().minus(mOdoPose.getRotation().toRotation2d().minus(mOffset));
+    mEstPose = new Pose3d(pose);
+    mOdoPose = new Pose3d(pose);
+    mOdoPoseBuffer.clear();
   }
 
   public void addOdometryMeasurement(OdometryMeasurement sample) {
