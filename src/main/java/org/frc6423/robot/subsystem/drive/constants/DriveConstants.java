@@ -6,8 +6,8 @@
 
 package org.frc6423.robot.subsystem.drive.constants;
 
-import static edu.wpi.first.units.Units.FeetPerSecond;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import com.ctre.phoenix6.CANBus;
@@ -63,7 +63,7 @@ public abstract class DriveConstants {
    */
   public AngularVelocity getMaxAngularVelocity() {
     return RadiansPerSecond.of(
-        getMaxLinearVelocity().in(FeetPerSecond) / getTrackRadius().in(Inches));
+        getMaxLinearVelocity().in(InchesPerSecond) / getTrackRadius().in(Inches));
   }
 
   /**

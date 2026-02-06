@@ -6,11 +6,16 @@
 
 package org.frc6423.robot.subsystem.drive;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -21,8 +26,11 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 import org.frc6423.robot.Robot;
 import org.frc6423.robot.RobotState;
 import org.frc6423.robot.RobotState.OdometryMeasurement;
@@ -107,6 +115,21 @@ public class Drive extends SubsystemBase {
   }
 
   /**
+   * @return {@link Pose2d} representing the measured position of robot in the x * y coordinate
+   *     field
+   */
+  public Pose2d getPose2d() {
+    return getPose3d().toPose2d();
+  }
+
+  /**
+   * @return {@link Pose2d} representing the measured position of robot on field
+   */
+  public Pose3d getPose3d() {
+    return mRobotState.getPose3d();
+  }
+
+  /**
    * @return {@link LinearVelocity} representing the linear velocity of drivetrain
    */
   @Logged(name = "LinearVelocity", importance = Importance.INFO)
@@ -166,13 +189,63 @@ public class Drive extends SubsystemBase {
     return mKinematics.toChassisSpeeds(getSwerveModuleStates());
   }
 
+  public Command driveTeleop(
+      DoubleSupplier xSpeedMag,
+      DoubleSupplier ySpeedMag,
+      DoubleSupplier omegaSpeedMag,
+      BooleanSupplier isSpeedReduced,
+      double reducedSpeedMag) {
+    return driveTeleop(xSpeedMag, ySpeedMag, omegaSpeedMag, isSpeedReduced, reducedSpeedMag, false);
+  }
+
+  public Command driveOpenLoopTeleop(
+      DoubleSupplier xSpeedMag,
+      DoubleSupplier ySpeedMag,
+      DoubleSupplier omegaSpeedMag,
+      BooleanSupplier isSpeedReduced,
+      double reducedSpeedMag) {
+    return driveTeleop(xSpeedMag, ySpeedMag, omegaSpeedMag, isSpeedReduced, reducedSpeedMag, true);
+  }
+
+  protected Command driveTeleop(
+      DoubleSupplier xSpeedMag,
+      DoubleSupplier ySpeedMag,
+      DoubleSupplier omegaSpeedMag,
+      BooleanSupplier isSpeedReduced,
+      double reducedSpeedMag,
+      boolean openLoopEnabled) {
+    var reducedSpeed = MathUtil.clamp(reducedSpeedMag, 0.0, 1.0);
+
+    var maxLinear = mConstants.getMaxLinearVelocity();
+    var maxAngular = mConstants.getMaxAngularVelocity();
+    var maxReducedAngular =
+        RadiansPerSecond.of(
+            maxLinear.times(reducedSpeed).in(InchesPerSecond)
+                / mConstants.getWheelRadius().in(Inches));
+
+    return this.run(
+        () -> {
+          setChassisSpeedsSetpoint(
+              isSpeedReduced.getAsBoolean()
+                  ? new ChassisSpeeds(
+                      maxLinear.times(xSpeedMag.getAsDouble()).times(reducedSpeed),
+                      maxLinear.times(ySpeedMag.getAsDouble()).times(reducedSpeed),
+                      maxReducedAngular.times(omegaSpeedMag.getAsDouble()))
+                  : new ChassisSpeeds(
+                      maxLinear.times(xSpeedMag.getAsDouble()),
+                      maxLinear.times(ySpeedMag.getAsDouble()),
+                      maxAngular.times(omegaSpeedMag.getAsDouble())),
+              openLoopEnabled);
+        });
+  }
+
   /**
    * Set a velocity setpoint to optimized and run
    *
    * @param speeds {@link ChassisSpeeds} representing velocity setpoint
    * @param openLoopEnabled when true, open-loop controlled will be utilized
    */
-  public void setChassisSpeedsSetpoint(ChassisSpeeds speeds, boolean openLoopEnabled) {
+  protected void setChassisSpeedsSetpoint(ChassisSpeeds speeds, boolean openLoopEnabled) {
     // Generate a time specific setpoint from continuous-time speeds
     speeds = ChassisSpeeds.discretize(speeds, 0.02);
 
