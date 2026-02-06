@@ -7,6 +7,9 @@
 package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
+import org.frc6423.robot.subsystem.drive.constants.Cascade;
+import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
+import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
 
 /**
  * This is a globally accessible class for storing immutable values.
@@ -19,11 +22,16 @@ import com.ctre.phoenix6.CANBus;
 public final class Constants {
   /** Runtime flags determining the robots initialization */
   public static final class Flags {
-    /** {@link Robot} representing the robot chassis being used */
-    public static final Robot kRobot = Robot.Y2026;
+    /** {@link RobotType} representing the robot chassis being used */
+    public static final RobotType kRobotType = RobotType.Y2026;
 
-    /** When true, subsystems will not be initialized */
-    public static final boolean kSubsystemDisabled = (kRobot != Robot.Y2026) ? true : false;
+    /**
+     * When true, subsystems will not be initialized
+     *
+     * <p><strong> WARNING </strong> ~ do NOT remove inline if-statement; Only change the false
+     * condition value
+     */
+    public static final boolean kSubsystemDisabled = (kRobotType != RobotType.Y2026) ? true : false;
 
     /** When true, drive will not be initialized */
     public static final boolean kDriveDisabled = false;
@@ -58,11 +66,17 @@ public final class Constants {
     public static final int kFlywheelRightId = 8;
   }
 
-  /** Represents a robot */
-  public static enum Robot {
+  /** Represents the type of robot codebase is running on */
+  public static enum RobotType {
     /** {@link Robot} representing the 2026 competition robot chassis */
-    Y2026,
+    Y2026(new RebuiltL2()),
     /** {@link Robot} representing the 2025 competition robot chassis, cascade */
-    Y2025
+    Y2025(new Cascade());
+
+    public final DriveConstants mDriveConstants;
+
+    private RobotType(DriveConstants drivetrainConstants) {
+      this.mDriveConstants = drivetrainConstants;
+    }
   }
 }
