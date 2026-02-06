@@ -205,6 +205,9 @@ public abstract class SwerveModuleIO {
    */
   protected abstract void setDriveVelocitySetpoint(AngularVelocity velocity, boolean focEnabled);
 
+  /** Stop drive & pivot servos */
+  public abstract void stop();
+
   /**
    * @return {@link Angle} representing the absolute angular position of module measured by an
    *     encoder

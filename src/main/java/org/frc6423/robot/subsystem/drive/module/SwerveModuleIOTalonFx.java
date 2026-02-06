@@ -44,8 +44,9 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
   private final TorqueCurrentFOC mTorqueOut = new TorqueCurrentFOC(0.0);
   private final MotionMagicTorqueCurrentFOC mPoseOut = new MotionMagicTorqueCurrentFOC(0.0);
   private final MotionMagicVelocityTorqueCurrentFOC mFocVelOut =
-      new MotionMagicVelocityTorqueCurrentFOC(0.0);
-  private final MotionMagicVelocityVoltage mVelOut = new MotionMagicVelocityVoltage(0.0);
+      new MotionMagicVelocityTorqueCurrentFOC(0.0).withSlot(0);
+  private final MotionMagicVelocityVoltage mVelOut =
+      new MotionMagicVelocityVoltage(0.0).withSlot(1);
 
   /**
    * Create new {@link SwerveModuleIOTalonFx}
@@ -134,6 +135,12 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
     }
 
     mDrive.setControl(mVelOut.withVelocity(velocity));
+  }
+
+  @Override
+  public void stop() {
+    mPivot.stopMotor();
+    mDrive.stopMotor();
   }
 
   @Override
