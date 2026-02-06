@@ -30,8 +30,6 @@ public class Robot extends CommandRobot {
 
   private final AutonManager mAutonManager = new AutonManager();
 
-  private final AutonManager mAutonManager = new AutonManager();
-
   public Robot() {
     // Initialize Devices
     mDriverController = new CommandXboxController(0);
