@@ -226,8 +226,7 @@ public class RebuiltL1 extends DriveConstants {
           Matrix.kDriveFrEncoderId,
           getPivotServoConfig(Matrix.kDriveFrEncoderId),
           getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.0)),
-          getWheelRadius()),
+          getCANcoderConfig(Degrees.of(0.0))),
       new ModuleConfig(
           "FL",
           getCANBus(),
@@ -236,8 +235,7 @@ public class RebuiltL1 extends DriveConstants {
           Matrix.kDriveFlEncoderId,
           getPivotServoConfig(Matrix.kDriveFlEncoderId),
           getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.0)),
-          getWheelRadius()),
+          getCANcoderConfig(Degrees.of(0.0))),
       new ModuleConfig(
           "BL",
           getCANBus(),
@@ -246,8 +244,7 @@ public class RebuiltL1 extends DriveConstants {
           Matrix.kDriveBlEncoderId,
           getPivotServoConfig(Matrix.kDriveBlEncoderId),
           getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.0)),
-          getWheelRadius()),
+          getCANcoderConfig(Degrees.of(0.0))),
       new ModuleConfig(
           "BR",
           getCANBus(),
@@ -256,8 +253,7 @@ public class RebuiltL1 extends DriveConstants {
           Matrix.kDriveBrEncoderId,
           getPivotServoConfig(Matrix.kDriveBrEncoderId),
           getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.0)),
-          getWheelRadius())
+          getCANcoderConfig(Degrees.of(0.0)))
     };
   }
 }

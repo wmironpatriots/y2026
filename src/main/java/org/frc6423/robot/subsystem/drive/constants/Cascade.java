@@ -53,8 +53,7 @@ public class Cascade extends RebuiltL1 {
           11,
           getPivotServoConfig(Matrix.kDriveFrEncoderId),
           getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.01)),
-          getWheelRadius()),
+          getCANcoderConfig(Degrees.of(0.01))),
       new ModuleConfig(
           "FL",
           getCANBus(),
@@ -63,8 +62,7 @@ public class Cascade extends RebuiltL1 {
           10,
           getPivotServoConfig(Matrix.kDriveFlEncoderId),
           getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(-0.16)),
-          getWheelRadius()),
+          getCANcoderConfig(Degrees.of(-0.16))),
       new ModuleConfig(
           "BL",
           getCANBus(),
@@ -73,8 +71,7 @@ public class Cascade extends RebuiltL1 {
           9,
           getPivotServoConfig(Matrix.kDriveBlEncoderId),
           getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.36)),
-          getWheelRadius()),
+          getCANcoderConfig(Degrees.of(0.36))),
       new ModuleConfig(
           "BR",
           getCANBus(),
@@ -83,8 +80,7 @@ public class Cascade extends RebuiltL1 {
           12,
           getPivotServoConfig(Matrix.kDriveBrEncoderId),
           getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(-0.26)),
-          getWheelRadius())
+          getCANcoderConfig(Degrees.of(-0.26)))
     };
   }
 }

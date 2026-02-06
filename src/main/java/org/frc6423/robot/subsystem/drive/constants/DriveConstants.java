@@ -166,7 +166,6 @@ public abstract class DriveConstants {
    * @param pivotConfig {@link TalonFXConfiguration} representing servo config for pivot
    * @param driveConfig {@link TalonFXConfiguration} representing servo config for drive
    * @param cancoderConfig {@link CANcoderConfiguration} representing cancoder config for encoder
-   * @param wheelRadius {@link Distance} representing the radius of the module wheel
    */
   public static record ModuleConfig(
       String name,
@@ -176,6 +175,5 @@ public abstract class DriveConstants {
       int cancoderId,
       TalonFXConfiguration pivotConfig,
       TalonFXConfiguration driveConfig,
-      CANcoderConfiguration cancoderConfig,
-      Distance wheelRadius) {}
+      CANcoderConfiguration cancoderConfig) {}
 }
