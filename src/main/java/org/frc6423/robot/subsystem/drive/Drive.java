@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 
+import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
@@ -30,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import org.frc6423.robot.Robot;
 import org.frc6423.robot.RobotState;
@@ -276,5 +278,10 @@ public class Drive extends SubsystemBase {
     }
 
     mSetpointStates = new SwerveModuleState[mModules.length];
+  }
+
+  // TODO
+  public Consumer<SwerveSample> getChoreoConsumer() {
+    return (sample) -> {};
   }
 }
