@@ -34,6 +34,6 @@ public class RebuiltL2 extends RebuiltL1 {
 
   @Override
   public double getDriveRotorToMechRatio() {
-    return (54.0 / 14.0) * (25.0 / 32.0) * (30.0 / 15.0);
+    return (54.0 / 14.0) * (25.0 / 32.0) * (30.0 / 15.0); // 6.026785714285714 overall
   }
 }
