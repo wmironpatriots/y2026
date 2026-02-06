@@ -53,6 +53,7 @@ public final class Constants {
     public static final int kDriveBlPivotId = 10;
     public static final int kDriveBlEncoderId = 11;
     public static final int kDriveBlDriveId = 12;
+    public static final int kDriveGyroId = 13;
 
     public static final CANBus kSubsystemCanBus = new CANBus("SOUP");
 

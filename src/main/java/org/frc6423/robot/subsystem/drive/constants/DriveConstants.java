@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -135,6 +136,11 @@ public abstract class DriveConstants {
   }
 
   /**
+   * @return {@link Pigeon2Configuration} represent pigeon2 config for gyro
+   */
+  public abstract Pigeon2Configuration getPigeon2Config();
+
+  /**
    * @return {@link TalonFXConfiguration} representing servo config for swerve module pivot
    */
   public abstract TalonFXConfiguration getPivotServoConfig(int CANcoderId);
@@ -151,12 +157,26 @@ public abstract class DriveConstants {
   public abstract CANcoderConfiguration getCANcoderConfig(Angle angularOffset);
 
   /**
+   * @return {@link GyroConfig} representing config of gyro
+   */
+  public abstract GyroConfig getGyroConfig();
+
+  /**
    * @return {@link ModuleConfig} array representing the configs of swerve modules (FR, FL, BL, BR)
    */
   public abstract ModuleConfig[] getModuleConfigs();
 
   /**
-   * Represents a configuration for a {@link SwerveModule}
+   * Represents a configuration for a {@link GyroIO}
+   *
+   * @param canBus {@link CANBus} representing the CANbus loop hardware is in
+   * @param deviceId the CAN device ID of gyro
+   * @param config {@link Pigeon2Configuration} representing the pigeon2 config for gyro
+   */
+  public static record GyroConfig(CANBus canBus, int deviceId, Pigeon2Configuration config) {}
+
+  /**
+   * Represents a configuration for a {@link SwerveModuleIO}
    *
    * @param name {@link String} nickname for module
    * @param canBus {@link CANBus} representing the CANbus loop hardware is attached to

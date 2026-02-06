@@ -26,6 +26,7 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -126,6 +127,11 @@ public class RebuiltL1 extends DriveConstants {
   }
 
   @Override
+  public Pigeon2Configuration getPigeon2Config() {
+    return new Pigeon2Configuration(); // TODO define configs if needed
+  }
+
+  @Override
   public TalonFXConfiguration getPivotServoConfig(int CANcoderId) {
     return new TalonFXConfiguration()
         .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
@@ -212,6 +218,11 @@ public class RebuiltL1 extends DriveConstants {
                         ? SensorDirectionValue.CounterClockwise_Positive
                         : SensorDirectionValue.Clockwise_Positive)
                 .withMagnetOffset(offset));
+  }
+
+  @Override
+  public GyroConfig getGyroConfig() {
+    return new GyroConfig(getCANBus(), Matrix.kDriveGyroId, getPigeon2Config());
   }
 
   @Override

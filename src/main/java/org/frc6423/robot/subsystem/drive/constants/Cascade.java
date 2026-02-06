@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.FeetPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 
+import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -39,6 +40,16 @@ public class Cascade extends RebuiltL1 {
   @Override
   public double getDriveRotorToMechRatio() {
     return (50.0 / 14.0) * (16.0 / 28.0) * (45.0 / 15.0);
+  }
+
+  @Override
+  public CANBus getCANBus() {
+    return new CANBus("CANchan");
+  }
+
+  @Override
+  public GyroConfig getGyroConfig() {
+    return new GyroConfig(getCANBus(), 0, getPigeon2Config());
   }
 
   @Override

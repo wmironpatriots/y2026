@@ -6,6 +6,7 @@
 
 package org.frc6423.robot.subsystem.drive;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -25,8 +26,7 @@ public class Drive extends SubsystemBase {
   private final SwerveDriveKinematics mKinematics;
 
   private final SwerveModuleIO[] mModules;
-
-  // TODO Gyro
+  private final GyroIO gyro;
 
   public Drive(DriveConstants constants) {
     mConstants = constants;
@@ -36,6 +36,8 @@ public class Drive extends SubsystemBase {
 
     var configs = constants.getModuleConfigs();
     mModules = new SwerveModuleIO[configs.length];
+    gyro = new GyroIOPigeon2(mConstants.getGyroConfig());
+
     for (int i = 0; i < configs.length; i++) {
       mModules[i] =
           Robot.isReal()
@@ -62,9 +64,18 @@ public class Drive extends SubsystemBase {
     }
   }
 
-  // TODO
+  /**
+   * @return {@link Rotation2d} representing measured yaw rotation
+   */
+  public Rotation2d getRotation2d() {
+    return gyro.getRotation2d();
+  }
+
+  /**
+   * @return {@link Rotation3d} representing the measured orientation of the robot in 3D space
+   */
   public Rotation3d getRotation3d() {
-    return Rotation3d.kZero;
+    return gyro.getRotation3d();
   }
 
   /**
