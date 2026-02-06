@@ -13,28 +13,17 @@ import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import java.util.function.DoubleSupplier;
 import org.frc6423.lib.driver.CommandRobot;
-import org.frc6423.robot.subsystem.drive.SwerveModule;
-import org.frc6423.robot.subsystem.drive.SwerveModule.ControlMode;
-import org.frc6423.robot.subsystem.drive.constants.Cascade;
-import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 
 @Logged
 public class Robot extends CommandRobot {
   private final CommandXboxController mDriverController;
-
-  private final DriveConstants mConstants = new Cascade();
-  private final SwerveModule mModule =
-      new SwerveModule(mConstants.getModuleConfigs()[0], mConstants);
 
   public Robot() {
     // Initialize Devices
@@ -90,23 +79,8 @@ public class Robot extends CommandRobot {
     configureGameBehavior();
   }
 
-  public Command runModule(DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
-    return mModule.run(
-        () -> {
-          var speed =
-              mConstants
-                  .getMaxLinearVelocity()
-                  .times(Math.hypot(xSupplier.getAsDouble(), ySupplier.getAsDouble()));
-          var rotation = new Rotation2d(xSupplier.getAsDouble(), ySupplier.getAsDouble());
-          mModule.setSwerveModuleStateSetpoint(
-              new SwerveModuleState(speed, rotation), ControlMode.OPEN_LOOP_VOLTAGE_FOC);
-        });
-  }
-
   /** Define Driver & Operator controller bindings */
-  public void configureBindings() {
-    mModule.setDefaultCommand(runModule(mDriverController::getLeftX, mDriverController::getLeftY));
-  }
+  public void configureBindings() {}
 
   /** Define behavior during different oppmodes */
   public void configureGameBehavior() {}

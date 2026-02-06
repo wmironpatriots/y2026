@@ -17,6 +17,18 @@ import com.ctre.phoenix6.CANBus;
  * subclasses
  */
 public final class Constants {
+  /** Runtime flags determining the robots initialization */
+  public static final class Flags {
+    /** {@link Robot} representing the robot chassis being used */
+    public static final Robot kRobot = Robot.Y2026;
+
+    /** When true, subsystems will not be initialized */
+    public static final boolean kSubsystemDisabled = (kRobot != Robot.Y2026) ? true : false;
+
+    /** When true, drive will not be initialized */
+    public static final boolean kDriveDisabled = false;
+  }
+
   /** The matrix contains the CAN identification information for all devices */
   public static final class Matrix {
     public static final CANBus kDriveCanBus = new CANBus("DRIVE");
@@ -44,5 +56,13 @@ public final class Constants {
     public static final int kHoodId = 6;
     public static final int kFlywheelLeftId = 7;
     public static final int kFlywheelRightId = 8;
+  }
+
+  /** Represents a robot */
+  public static enum Robot {
+    /** {@link Robot} representing the 2026 competition robot chassis */
+    Y2026,
+    /** {@link Robot} representing the 2025 competition robot chassis, cascade */
+    Y2025
   }
 }
