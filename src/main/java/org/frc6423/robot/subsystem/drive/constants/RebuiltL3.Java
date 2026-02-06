@@ -10,9 +10,9 @@ import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 
 /**
- * {@link RebuiltL1} but for MK5i /w L3 ratio
+ * {@link RebuiltL2} but for MK5i /w L3 ratio
  */
-public class RebuiltL3 extends RebuiltL1 {
+public class RebuiltL3 extends RebuiltL2 {
     @Override
     public LinearVelocity getMaxLinearVelocity() {
         // https://www.swervedrivespecialties.com/products/mk5i-swerve-module
