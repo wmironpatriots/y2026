@@ -9,6 +9,7 @@ package org.frc6423.robot.subsystem.drive;
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.FeetPerSecond;
 import static edu.wpi.first.units.Units.FeetPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -144,13 +145,17 @@ public abstract class SwerveModuleIO {
                 .div(mDriveConstants.getMaxLinearVelocity().in(velocity.baseUnit()))
                 .baseUnitMagnitude());
 
+    var angularVelocity =
+        RadiansPerSecond.of(
+            velocity.div(mDriveConstants.getWheelRadius().in(Meters)).baseUnitMagnitude());
+
     // Apply drive setpoint
     switch (controlMode) {
       case CLOSED_LOOP_TORQUE_FOC:
-        setDriveVelocitySetpoint(velocity, true);
+        setDriveVelocitySetpoint(angularVelocity, true);
         break;
       case CLOSED_LOOP_VOLT:
-        setDriveVelocitySetpoint(velocity, false);
+        setDriveVelocitySetpoint(angularVelocity, false);
         break;
       case OPEN_LOOP_VOLT_FOC:
         setDriveVoltageSetpoint(velocityVolts, true);
@@ -195,10 +200,10 @@ public abstract class SwerveModuleIO {
   /**
    * Set Motion Profiled Velocity setpoint for drive servo (closed-loop control)
    *
-   * @param velocity {@link LinearVelocity} representing the desired velocity output
+   * @param velocity {@link AngularVelocity} representing the desired velocity output
    * @param focEnabled when true, FOC control will be used
    */
-  protected abstract void setDriveVelocitySetpoint(LinearVelocity velocity, boolean focEnabled);
+  protected abstract void setDriveVelocitySetpoint(AngularVelocity velocity, boolean focEnabled);
 
   /**
    * @return {@link Angle} representing the absolute angular position of module measured by an
