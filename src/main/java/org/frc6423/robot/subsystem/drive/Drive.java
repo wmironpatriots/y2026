@@ -176,7 +176,7 @@ public class Drive extends SubsystemBase {
    * @return {@link SwerveModuleState} array representing the setpoint velocity vectors of swerve
    *     modules
    */
-  @Logged(name = "Rotation2d", importance = Importance.INFO)
+  @Logged(name = "Setpoint SwerveModuleStates", importance = Importance.INFO)
   public SwerveModuleState[] getSetpointSwerveModuleStates() {
     return mSetpointStates;
   }

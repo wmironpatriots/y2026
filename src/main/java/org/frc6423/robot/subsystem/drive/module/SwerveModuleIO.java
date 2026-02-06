@@ -218,84 +218,84 @@ public abstract class SwerveModuleIO {
   /**
    * @return {@link Voltage} representing the applied voltage of pivot servo
    */
-  @Logged(name = "Applied Voltage", importance = Importance.INFO)
+  @Logged(name = "Pivot Applied Voltage", importance = Importance.INFO)
   public abstract Voltage getPivotAppliedVoltage();
 
   /**
    * @return {@link Current} representing the input supply current of pivot servo
    */
-  @Logged(name = "Supply Current", importance = Importance.INFO)
+  @Logged(name = "Pivot Supply Current", importance = Importance.INFO)
   public abstract Current getPivotSupplyCurrent();
 
   /**
    * @return {@link Current} representing the output stator current of pivot servo
    */
-  @Logged(name = "Stator Current", importance = Importance.INFO)
+  @Logged(name = "Pivot Stator Current", importance = Importance.INFO)
   public abstract Current getPivotStatorCurrent();
 
   /**
    * @return {@link Current} representing the torque current output of pivot servo
    */
-  @Logged(name = "Torque Current", importance = Importance.INFO)
+  @Logged(name = "Pivot Torque Current", importance = Importance.INFO)
   public abstract Current getPivotTorqueCurrent();
 
   /**
    * @return {@link Angle} representing the angular position of pivot servo
    */
-  @Logged(name = "Angle", importance = Importance.INFO)
+  @Logged(name = "Pivot Angle", importance = Importance.INFO)
   public abstract Angle getPivotAngle();
 
   /**
    * @return {@link Temperature} representing the temperature of pivot servo
    */
-  @Logged(name = "Temperature", importance = Importance.INFO)
+  @Logged(name = "Pivot Temperature", importance = Importance.INFO)
   public abstract Temperature getPivotTemperature();
 
   /**
    * @return {@link Voltage} representing the applied voltage of drive servo
    */
-  @Logged(name = "Applied Voltage", importance = Importance.INFO)
+  @Logged(name = "Drive Applied Voltage", importance = Importance.INFO)
   public abstract Voltage getDriveAppliedVoltage();
 
   /**
    * @return {@link Current} representing the input supply current of drive servo
    */
-  @Logged(name = "Supply Current", importance = Importance.INFO)
+  @Logged(name = "Drive Supply Current", importance = Importance.INFO)
   public abstract Current getDriveSupplyCurrent();
 
   /**
    * @return {@link Current} representing the output stator current of drive servo
    */
-  @Logged(name = "Stator Current", importance = Importance.INFO)
+  @Logged(name = "Drive Stator Current", importance = Importance.INFO)
   public abstract Current getDriveStatorCurrent();
 
   /**
    * @return {@link Current} representing the torque current output of drive servo
    */
-  @Logged(name = "Torque Current", importance = Importance.INFO)
+  @Logged(name = "Drive Torque Current", importance = Importance.INFO)
   public abstract Current getDriveTorqueCurrent();
 
   /**
    * @return {@link Angle} representing the angular position of drive servo
    */
-  @Logged(name = "Angle", importance = Importance.INFO)
+  @Logged(name = "Drive Angle", importance = Importance.INFO)
   public abstract Angle getDriveAngle();
 
   /**
    * @return {@link Temperature} representing the temperature of drive servo
    */
-  @Logged(name = "Temperature", importance = Importance.INFO)
+  @Logged(name = "Drive Temperature", importance = Importance.INFO)
   public abstract Temperature getDriveTemperature();
 
   /**
    * @return {@link AngularVelocity} representing the angular velocity of drive servo
    */
-  @Logged(name = "Angular Velocity", importance = Importance.INFO)
+  @Logged(name = "Drive Angular Velocity", importance = Importance.INFO)
   public abstract AngularVelocity getDriveAngularVelocity();
 
   /**
    * @return {@link AngularAcceleration} representing the angular acceleration of drive servo
    */
-  @Logged(name = "Angular Acceleration", importance = Importance.INFO)
+  @Logged(name = "Drive Angular Acceleration", importance = Importance.INFO)
   public abstract AngularAcceleration getDriveAngularAcceleration();
 }
