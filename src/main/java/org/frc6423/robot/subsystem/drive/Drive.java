@@ -15,6 +15,7 @@ import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -56,6 +57,9 @@ public class Drive extends SubsystemBase {
   private SwerveModuleState[] mSetpointStates;
 
   private Rotation2d mSimRotation2d = Rotation2d.kZero;
+
+  private final PIDController mLinearFeedback = new PIDController(5.0, 0.0, 0.0);
+  private final PIDController mAngularFeedback = new PIDController(6.0, 0.0, 0.0);
 
   /**
    * Create new {@link Drive}
@@ -280,8 +284,24 @@ public class Drive extends SubsystemBase {
     mSetpointStates = new SwerveModuleState[mModules.length];
   }
 
-  // TODO
+  /**
+   * Get {@link SwerveSample} consumer for following Choreo trajectories
+   *
+   * @return {@link Consumer} of {@link SwerveSample}
+   */
   public Consumer<SwerveSample> getChoreoConsumer() {
-    return (sample) -> {};
+    mAngularFeedback.enableContinuousInput(-Math.PI, Math.PI);
+    return (sample) -> {
+      var pose = getPose2d();
+      var rotation = getRotation2d();
+
+      ChassisSpeeds speeds =
+          new ChassisSpeeds(
+              sample.vx + mLinearFeedback.calculate(pose.getX(), sample.x),
+              sample.vy + mLinearFeedback.calculate(pose.getY(), sample.y),
+              sample.omega + mAngularFeedback.calculate(rotation.getRadians(), sample.heading));
+
+      setChassisSpeedsSetpoint(speeds, false);
+    };
   }
 }
