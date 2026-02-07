@@ -35,6 +35,7 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.Distance;
@@ -159,10 +160,10 @@ public class RebuiltL2 extends DriveConstants {
         // TODO tune; current values stolen from cascade
         .withSlot0(
             new Slot0Configs()
-                .withKS(0.014)
-                .withKV(10.0)
+                .withKS(0.0)
+                .withKV(0.0)
                 .withKA(0.0)
-                .withKP(600.0)
+                .withKP(4000.0)
                 .withKD(50.0)); // Torque Based Motion Magic Position Controls
   }
 
@@ -204,6 +205,11 @@ public class RebuiltL2 extends DriveConstants {
                 .withKA(0.0)
                 .withKP(0.0)
                 .withKD(0.0)); // Voltage Based Motion Magic Velocity Controls
+  }
+
+  @Override
+  public double getDriveMotorKt() {
+    return DCMotor.getKrakenX60Foc(1).KtNMPerAmp;
   }
 
   @Override

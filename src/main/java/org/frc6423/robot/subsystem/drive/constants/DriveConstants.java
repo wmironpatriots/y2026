@@ -151,6 +151,18 @@ public abstract class DriveConstants {
   public abstract TalonFXConfiguration getDriveServoConfig();
 
   /**
+   * @return the torque constant of the drive motor through its gearbox
+   */
+  public double getDriveGearboxKt() {
+    return getDriveRotorToMechRatio() / getDriveMotorKt();
+  }
+
+  /**
+   * @return the torque constant of the drive motor
+   */
+  public abstract double getDriveMotorKt();
+
+  /**
    * @param angularOffset {@link Angle} representing the angular position offset of encoder
    * @return {@link CANcoderConfiguration} representing CANcoder config for swerve module encoder
    */
