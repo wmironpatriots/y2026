@@ -58,8 +58,8 @@ public class Drive extends SubsystemBase {
 
   private Rotation2d mSimRotation2d = Rotation2d.kZero;
 
-  private final PIDController mLinearFeedback = new PIDController(5.0, 0.0, 0.0);
-  private final PIDController mAngularFeedback = new PIDController(6.0, 0.0, 0.0);
+  private final PIDController mLinearFeedback;
+  private final PIDController mAngularFeedback;
 
   /**
    * Create new {@link Drive}
@@ -82,6 +82,11 @@ public class Drive extends SubsystemBase {
               ? new SwerveModuleIOTalonFx(configs[i].name(), configs[i], constants)
               : new SwerveModuleIOTalonFx(configs[i].name(), configs[i], constants);
     }
+
+    // TODO access these from drive constants
+    mLinearFeedback = new PIDController(5.0, 0.0, 0.0);
+    mAngularFeedback = new PIDController(6.0, 0.0, 0.0);
+    mAngularFeedback.enableContinuousInput(-Math.PI, Math.PI);
 
     mSetpointStates = new SwerveModuleState[mModules.length];
   }
@@ -290,7 +295,6 @@ public class Drive extends SubsystemBase {
    * @return {@link Consumer} of {@link SwerveSample}
    */
   public Consumer<SwerveSample> getChoreoConsumer() {
-    mAngularFeedback.enableContinuousInput(-Math.PI, Math.PI);
     return (sample) -> {
       var pose = getPose2d();
       var rotation = getRotation2d();
