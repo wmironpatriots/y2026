@@ -38,28 +38,20 @@ public class RobotState {
 
   public static RobotState kInstance;
 
-  public static RobotState createInstance(DriveConstants driveConstants) {
-    kInstance = new RobotState(driveConstants);
-
-    return kInstance;
-  }
-
   /**
    * @return {@link RobotState} singleton instance
    */
   public static RobotState getInstance() {
     if (kInstance == null) {
-      System.out.println(
-          "RobotState Error! Singleton hasn't been initialized; use RobotState.createInstance() first");
-      return null;
+      kInstance = new RobotState(Constants.Flags.kDriveConstants);
     }
 
     return kInstance;
   }
 
-  private Pose3d mPreviousOdoPose;
-  private Pose3d mOdoPose;
-  private Pose3d mEstPose;
+  private Pose3d mPreviousOdoPose = new Pose3d();
+  private Pose3d mOdoPose = new Pose3d();
+  private Pose3d mEstPose = new Pose3d();
   private final TimeInterpolatableBuffer<Pose3d> mOdoPoseBuffer =
       TimeInterpolatableBuffer.createBuffer(kBufferDuration);
 
@@ -68,9 +60,17 @@ public class RobotState {
   private final SwerveDriveKinematics mKinematics;
   private SwerveModulePosition[] mPreviousSwerveModulePoses;
 
-  /** Create new {@link RobotState} */
+  /**
+   * Create new RobotState
+   *
+   * @param driveConstants {@link DriveConstants} representing the drivetrain's constraints
+   */
   private RobotState(DriveConstants driveConstants) {
-    mPreviousSwerveModulePoses = new SwerveModulePosition[4];
+    mPreviousSwerveModulePoses = new SwerveModulePosition[driveConstants.getModuleConfigs().length];
+    for (int i = 0; i < mPreviousSwerveModulePoses.length; i++) {
+      mPreviousSwerveModulePoses[i] = new SwerveModulePosition();
+    }
+
     mKinematics = driveConstants.getKinematics();
   }
 
