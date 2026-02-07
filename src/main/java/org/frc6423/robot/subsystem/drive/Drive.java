@@ -40,6 +40,7 @@ import org.frc6423.robot.subsystem.drive.gyro.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.module.SwerveModuleIO;
 import org.frc6423.robot.subsystem.drive.module.SwerveModuleIO.ControlMode;
 import org.frc6423.robot.subsystem.drive.module.SwerveModuleIOTalonFx;
+import org.frc6423.robot.subsystem.drive.module.SwerveModuleIOTalonFxSim;
 
 /** {@link SubsystemBase} extension representing swerve drivetrain */
 public class Drive extends SubsystemBase {
@@ -63,7 +64,7 @@ public class Drive extends SubsystemBase {
   public Drive(DriveConstants constants) {
     mConstants = constants;
 
-    mRobotState = RobotState.createInstance(constants);
+    mRobotState = RobotState.getInstance();
     mKinematics = constants.getKinematics();
 
     var configs = constants.getModuleConfigs();
@@ -74,7 +75,7 @@ public class Drive extends SubsystemBase {
       mModules[i] =
           Robot.isReal()
               ? new SwerveModuleIOTalonFx(configs[i].name(), configs[i], constants)
-              : new SwerveModuleIOTalonFx(configs[i].name(), configs[i], constants);
+              : new SwerveModuleIOTalonFxSim(configs[i].name(), configs[i], constants);
     }
 
     mSetpointStates = new SwerveModuleState[mModules.length];

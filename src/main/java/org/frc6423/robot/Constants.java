@@ -25,6 +25,9 @@ public final class Constants {
     /** {@link RobotType} representing the robot chassis being used */
     public static final RobotType kRobotType = RobotType.Y2026;
 
+    /** {@link DriveConstants} representing the drivetrain's constraints */
+    public static final DriveConstants kDriveConstants = kRobotType.mDriveConstants;
+
     /**
      * When true, subsystems will not be initialized
      *
