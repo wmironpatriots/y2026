@@ -8,9 +8,12 @@ package org.frc6423.robot;
 
 import choreo.auto.AutoChooser;
 import choreo.auto.AutoFactory;
+import choreo.trajectory.SwerveSample;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import java.util.function.Consumer;
+import org.frc6423.robot.subsystem.drive.Drive;
 
 /**
  * TODO
@@ -27,10 +30,16 @@ public class AutonManager {
   private final AutoFactory mAutoFactory;
   private final AutoChooser mAutoChooser;
 
+  private final Consumer<SwerveSample> mSampleConsumer;
+
   /** Create new {@link AutonManager} */
-  public AutonManager() {
+  public AutonManager(RobotState state, Drive drive) {
     mAutoChooser = new AutoChooser();
-    mAutoFactory = new AutoFactory(null, null, null, false, null);
+
+    mSampleConsumer = drive.getChoreoConsumer();
+
+    mAutoFactory =
+        new AutoFactory(drive::getPose2d, state::resetPose, mSampleConsumer::accept, true, drive);
 
     mAutoChooser.addCmd("Do Nothing", this::doNothing);
     mAutoChooser.addCmd("DepotShot", this::depotShot);
@@ -64,13 +73,5 @@ public class AutonManager {
   private Command sourceShot() {
     return Commands.sequence(
         mAutoFactory.resetOdometry("SourceShot"), mAutoFactory.trajectoryCmd("SourceShot"));
-  }
-
-  /** Represents a possible routine during autonomous */
-  public static enum Routines {
-    NOTHING,
-    DEPOT_SHOT,
-    NEUTRAL_SHOT,
-    SOURCE_SHOT
   }
 }
