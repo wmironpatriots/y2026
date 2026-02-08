@@ -13,7 +13,6 @@ import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -21,20 +20,16 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import org.frc6423.lib.driver.CommandRobot;
-import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.subsystem.drive.Drive;
 
 @Logged
 public class Robot extends CommandRobot {
-  private final CommandPS5Controller mDriverController;
+  private final CommandPS5Controller mController;
 
   private final RobotState mRobotState = RobotState.getInstance();
 
-  private final Drive mDrive = new Drive(Flags.kRobotType.mDriveConstants);
-
   public Robot() {
     // Initialize Devices
-    mDriverController = new CommandPS5Controller(0);
+    mController = new CommandPS5Controller(0);
 
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);
@@ -87,14 +82,7 @@ public class Robot extends CommandRobot {
   }
 
   /** Define Driver & Operator controller bindings */
-  public void configureBindings() {
-    mDrive.driveTeleop(
-        () -> MathUtil.applyDeadband(mDriverController.getLeftX(), 0.20),
-        () -> MathUtil.applyDeadband(mDriverController.getLeftY(), 0.20),
-        () -> MathUtil.applyDeadband(mDriverController.getRightX(), 0.2),
-        () -> mDriverController.triangle().getAsBoolean(),
-        0.65);
-  }
+  public void configureBindings() {}
 
   /** Define behavior during different oppmodes */
   public void configureGameBehavior() {}

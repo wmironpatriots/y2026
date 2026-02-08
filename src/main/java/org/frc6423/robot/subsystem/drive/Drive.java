@@ -6,14 +6,8 @@
 
 package org.frc6423.robot.subsystem.drive;
 
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.InchesPerSecond;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -22,11 +16,10 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -38,7 +31,6 @@ import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.gyro.GyroIO;
 import org.frc6423.robot.subsystem.drive.gyro.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.module.SwerveModuleIO;
-import org.frc6423.robot.subsystem.drive.module.SwerveModuleIO.ControlMode;
 import org.frc6423.robot.subsystem.drive.module.SwerveModuleIOTalonFx;
 import org.frc6423.robot.subsystem.drive.module.SwerveModuleIOTalonFxSim;
 
@@ -90,20 +82,33 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // TODO high freq odometry
+    // Update odometry /w measurements
     mRobotState.addOdometryMeasurement(
         new OdometryMeasurement(
             Timer.getTimestamp(),
             getSwerveModulePositions(),
             Robot.isReal() ? Optional.of(getRotation3d()) : Optional.empty()));
 
+    // Update Swerve Module Signals
     for (var module : mModules) {
       module.periodic();
     }
 
+    // Stop dt when disabled
     if (DriverStation.isDisabled()) {
       stop();
     }
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    // Rotate simulated gyro by omega, but only if omega exists
+    mSimRotation2d =
+        mSimRotation2d.rotateBy(
+            Rotation2d.fromRadians(
+                !Double.isNaN(getRobotRelativeChassisSpeeds().omegaRadiansPerSecond)
+                    ? getRobotRelativeChassisSpeeds().omegaRadiansPerSecond * 0.02
+                    : 0.0));
   }
 
   /**
@@ -123,78 +128,39 @@ public class Drive extends SubsystemBase {
   }
 
   /**
-   * @return {@link Pose2d} representing the measured position of robot in the x * y coordinate
-   *     field
+   * @return {@link Pose3d} representing field position WRT to alliance origin in 2D space
    */
+  @Logged(name = "Pose2d", importance = Importance.INFO)
   public Pose2d getPose2d() {
     return getPose3d().toPose2d();
   }
 
   /**
-   * @return {@link Pose2d} representing the measured position of robot on field
+   * @return {@link Pose3d} representing field position WRT to alliance origin in 3D space
    */
+  @Logged(name = "Pose3d", importance = Importance.INFO)
   public Pose3d getPose3d() {
     return mRobotState.getPose3d();
   }
 
-  /**
-   * @return {@link LinearVelocity} representing the linear velocity of drivetrain
-   */
-  @Logged(name = "LinearVelocity", importance = Importance.INFO)
-  public LinearVelocity getLinearVelocity() {
-    return MetersPerSecond.of(
-        Math.hypot(getChassisSpeeds().vxMetersPerSecond, getChassisSpeeds().vyMetersPerSecond));
+  public ChassisSpeeds getFieldRelativeChassisSpeeds() {
+    return null;
   }
 
-  /**
-   * @return {@link AngularVelocity} representing the angular velocity of drivetrain
-   */
-  @Logged(name = "AngularVelocity", importance = Importance.INFO)
-  public AngularVelocity getAngularVelocity() {
-    return RadiansPerSecond.of(getChassisSpeeds().omegaRadiansPerSecond);
+  public ChassisSpeeds getRobotRelativeChassisSpeeds() {
+    return null;
   }
 
-  /**
-   * @return {@link SwerveModulePosition} representing the displacement vectors of swerve modules
-   */
-  @Logged(name = "SwerveModulePositions", importance = Importance.INFO)
   public SwerveModulePosition[] getSwerveModulePositions() {
-    var poses = new SwerveModulePosition[mModules.length];
-    for (int i = 0; i < poses.length; i++) {
-      poses[i] = mModules[i].getSwerveModulePosition();
-    }
-
-    return poses;
+    return null;
   }
 
-  /**
-   * @return {@link SwerveModulePosition} representing the velocity vectors of swerve modules
-   */
-  @Logged(name = "SwerveModuleStates", importance = Importance.INFO)
   public SwerveModuleState[] getSwerveModuleStates() {
-    var states = new SwerveModuleState[mModules.length];
-    for (int i = 0; i < states.length; i++) {
-      states[i] = mModules[i].getSwerveModuleState();
-    }
-
-    return states;
+    return null;
   }
 
-  /**
-   * @return {@link SwerveModuleState} array representing the setpoint velocity vectors of swerve
-   *     modules
-   */
-  @Logged(name = "Setpoint SwerveModuleStates", importance = Importance.INFO)
   public SwerveModuleState[] getSetpointSwerveModuleStates() {
-    return mSetpointStates;
-  }
-
-  /**
-   * @return {@link ChassisSpeeds} representing the drive speeds
-   */
-  @Logged(name = "ChassisSpeeds", importance = Importance.INFO)
-  public ChassisSpeeds getChassisSpeeds() {
-    return mKinematics.toChassisSpeeds(getSwerveModuleStates());
+    return null;
   }
 
   public Command driveTeleop(
@@ -206,83 +172,25 @@ public class Drive extends SubsystemBase {
     return driveTeleop(xSpeedMag, ySpeedMag, omegaSpeedMag, isSpeedReduced, reducedSpeedMag, false);
   }
 
-  public Command driveOpenLoopTeleop(
-      DoubleSupplier xSpeedMag,
-      DoubleSupplier ySpeedMag,
-      DoubleSupplier omegaSpeedMag,
-      BooleanSupplier isSpeedReduced,
-      double reducedSpeedMag) {
-    return driveTeleop(xSpeedMag, ySpeedMag, omegaSpeedMag, isSpeedReduced, reducedSpeedMag, true);
-  }
-
-  protected Command driveTeleop(
+  public Command driveTeleop(
       DoubleSupplier xSpeedMag,
       DoubleSupplier ySpeedMag,
       DoubleSupplier omegaSpeedMag,
       BooleanSupplier isSpeedReduced,
       double reducedSpeedMag,
       boolean openLoopEnabled) {
-    var reducedSpeed = MathUtil.clamp(reducedSpeedMag, 0.0, 1.0);
-
-    var maxLinear = mConstants.getMaxLinearVelocity();
-    var maxAngular = mConstants.getMaxAngularVelocity();
-    var maxReducedAngular =
-        RadiansPerSecond.of(
-            maxLinear.times(reducedSpeed).in(InchesPerSecond)
-                / mConstants.getWheelRadius().in(Inches));
-
-    return this.run(
-        () -> {
-          setChassisSpeedsSetpoint(
-              isSpeedReduced.getAsBoolean()
-                  ? new ChassisSpeeds(
-                      maxLinear.times(xSpeedMag.getAsDouble()).times(reducedSpeed),
-                      maxLinear.times(ySpeedMag.getAsDouble()).times(reducedSpeed),
-                      maxReducedAngular.times(omegaSpeedMag.getAsDouble()))
-                  : new ChassisSpeeds(
-                      maxLinear.times(xSpeedMag.getAsDouble()),
-                      maxLinear.times(ySpeedMag.getAsDouble()),
-                      maxAngular.times(omegaSpeedMag.getAsDouble())),
-              openLoopEnabled);
-        });
+    return Commands.none();
   }
 
-  /**
-   * Set a velocity setpoint to optimized and run
-   *
-   * @param speeds {@link ChassisSpeeds} representing velocity setpoint
-   * @param openLoopEnabled when true, open-loop controlled will be utilized
-   */
-  protected void setChassisSpeedsSetpoint(ChassisSpeeds speeds, boolean openLoopEnabled) {
-    // Generate a time specific setpoint from continuous-time speeds
-    speeds = ChassisSpeeds.discretize(speeds, 0.02);
+  protected void setChassisSpeedsSetpoint(ChassisSpeeds speeds, boolean openLoopEnabled) {}
 
-    // Convert to module states and clamp velocity
-    var states = mKinematics.toSwerveModuleStates(speeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(states, mConstants.getMaxLinearVelocity());
-
-    ControlMode mode;
-
-    // Use FOC control until over 90% of max velocity
-    if (getLinearVelocity().gt(mConstants.getMaxLinearVelocity().times(0.9))) {
-      mode = openLoopEnabled ? ControlMode.OPEN_LOOP_VOLT_FOC : ControlMode.CLOSED_LOOP_TORQUE_FOC;
-    } else {
-      mode = openLoopEnabled ? ControlMode.OPEN_LOOP_VOLT : ControlMode.CLOSED_LOOP_VOLT;
-    }
-
-    for (int i = 0; i < mModules.length; i++) {
-      mModules[i].setSetpoint(states[i], mode);
-    }
-
-    mSetpointStates = states;
-  }
+  /** Stop drivetrain completely with the wheel forming an X */
+  public void xStop() {}
 
   /** Stop drivetrain completely */
   public void stop() {
     for (int i = 0; i < mModules.length; i++) {
       mModules[i].stop();
     }
-
-    mSetpointStates = new SwerveModuleState[mModules.length];
   }
 }

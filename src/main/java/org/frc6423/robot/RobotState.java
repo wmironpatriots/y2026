@@ -25,6 +25,8 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N4;
 import edu.wpi.first.math.numbers.N6;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.Optional;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
@@ -55,6 +57,8 @@ public class RobotState {
   private final TimeInterpolatableBuffer<Pose3d> mOdoPoseBuffer =
       TimeInterpolatableBuffer.createBuffer(kBufferDuration);
 
+  private final Field2d mF2d = new Field2d();
+
   private Rotation2d mOffset = Rotation2d.kZero;
 
   private final SwerveDriveKinematics mKinematics;
@@ -72,6 +76,8 @@ public class RobotState {
     }
 
     mKinematics = driveConstants.getKinematics();
+
+    SmartDashboard.putData(mF2d);
   }
 
   /**
@@ -117,6 +123,7 @@ public class RobotState {
           // Calculate change in distance between odometry positions and apply to estimated pose
           Twist3d estPoseTwist = mPreviousOdoPose.log(mOdoPose);
           mEstPose.exp(estPoseTwist);
+          mF2d.setRobotPose(mEstPose.toPose2d());
         });
   }
 
@@ -194,6 +201,7 @@ public class RobotState {
                         transformTimesK.get(5, 0)));
 
             mEstPose = estPoseAtTimestamp.plus(scaledTransform).plus(transform.inverse());
+            mF2d.setRobotPose(mEstPose.toPose2d());
           });
     }
   }
