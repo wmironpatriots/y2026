@@ -6,6 +6,8 @@
 
 package org.frc6423.robot.subsystem.drive;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -16,6 +18,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -51,6 +54,8 @@ public class Drive extends SubsystemBase {
   private SwerveModuleState[] mSetpointStates;
 
   private Rotation2d mSimRotation2d = Rotation2d.kZero;
+
+  private boolean mIsFocAutoToggleEnabled = true;
 
   /**
    * Create new {@link Drive}
@@ -143,6 +148,11 @@ public class Drive extends SubsystemBase {
     return mRobotState.getPose3d();
   }
 
+  public LinearVelocity getLinearVelocity() {
+    var speeds = getRobotRelativeChassisSpeeds();
+    return MetersPerSecond.of(Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond));
+  }
+
   public ChassisSpeeds getFieldRelativeChassisSpeeds() {
     return null;
   }
@@ -163,6 +173,15 @@ public class Drive extends SubsystemBase {
     return null;
   }
 
+  /**
+   * @return true if FOC is enabled
+   */
+  public boolean isFocEnabled() {
+    return mIsFocAutoToggleEnabled
+        && getLinearVelocity()
+            .gt(mConstants.getMaxLinearVelocity().times(mConstants.getFocAutoToggleMagnitude()));
+  }
+
   public Command driveTeleop(
       DoubleSupplier xSpeedMag,
       DoubleSupplier ySpeedMag,
@@ -180,6 +199,20 @@ public class Drive extends SubsystemBase {
       double reducedSpeedMag,
       boolean openLoopEnabled) {
     return Commands.none();
+  }
+
+  /**
+   * Auto FOC toggle is a system that disables Field Oriented Control once servos reach a certain
+   * magnitude of the maximum drivetrain speed. This allows the drivetrain to reach its maximum
+   * possible speed
+   *
+   * <p><strong> WARNING </strong> ~ FOC is required to control wheel torques; You must disable auto
+   * toggle if you wish to accurate control torques
+   *
+   * @param enabled when true, FOC will automatically toggle on/off to maximize velocity
+   */
+  protected void setFocAutoToggleStatus(boolean enabled) {
+    mIsFocAutoToggleEnabled = enabled;
   }
 
   protected void setChassisSpeedsSetpoint(ChassisSpeeds speeds, boolean openLoopEnabled) {}

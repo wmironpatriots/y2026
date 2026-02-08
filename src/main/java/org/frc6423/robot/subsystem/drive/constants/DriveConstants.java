@@ -59,6 +59,12 @@ public abstract class DriveConstants {
   public abstract LinearAcceleration getMaxLinearAcceleration();
 
   /**
+   * @return double representing the proportion of the max speed that must be achieved for FOC to be
+   *     toggled
+   */
+  public abstract double getFocAutoToggleMagnitude();
+
+  /**
    * @return {@link AngularVelocity} representing the maximum possible velocity of drivetrain
    */
   public AngularVelocity getMaxAngularVelocity() {

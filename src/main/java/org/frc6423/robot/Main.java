@@ -46,6 +46,7 @@ public final class Main {
 
   private Main() {}
 
+  // TODO add way to pass args to main
   public static void main(String... args) {
     var argsList = Arrays.asList(args);
 

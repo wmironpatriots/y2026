@@ -73,6 +73,11 @@ public class RebuiltL2 extends DriveConstants {
   }
 
   @Override
+  public double getFocAutoToggleMagnitude() {
+    return 0.9; // TODO test irl
+  }
+
+  @Override
   public LinearAcceleration getMaxLinearAcceleration() {
     return MetersPerSecondPerSecond.of(17.594);
   }
