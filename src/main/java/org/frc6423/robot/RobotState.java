@@ -25,53 +25,59 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N4;
 import edu.wpi.first.math.numbers.N6;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.Optional;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 
-/** A class for keeping track of: * The estimated position of robot on field * The */
+/** A singleton that tracks the robot's estimated position */
 public class RobotState {
   // * CONSTANTS
   public static final Matrix<N4, N1> kPoseEstimateStdevs = VecBuilder.fill(0.6, 0.6, 0.07, 0.0);
 
   public static final double kBufferDuration = 1.5;
 
-  public static RobotState kInstance;
-
-  public static RobotState createInstance(DriveConstants driveConstants) {
-    kInstance = new RobotState(driveConstants);
-
-    return kInstance;
-  }
+  @Logged public static RobotState kInstance;
 
   /**
    * @return {@link RobotState} singleton instance
    */
   public static RobotState getInstance() {
     if (kInstance == null) {
-      System.out.println(
-          "RobotState Error! Singleton hasn't been initialized; use RobotState.createInstance() first");
-      return null;
+      kInstance = new RobotState(Main.Flags.kRobotType.mDriveConstants);
     }
 
     return kInstance;
   }
 
-  private Pose3d mPreviousOdoPose;
-  private Pose3d mOdoPose;
-  private Pose3d mEstPose;
+  private Pose3d mPreviousOdoPose = new Pose3d();
+  private Pose3d mOdoPose = new Pose3d();
+  private Pose3d mEstPose = new Pose3d();
   private final TimeInterpolatableBuffer<Pose3d> mOdoPoseBuffer =
       TimeInterpolatableBuffer.createBuffer(kBufferDuration);
+
+  private final Field2d mF2d = new Field2d();
 
   private Rotation2d mOffset = Rotation2d.kZero;
 
   private final SwerveDriveKinematics mKinematics;
   private SwerveModulePosition[] mPreviousSwerveModulePoses;
 
-  /** Create new {@link RobotState} */
+  /**
+   * Create new RobotState
+   *
+   * @param driveConstants {@link DriveConstants} representing the drivetrain's constraints
+   */
   private RobotState(DriveConstants driveConstants) {
     mPreviousSwerveModulePoses = new SwerveModulePosition[4];
+    for (int i = 0; i < mPreviousSwerveModulePoses.length; i++) {
+      mPreviousSwerveModulePoses[i] = new SwerveModulePosition();
+    }
+
     mKinematics = driveConstants.getKinematics();
+
+    SmartDashboard.putData(mF2d);
   }
 
   /**
@@ -117,6 +123,7 @@ public class RobotState {
           // Calculate change in distance between odometry positions and apply to estimated pose
           Twist3d estPoseTwist = mPreviousOdoPose.log(mOdoPose);
           mEstPose.exp(estPoseTwist);
+          mF2d.setRobotPose(mEstPose.toPose2d());
         });
   }
 
@@ -194,6 +201,7 @@ public class RobotState {
                         transformTimesK.get(5, 0)));
 
             mEstPose = estPoseAtTimestamp.plus(scaledTransform).plus(transform.inverse());
+            mF2d.setRobotPose(mEstPose.toPose2d());
           });
     }
   }

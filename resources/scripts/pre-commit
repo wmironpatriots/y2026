@@ -5,10 +5,23 @@
 # Escape sequences
 RED='\e[31m!'
 NC='\e[0m'
+PROTECTED_FILES=("simgui.json" "simgui-window.json")
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "~~~ Starting Pre-Commit Checks ~~~"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
+for FILE in "${PROTECTED_FILES[@]}"; do
+    # Check if the file is currently staged (in the index)
+    if git diff --cached --name-only | grep -xq "$FILE"; then
+        echo "⚠️  Action required: $FILE was modified."
+        
+        # Unstage the file and restore it to the version in HEAD
+        git checkout HEAD -- "$FILE"
+        
+        echo "✅ $FILE has been reverted to its last committed state."
+    fi
+done
 
 # Gather the staged files - to make sure changes are saved only for these files.
 stagedFiles=$(git diff --staged --name-only)

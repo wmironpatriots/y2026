@@ -51,13 +51,12 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
   /**
    * Create new {@link SwerveModuleIOTalonFx}
    *
-   * @param name {@link String} representing a "nickname" for module
    * @param config {@link ModuleConfig} representing the configuration for module
    * @param driveConstants {@link DriveConstants} representing the constants of the overall
    *     drivetrain
    */
-  public SwerveModuleIOTalonFx(String name, ModuleConfig config, DriveConstants driveConstants) {
-    super(name, config, driveConstants);
+  public SwerveModuleIOTalonFx(ModuleConfig config, DriveConstants driveConstants) {
+    super(config, driveConstants);
 
     mEncoder = new CANcoder(mConfig.cancoderId(), mConfig.canBus());
     mPivot = new TalonFX(mConfig.pivotDeviceId(), mConfig.canBus());
@@ -128,13 +127,13 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
   }
 
   @Override
-  protected void setDriveVelocitySetpoint(AngularVelocity velocity, boolean focEnabled) {
-    if (focEnabled) {
-      mFocVelOut.withVelocity(velocity);
-      return;
-    }
-
+  protected void setDriveVoltageVelocitySetpoint(AngularVelocity velocity) {
     mDrive.setControl(mVelOut.withVelocity(velocity));
+  }
+
+  @Override
+  protected void setDriveTorqueVelocitySetpoint(AngularVelocity velocity, Current wheelForceAmps) {
+    mDrive.setControl(mFocVelOut.withVelocity(velocity).withFeedForward(wheelForceAmps));
   }
 
   @Override

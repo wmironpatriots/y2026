@@ -18,20 +18,18 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import org.frc6423.lib.driver.CommandRobot;
-import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.subsystem.drive.Drive;
 
 @Logged
 public class Robot extends CommandRobot {
-  private final CommandXboxController mDriverController;
+  private final CommandPS5Controller mController;
 
-  private final Drive mDrive = new Drive(Flags.kRobotType.mDriveConstants);
+  private final RobotState mRobotState = RobotState.getInstance();
 
   public Robot() {
     // Initialize Devices
-    mDriverController = new CommandXboxController(0);
+    mController = new CommandPS5Controller(0);
 
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);

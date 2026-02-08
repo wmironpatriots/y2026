@@ -59,6 +59,12 @@ public abstract class DriveConstants {
   public abstract LinearAcceleration getMaxLinearAcceleration();
 
   /**
+   * @return double representing the proportion of the max speed that must be achieved for FOC to be
+   *     toggled
+   */
+  public abstract double getFocAutoToggleMagnitude();
+
+  /**
    * @return {@link AngularVelocity} representing the maximum possible velocity of drivetrain
    */
   public AngularVelocity getMaxAngularVelocity() {
@@ -151,6 +157,18 @@ public abstract class DriveConstants {
   public abstract TalonFXConfiguration getDriveServoConfig();
 
   /**
+   * @return the torque constant of the drive motor through its gearbox
+   */
+  public double getDriveGearboxKt() {
+    return getDriveRotorToMechRatio() / getDriveMotorKt();
+  }
+
+  /**
+   * @return the torque constant of the drive motor
+   */
+  public abstract double getDriveMotorKt();
+
+  /**
    * @param angularOffset {@link Angle} representing the angular position offset of encoder
    * @return {@link CANcoderConfiguration} representing CANcoder config for swerve module encoder
    */
@@ -162,9 +180,24 @@ public abstract class DriveConstants {
   public abstract GyroConfig getGyroConfig();
 
   /**
-   * @return {@link ModuleConfig} array representing the configs of swerve modules (FR, FL, BL, BR)
+   * @return {@link ModuleConfig} representing configuration of Front Right Module
    */
-  public abstract ModuleConfig[] getModuleConfigs();
+  public abstract ModuleConfig getFrontRightModuleConfig();
+
+  /**
+   * @return {@link ModuleConfig} representing configuration of Front Left Module
+   */
+  public abstract ModuleConfig getFrontLeftModuleConfig();
+
+  /**
+   * @return {@link ModuleConfig} representing configuration of Back Left Module
+   */
+  public abstract ModuleConfig getBackLeftModuleConfig();
+
+  /**
+   * @return {@link ModuleConfig} representing configuration of Back Right Module
+   */
+  public abstract ModuleConfig getBackRightModuleConfig();
 
   /**
    * Represents a configuration for a {@link GyroIO}

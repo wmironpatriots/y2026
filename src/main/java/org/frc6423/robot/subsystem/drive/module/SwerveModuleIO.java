@@ -6,11 +6,13 @@
 
 package org.frc6423.robot.subsystem.drive.module;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.FeetPerSecond;
 import static edu.wpi.first.units.Units.FeetPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.NewtonMeters;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
@@ -29,6 +31,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Temperature;
+import edu.wpi.first.units.measure.Torque;
 import edu.wpi.first.units.measure.Voltage;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants.ModuleConfig;
@@ -59,8 +62,8 @@ public abstract class SwerveModuleIO {
    * @param driveConstants {@link DriveConstants} representing the constants of the overall
    *     drivetrain
    */
-  public SwerveModuleIO(String name, ModuleConfig config, DriveConstants driveConstants) {
-    mName = name;
+  public SwerveModuleIO(ModuleConfig config, DriveConstants driveConstants) {
+    mName = config.name();
     mConfig = config;
     mDriveConstants = driveConstants;
   }
@@ -122,49 +125,87 @@ public abstract class SwerveModuleIO {
   }
 
   /**
-   * Set a velocity vector setpoint to optimize and run
+   * Set a {@link SwerveModuleSetpoint} to optimize and run /w desired drive torque
+   *
+   * @param setpoint {@link SwerveModuleState} representing the desired velocity vector
+   * @param torque {@link Torque} representing the desired wheel torque
+   * @return {@link SwerveModuleState} representing setpoint post optimization
+   */
+  public SwerveModuleState setSetpointWithWheelTorque(SwerveModuleState setpoint, Torque torque) {
+    // Optimize setpoints
+    setpoint.optimize(getRotation2d());
+    setpoint.cosineScale(getRotation2d());
+
+    // Send Pivot Setpoint
+    setPivotPositionSetpoint(setpoint.angle.getMeasure());
+    // Store Drive Setpoint
+    var speed = MetersPerSecond.of(setpoint.speedMetersPerSecond);
+
+    // Calculate Closed-Loop setpoint
+    var speedAngular =
+        RadiansPerSecond.of(
+            speed.div(mDriveConstants.getWheelRadius().in(Meters)).baseUnitMagnitude());
+
+    // Calculate torque feedforward
+    var feedforwardAmps = Amps.of(torque.div(mDriveConstants.getDriveGearboxKt()).in(NewtonMeters));
+
+    // Send Drive Setpoint
+    setDriveTorqueVelocitySetpoint(speedAngular, feedforwardAmps);
+
+    // Returned optimized
+    return setpoint;
+  }
+
+  /**
+   * Set a {@link SwerveModuleSetpoint} to optimize and run
    *
    * @param setpoint {@link SwerveModuleState} representing the desired velocity vector
    * @param controlMode {@link ControlMode} representing the desired control method to use
    * @return {@link SwerveModuleState} representing setpoint post optimization
    */
-  public SwerveModuleState setSetpoint(SwerveModuleState setpoint, ControlMode controlMode) {
-    // Optimizations
+  public SwerveModuleState setSetpoint(SwerveModuleState setpoint, ControlMode mode) {
+    // Optimize setpoints
     setpoint.optimize(getRotation2d());
     setpoint.cosineScale(getRotation2d());
 
+    // Send Pivot Setpoint
     setPivotPositionSetpoint(setpoint.angle.getMeasure());
-    var velocity = MetersPerSecond.of(setpoint.speedMetersPerSecond);
+    // Store Drive Setpoint
+    var speed = MetersPerSecond.of(setpoint.speedMetersPerSecond);
 
-    // Voltage for open loop is calculated with the following equation:
-    // (supplyVoltage) * (setpointVelocity/maxVelocity)
-    var velocityVolts =
+    // Calculate setpoint by multiplying the percentage of max vel requested times 12.0v
+    // (setpointSpeed / maxSpeed) * 12.0
+    // ~
+    // 12.0v is a good approximation of supply current
+    // Do not get the actual supply current; it will just make the setpoint more unstable
+    var speedVolts =
         Volts.of(
-            velocity
+            speed
                 .times(12.0)
-                .div(mDriveConstants.getMaxLinearVelocity().in(velocity.baseUnit()))
+                .div(mDriveConstants.getMaxLinearVelocity().in(speed.baseUnit()))
                 .baseUnitMagnitude());
 
-    var angularVelocity =
+    // Calculate Closed-Loop setpoint
+    var speedAngular =
         RadiansPerSecond.of(
-            velocity.div(mDriveConstants.getWheelRadius().in(Meters)).baseUnitMagnitude());
+            speed.div(mDriveConstants.getWheelRadius().in(Meters)).baseUnitMagnitude());
 
-    // Apply drive setpoint
-    switch (controlMode) {
+    switch (mode) {
       case CLOSED_LOOP_TORQUE_FOC:
-        setDriveVelocitySetpoint(angularVelocity, true);
+        setDriveTorqueVelocitySetpoint(speedAngular, Amps.zero());
         break;
       case CLOSED_LOOP_VOLT:
-        setDriveVelocitySetpoint(angularVelocity, false);
+        setDriveVoltageVelocitySetpoint(speedAngular);
         break;
       case OPEN_LOOP_VOLT_FOC:
-        setDriveVoltageSetpoint(velocityVolts, true);
+        setDriveVoltageSetpoint(speedVolts, true);
         break;
       case OPEN_LOOP_VOLT:
-        setDriveVoltageSetpoint(velocityVolts, false);
+        setDriveVoltageSetpoint(speedVolts, false);
         break;
     }
 
+    // Returned optimized
     return setpoint;
   }
 
@@ -198,12 +239,19 @@ public abstract class SwerveModuleIO {
   protected abstract void setDriveTorqueCurrentFocSetpoint(Current current);
 
   /**
-   * Set Motion Profiled Velocity setpoint for drive servo (closed-loop control)
+   * Set Motion Profiled Velocity setpoint (voltage based) representing the desired velocity output
    *
    * @param velocity {@link AngularVelocity} representing the desired velocity output
-   * @param focEnabled when true, FOC control will be used
    */
-  protected abstract void setDriveVelocitySetpoint(AngularVelocity velocity, boolean focEnabled);
+  protected abstract void setDriveVoltageVelocitySetpoint(AngularVelocity velocity);
+
+  /**
+   * Set Motion Profiled Voltage setpoint (torque based) representing the desired velocity output
+   *
+   * @param velocity {@link AngularVelocity} representing the desired velocity output
+   */
+  protected abstract void setDriveTorqueVelocitySetpoint(
+      AngularVelocity velocity, Current wheelForceAmps);
 
   /** Stop drive & pivot servos */
   public abstract void stop();

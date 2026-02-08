@@ -9,6 +9,7 @@ package org.frc6423.robot;
 import com.ctre.phoenix6.CANBus;
 import org.frc6423.robot.subsystem.drive.constants.Cascade;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
+import org.frc6423.robot.subsystem.drive.constants.RebuiltL1;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
 
 /**
@@ -20,23 +21,6 @@ import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
  * subclasses
  */
 public final class Constants {
-  /** Runtime flags determining the robots initialization */
-  public static final class Flags {
-    /** {@link RobotType} representing the robot chassis being used */
-    public static final RobotType kRobotType = RobotType.Y2026;
-
-    /**
-     * When true, subsystems will not be initialized
-     *
-     * <p><strong> WARNING </strong> ~ do NOT remove inline if-statement; Only change the false
-     * condition value
-     */
-    public static final boolean kSubsystemDisabled = (kRobotType != RobotType.Y2026) ? true : false;
-
-    /** When true, drive will not be initialized */
-    public static final boolean kDriveDisabled = false;
-  }
-
   /** The matrix contains the CAN identification information for all devices */
   public static final class Matrix {
     public static final CANBus kDriveCanBus = new CANBus("DRIVE");
@@ -69,8 +53,12 @@ public final class Constants {
 
   /** Represents the type of robot codebase is running on */
   public static enum RobotType {
-    /** {@link Robot} representing the 2026 competition robot chassis */
-    Y2026(new RebuiltL2()),
+    /** {@link RobotType} representing the 2026 competition robot chassis /w L1 Ratio */
+    Y2026_L1(new RebuiltL1()),
+    /** {@link RobotType} representing the 2026 competition robot chassis /w L2 Ratio */
+    Y2026_L2(new RebuiltL2()),
+    /** {@link RobotType} representing the 2026 competition robot chassis /w L3 Ratio */
+    Y2026_L3(new RebuiltL2()),
     /** {@link Robot} representing the 2025 competition robot chassis, cascade */
     Y2025(new Cascade());
 
