@@ -128,13 +128,13 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
   }
 
   @Override
-  protected void setDriveVelocitySetpoint(AngularVelocity velocity, boolean focEnabled) {
-    if (focEnabled) {
-      mFocVelOut.withVelocity(velocity);
-      return;
-    }
-
+  protected void setDriveVoltageVelocitySetpoint(AngularVelocity velocity) {
     mDrive.setControl(mVelOut.withVelocity(velocity));
+  }
+
+  @Override
+  protected void setDriveTorqueVelocitySetpoint(AngularVelocity velocity, Current wheelForceAmps) {
+    mDrive.setControl(mFocVelOut.withVelocity(velocity).withFeedForward(wheelForceAmps));
   }
 
   @Override
