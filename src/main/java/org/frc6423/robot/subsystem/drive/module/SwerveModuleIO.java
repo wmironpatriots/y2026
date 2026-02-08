@@ -62,8 +62,8 @@ public abstract class SwerveModuleIO {
    * @param driveConstants {@link DriveConstants} representing the constants of the overall
    *     drivetrain
    */
-  public SwerveModuleIO(String name, ModuleConfig config, DriveConstants driveConstants) {
-    mName = name;
+  public SwerveModuleIO(ModuleConfig config, DriveConstants driveConstants) {
+    mName = config.name();
     mConfig = config;
     mDriveConstants = driveConstants;
   }

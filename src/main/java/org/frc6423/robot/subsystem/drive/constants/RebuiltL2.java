@@ -230,45 +230,54 @@ public class RebuiltL2 extends DriveConstants {
   }
 
   @Override
-  public ModuleConfig[] getModuleConfigs() {
-    // TODO derive offsets
-    return new ModuleConfig[] {
-      new ModuleConfig(
-          "FR",
-          getCANBus(),
-          Matrix.kDriveFrPivotId,
-          Matrix.kDriveFrDriveId,
-          Matrix.kDriveFrEncoderId,
-          getPivotServoConfig(Matrix.kDriveFrEncoderId),
-          getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.0))),
-      new ModuleConfig(
-          "FL",
-          getCANBus(),
-          Matrix.kDriveFlPivotId,
-          Matrix.kDriveFlDriveId,
-          Matrix.kDriveFlEncoderId,
-          getPivotServoConfig(Matrix.kDriveFlEncoderId),
-          getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.0))),
-      new ModuleConfig(
-          "BL",
-          getCANBus(),
-          Matrix.kDriveBlPivotId,
-          Matrix.kDriveBlDriveId,
-          Matrix.kDriveBlEncoderId,
-          getPivotServoConfig(Matrix.kDriveBlEncoderId),
-          getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.0))),
-      new ModuleConfig(
-          "BR",
-          getCANBus(),
-          Matrix.kDriveBrPivotId,
-          Matrix.kDriveBrDriveId,
-          Matrix.kDriveBrEncoderId,
-          getPivotServoConfig(Matrix.kDriveBrEncoderId),
-          getDriveServoConfig(),
-          getCANcoderConfig(Degrees.of(0.0)))
-    };
+  public ModuleConfig getFrontRightModuleConfig() {
+    return new ModuleConfig(
+        "FR",
+        getCANBus(),
+        Matrix.kDriveFrPivotId,
+        Matrix.kDriveFrDriveId,
+        Matrix.kDriveFrEncoderId,
+        getPivotServoConfig(Matrix.kDriveFrEncoderId),
+        getDriveServoConfig(),
+        getCANcoderConfig(Degrees.of(0.0)));
+  }
+
+  @Override
+  public ModuleConfig getFrontLeftModuleConfig() {
+    return new ModuleConfig(
+        "FL",
+        getCANBus(),
+        Matrix.kDriveFlPivotId,
+        Matrix.kDriveFlDriveId,
+        Matrix.kDriveFlEncoderId,
+        getPivotServoConfig(Matrix.kDriveFlEncoderId),
+        getDriveServoConfig(),
+        getCANcoderConfig(Degrees.of(0.0)));
+  }
+
+  @Override
+  public ModuleConfig getBackLeftModuleConfig() {
+    return new ModuleConfig(
+        "BL",
+        getCANBus(),
+        Matrix.kDriveBlPivotId,
+        Matrix.kDriveBlDriveId,
+        Matrix.kDriveBlEncoderId,
+        getPivotServoConfig(Matrix.kDriveBlEncoderId),
+        getDriveServoConfig(),
+        getCANcoderConfig(Degrees.of(0.0)));
+  }
+
+  @Override
+  public ModuleConfig getBackRightModuleConfig() {
+    return new ModuleConfig(
+        "BR",
+        getCANBus(),
+        Matrix.kDriveBrPivotId,
+        Matrix.kDriveBrDriveId,
+        Matrix.kDriveBrEncoderId,
+        getPivotServoConfig(Matrix.kDriveBrEncoderId),
+        getDriveServoConfig(),
+        getCANcoderConfig(Degrees.of(0.0)));
   }
 }

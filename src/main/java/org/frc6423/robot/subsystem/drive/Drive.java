@@ -49,8 +49,12 @@ public class Drive extends SubsystemBase {
   private final RobotState mRobotState;
   private final SwerveDriveKinematics mKinematics;
 
+  @Logged private final SwerveModuleIO mFrModule;
+  @Logged private final SwerveModuleIO mFlModule;
+  @Logged private final SwerveModuleIO mBlModule;
+  @Logged private final SwerveModuleIO mBrModule;
   private final SwerveModuleIO[] mModules;
-  private final GyroIO mGyro;
+  @Logged private final GyroIO mGyro;
 
   private SwerveModuleState[] mSetpointStates;
 
@@ -67,18 +71,21 @@ public class Drive extends SubsystemBase {
     mRobotState = RobotState.getInstance();
     mKinematics = constants.getKinematics();
 
-    var configs = constants.getModuleConfigs();
-    mModules = new SwerveModuleIO[configs.length];
     mGyro = new GyroIOPigeon2(mConstants.getGyroConfig());
 
-    for (int i = 0; i < configs.length; i++) {
-      mModules[i] =
-          Robot.isReal()
-              ? new SwerveModuleIOTalonFx(configs[i].name(), configs[i], constants)
-              : new SwerveModuleIOTalonFxSim(configs[i].name(), configs[i], constants);
+    if (Robot.isReal()) {
+      mFrModule = new SwerveModuleIOTalonFx(mConstants.getFrontRightModuleConfig(), constants);
+      mFlModule = new SwerveModuleIOTalonFx(mConstants.getFrontLeftModuleConfig(), constants);
+      mBlModule = new SwerveModuleIOTalonFx(mConstants.getBackLeftModuleConfig(), constants);
+      mBrModule = new SwerveModuleIOTalonFx(mConstants.getBackRightModuleConfig(), constants);
+    } else {
+      mFrModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontRightModuleConfig(), constants);
+      mFlModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontLeftModuleConfig(), constants);
+      mBlModule = new SwerveModuleIOTalonFxSim(mConstants.getBackLeftModuleConfig(), constants);
+      mBrModule = new SwerveModuleIOTalonFxSim(mConstants.getBackRightModuleConfig(), constants);
     }
 
-    mSetpointStates = new SwerveModuleState[mModules.length];
+    mModules = new SwerveModuleIO[] {mFrModule, mFlModule, mBlModule, mBrModule};
   }
 
   @Override

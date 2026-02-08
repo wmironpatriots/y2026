@@ -29,14 +29,14 @@ import java.util.Optional;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 
-/** A class for keeping track of: * The estimated position of robot on field * The */
+/** A singleton that tracks the robot's estimated position */
 public class RobotState {
   // * CONSTANTS
   public static final Matrix<N4, N1> kPoseEstimateStdevs = VecBuilder.fill(0.6, 0.6, 0.07, 0.0);
 
   public static final double kBufferDuration = 1.5;
 
-  public static RobotState kInstance;
+  @Logged public static RobotState kInstance;
 
   /**
    * @return {@link RobotState} singleton instance
@@ -66,7 +66,7 @@ public class RobotState {
    * @param driveConstants {@link DriveConstants} representing the drivetrain's constraints
    */
   private RobotState(DriveConstants driveConstants) {
-    mPreviousSwerveModulePoses = new SwerveModulePosition[driveConstants.getModuleConfigs().length];
+    mPreviousSwerveModulePoses = new SwerveModulePosition[4];
     for (int i = 0; i < mPreviousSwerveModulePoses.length; i++) {
       mPreviousSwerveModulePoses[i] = new SwerveModulePosition();
     }

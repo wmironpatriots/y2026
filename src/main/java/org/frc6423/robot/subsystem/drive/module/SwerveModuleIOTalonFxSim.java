@@ -24,8 +24,8 @@ public class SwerveModuleIOTalonFxSim extends SwerveModuleIOTalonFx {
 
   private double mPreviousTimestamp = 0.0;
 
-  public SwerveModuleIOTalonFxSim(String name, ModuleConfig config, DriveConstants driveConstants) {
-    super(name, config, driveConstants);
+  public SwerveModuleIOTalonFxSim(ModuleConfig config, DriveConstants driveConstants) {
+    super(config, driveConstants);
 
     mPivotModel =
         new DCMotorSim(
