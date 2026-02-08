@@ -1,0 +1,229 @@
+{
+  "HALProvider": {
+    "Other Devices": {
+      "CANcoder (v6)[2]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[0]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[0]/Fwd Limit": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[0]/Rev Limit": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[0]/Rotor Sensor": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[1]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[1]/Fwd Limit": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[1]/Rev Limit": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon FX (v6)[1]/Rotor Sensor": {
+        "header": {
+          "open": true
+        }
+      },
+      "window": {
+        "visible": false
+      }
+    }
+  },
+  "NTProvider": {
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/Alerts": "Alerts",
+      "/SmartDashboard/Choreo Alerts": "Alerts",
+      "/SmartDashboard/Field": "Field2d"
+    },
+    "windows": {
+      "/SmartDashboard/Field": {
+        "bottom": 1914,
+        "height": 8.069275856018066,
+        "left": 245,
+        "right": 3942,
+        "top": 118,
+        "width": 16.54119300842285,
+        "window": {
+          "visible": true
+        }
+      }
+    }
+  },
+  "NetworkTables": {
+    "transitory": {
+      "Telemetry": {
+        "io": {
+          "open": true
+        },
+        "mDrive": {
+          "mBlModule": {
+            "open": true
+          },
+          "mBrModule": {
+            "open": true
+          },
+          "mFlModule": {
+            "open": true
+          },
+          "mFrModule": {
+            "open": true
+          },
+          "mGyro": {
+            "open": true
+          },
+          "open": true
+        },
+        "mIntake": {
+          "mPivot": {
+            "mLeader": {
+              "Setpoint": {
+                "open": true
+              },
+              "open": true
+            },
+            "open": true
+          },
+          "mRoller": {
+            "mLeader": {
+              "Setpoint": {
+                "open": true
+              },
+              "open": true
+            },
+            "open": true
+          },
+          "open": true
+        },
+        "mModule": {
+          "SwerveModulePosition##v_Telemetry/mModule/Module Pose": {
+            "Rotation2d##v_angle": {
+              "open": true
+            },
+            "open": true
+          },
+          "SwerveModuleState##v_Telemetry/mModule/Module State": {
+            "Rotation2d##v_angle": {
+              "open": true
+            },
+            "open": true
+          },
+          "mDrive": {
+            "Setpoint": {
+              "open": true
+            },
+            "open": true
+          },
+          "mEncoder": {
+            "open": true
+          },
+          "mPivot": {
+            "Setpoint": {
+              "open": true
+            },
+            "open": true
+          },
+          "open": true
+        },
+        "open": true,
+        "roller": {
+          "mLeader": {
+            "Setpoint": {
+              "open": true
+            },
+            "open": true
+          },
+          "open": true
+        },
+        "run": {
+          "open": true
+        },
+        "run2": {
+          "open": true
+        },
+        "servo": {
+          "Setpoint": {
+            "open": true
+          },
+          "open": true
+        },
+        "simMotor": {
+          "Setpoint": {
+            "open": true
+          },
+          "open": true
+        }
+      }
+    }
+  },
+  "NetworkTables Info": {
+    "visible": true
+  },
+  "Plot": {
+    "Plot <0>": {
+      "plots": [
+        {
+          "backgroundColor": [
+            0.05999999865889549,
+            0.05999999865889549,
+            0.05999999865889549,
+            0.9399999976158142
+          ],
+          "height": 749,
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:/Tracer/robot main/CommandScheduler"
+            }
+          ]
+        }
+      ],
+      "window": {
+        "name": "tracers"
+      }
+    },
+    "Plot <1>": {
+      "plots": [
+        {
+          "backgroundColor": [
+            0.05999999865889549,
+            0.05999999865889549,
+            0.05999999865889549,
+            0.9399999976158142
+          ],
+          "height": 749
+        }
+      ],
+      "window": {
+        "name": "Tuning Window (CAN EDIT)"
+      }
+    }
+  }
+}
