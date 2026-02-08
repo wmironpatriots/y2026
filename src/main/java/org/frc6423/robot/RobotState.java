@@ -45,7 +45,7 @@ public class RobotState {
    */
   public static RobotState getInstance() {
     if (kInstance == null) {
-      kInstance = new RobotState(Constants.Flags.kDriveConstants);
+      kInstance = new RobotState(Main.Flags.kRobotType.mDriveConstants);
     }
 
     return kInstance;
