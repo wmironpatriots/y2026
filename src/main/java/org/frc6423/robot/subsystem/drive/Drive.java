@@ -154,11 +154,11 @@ public class Drive extends SubsystemBase {
   }
 
   public ChassisSpeeds getFieldRelativeChassisSpeeds() {
-    return null;
+    return ChassisSpeeds.fromRobotRelativeSpeeds(getRobotRelativeChassisSpeeds(), getRotation2d());
   }
 
   public ChassisSpeeds getRobotRelativeChassisSpeeds() {
-    return null;
+    return mKinematics.toChassisSpeeds(getSwerveModuleStates());
   }
 
   public SwerveModulePosition[] getSwerveModulePositions() {
