@@ -16,7 +16,7 @@ import edu.wpi.first.units.measure.MomentOfInertia;
  * @param name {@link String} representing servo nickname
  * @param canBus {@link CANBus} representing CAN bus loop device is in
  * @param canDeviceId {@link Integer} representing the id of CAN device
- * @param config {@link TalonFXConfiguration} representing the servo config
+ * @param talonConfig {@link TalonFXConfiguration} representing the servo config
  * @param rotationalInertia {@link MomentOfInertia} representing the rotational inertia of system
  * @param motorKt {@link Double} representing the servo's kT rating
  * @param voltageGainsSlot {@link Integer} representing the gains slot to use for voltage based
@@ -28,7 +28,7 @@ public record ServoConfig(
     String name,
     CANBus canBus,
     int canDeviceId,
-    TalonFXConfiguration config,
+    TalonFXConfiguration talonConfig,
     MomentOfInertia rotationalInertia,
     double motorKt,
     int voltageGainsSlot,
@@ -38,6 +38,6 @@ public record ServoConfig(
    * @return {@link Double} representing the motor's kT after going through gearbox of system
    */
   public double systemKt() {
-    return config.Feedback.RotorToSensorRatio / motorKt();
+    return talonConfig.Feedback.SensorToMechanismRatio / motorKt();
   }
 }
