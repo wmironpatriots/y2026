@@ -51,20 +51,25 @@ public class ServoIOTalonFx extends ServoIO {
   protected final VoltageOut mVoltRequest = new VoltageOut(0.0);
   protected final TorqueCurrentFOC mTorqueRequest = new TorqueCurrentFOC(0.0);
 
-  protected final PositionVoltage mVoltPoseRequest = new PositionVoltage(0.0);
-  protected final PositionTorqueCurrentFOC mTorquePoseRequest = new PositionTorqueCurrentFOC(0.0);
+  protected final PositionVoltage mVoltPoseRequest =
+      new PositionVoltage(0.0).withSlot(mConfig.voltageGainsSlot());
+  protected final PositionTorqueCurrentFOC mTorquePoseRequest =
+      new PositionTorqueCurrentFOC(0.0).withSlot(mConfig.torqueGainsSlot());
 
-  protected final VelocityVoltage mVoltVelRequest = new VelocityVoltage(0.0);
-  protected final VelocityTorqueCurrentFOC mTorqueVelRequest = new VelocityTorqueCurrentFOC(0.0);
+  protected final VelocityVoltage mVoltVelRequest =
+      new VelocityVoltage(0.0).withSlot(mConfig.voltageGainsSlot());
+  protected final VelocityTorqueCurrentFOC mTorqueVelRequest =
+      new VelocityTorqueCurrentFOC(0.0).withSlot(mConfig.torqueGainsSlot());
 
-  protected final MotionMagicVoltage mVoltProfiledPoseRequest = new MotionMagicVoltage(0.0);
+  protected final MotionMagicVoltage mVoltProfiledPoseRequest =
+      new MotionMagicVoltage(0.0).withSlot(mConfig.voltageGainsSlot());
   protected final MotionMagicTorqueCurrentFOC mTorqueProfiledPoseRequest =
-      new MotionMagicTorqueCurrentFOC(0.0);
+      new MotionMagicTorqueCurrentFOC(0.0).withSlot(mConfig.torqueGainsSlot());
 
   protected final MotionMagicVelocityVoltage mVoltProfiledVelRequest =
-      new MotionMagicVelocityVoltage(0.0);
+      new MotionMagicVelocityVoltage(0.0).withSlot(mConfig.voltageGainsSlot());
   protected final MotionMagicVelocityTorqueCurrentFOC mTorqueProfiledVelRequest =
-      new MotionMagicVelocityTorqueCurrentFOC(0.0);
+      new MotionMagicVelocityTorqueCurrentFOC(0.0).withSlot(mConfig.torqueGainsSlot());
 
   /**
    * Create new {@link ServoIOTalonFx}
