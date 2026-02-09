@@ -21,15 +21,12 @@ import edu.wpi.first.units.measure.Angle;
 public class EncoderIOCanCoder extends EncoderIO {
   private final CANcoder mEncoder;
 
-  private final CANcoderConfiguration mConfig;
-
   private final StatusSignal<Angle> mAngleSig;
 
   public EncoderIOCanCoder(int canDeviceId, CANBus canBusId, CANcoderConfiguration config) {
     mEncoder = new CANcoder(canDeviceId, canBusId);
 
     mEncoder.getConfigurator().apply(config);
-    mConfig = config;
 
     mAngleSig = mEncoder.getAbsolutePosition();
   }
