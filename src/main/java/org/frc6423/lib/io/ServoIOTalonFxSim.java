@@ -8,21 +8,12 @@ package org.frc6423.lib.io;
 
 import static edu.wpi.first.units.Units.Volts;
 
-import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.ChassisReference;
-import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import org.frc6423.lib.sim.MechSim;
 
-/** Simulated extension of {@link ServoIOTalonFx} */
+/** {@link ServoIOTalon} extension for simulation */
 public class ServoIOTalonFxSim extends ServoIOTalonFx {
   private final MechSim mModel;
   private final Notifier mUpdater;
@@ -30,20 +21,16 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
   /**
    * Create new {@link ServoIOTalonFxSim}
    *
-   * @param name friendly "nickname" for servo
-   * @param canDeviceId integer ID on CAN loop
-   * @param canBusId {@link CANBus} representing the CAN bus device is on
-   * @param config {@link TalonFXConfiguration} representing servo config
-   * @param sim {@link MechSim} representing the simulation model
+   * @param config {@link SwerveConfig} representing the configuration of servo
+   * @param model {@link MechSim} representing the physics simulation to use for modeling system
    */
-  public ServoIOTalonFxSim(
-      String name, int canDeviceId, CANBus canBus, TalonFXConfiguration config, MechSim sim) {
-    super(name, canDeviceId, canBus, config);
+  protected ServoIOTalonFxSim(ServoConfig config, MechSim model) {
+    super(config);
 
-    mModel = sim;
+    mModel = model;
 
     mServo.getSimState().Orientation =
-        config.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive
+        mTalonConfig.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive
             ? ChassisReference.CounterClockwise_Positive
             : ChassisReference.Clockwise_Positive;
 
@@ -51,8 +38,8 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
     mUpdater.startPeriodic(0.005);
   }
 
-  /** Update {@link DCMotorSim} model and {@link TalonFX} {@link TalonFXSimState} */
-  private void updateSimulation() {
+  /** Update high fidelity sim */
+  protected void updateSimulation() {
     mServo.getSimState().setSupplyVoltage(12.0);
 
     // Set system model input voltage using simulation input
@@ -65,43 +52,10 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
     // Update simulation using system model
     mServo
         .getSimState()
-        .setRawRotorPosition(mModel.getAngle().times(mConfig.Feedback.SensorToMechanismRatio));
+        .setRawRotorPosition(mModel.getAngle().times(mTalonConfig.Feedback.SensorToMechanismRatio));
     mServo
         .getSimState()
         .setRotorVelocity(
-            mModel.getAngularVelocity().times(mConfig.Feedback.SensorToMechanismRatio));
-  }
-
-  @Override
-  public Voltage getAppliedVoltage() {
-    return mServo.getSimState().getMotorVoltageMeasure();
-  }
-
-  /**
-   * @return {@link Current} representing the stator current of the {@link MechSim} model
-   */
-  public Current getPhysicsModelStatorCurrent() {
-    return mModel.getStatorCurrent();
-  }
-
-  @Override
-  public Current getSupplyCurrent() {
-    return mServo.getSimState().getSupplyCurrentMeasure();
-  }
-
-  /**
-   * @return {@link Angle} representing the angular position of the {@link MechSim} model
-   */
-  @Logged(name = "Physics Model Angle", importance = Importance.INFO)
-  public Angle getPhysicsModelAngle() {
-    return mModel.getAngle();
-  }
-
-  /**
-   * @return {@link AngularVelocity} representing the angular velocity of the {@link MechSim} model
-   */
-  @Logged(name = "Physics Model Angular Velocity", importance = Importance.INFO)
-  public AngularVelocity getPhysicsModelAngularVelocity() {
-    return mModel.getAngularVelocity();
+            mModel.getAngularVelocity().times(mTalonConfig.Feedback.SensorToMechanismRatio));
   }
 }

@@ -10,45 +10,19 @@ import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
  * oh-yes-0-fps's Tracer implementation
  *
- * <p>---
- *
  * <p>A Utility class for tracing code execution time. Will put info to NetworkTables under the
  * "Tracer" table.
- *
- * <p>Example inside {@code Robot.java}
- *
- * <pre><code>
- *
- * public void robotPeriodic() {
- *   CommandScheduler.getInstance().run(); // CommandScheduler is already traced
- *   Tracer.traceFunc("MyVendorDep", MyVendorDep::updateAll);
- * }
- * </code></pre>
- *
- * <p>Example inside a {@code Drive Subsystem}
- *
- * <pre><code>
- * // Subsystem periodics are automaticall traced
- * public void periodic() {
- *   for (var module : modules) {
- *     Tracer.traceFunc("Module" + module.getName(), module::update);
- *   }
- *   Tracer.traceFunc("Gyro", gyro::update);
- * }
- * </code></pre>
  */
 public class Tracer {
   private static final class TraceStartData {
@@ -413,103 +387,6 @@ public class Tracer {
         runnable.run();
       } finally {
         subOut();
-      }
-    }
-  }
-
-  // A REIMPLEMENTATION OF THE OLD TRACER TO NOT BREAK OLD CODE
-
-  private static final long kMinPrintPeriod = 1000000; // microseconds
-
-  private long m_lastEpochsPrintTime; // microseconds
-  private long m_startTime; // microseconds
-
-  private final HashMap<String, Long> m_epochs = new HashMap<>(); // microseconds
-
-  /**
-   * Constructs a {@code Tracer} compatible with the 2024 {@code Tracer}.
-   *
-   * @deprecated This constructor is only for compatibility with the 2024 {@code Tracer} and will be
-   *     removed in 2025. Use the static methods in {@link Tracer} instead.
-   */
-  @Deprecated(since = "2025", forRemoval = true)
-  public Tracer() {
-    resetTimer();
-  }
-
-  /**
-   * Clears all epochs.
-   *
-   * @deprecated This method is only for compatibility with the 2024 {@code Tracer} and will be
-   *     removed in 2025. Use the static methods in {@link Tracer} instead.
-   */
-  @Deprecated(since = "2025", forRemoval = true)
-  public void clearEpochs() {
-    m_epochs.clear();
-    resetTimer();
-  }
-
-  /**
-   * Restarts the epoch timer.
-   *
-   * @deprecated This method is only for compatibility with the 2024 {@code Tracer} and will be
-   *     removed in 2025. Use the static methods in {@link Tracer} instead.
-   */
-  @Deprecated(since = "2025", forRemoval = true)
-  public final void resetTimer() {
-    m_startTime = RobotController.getFPGATime();
-  }
-
-  /**
-   * Adds time since last epoch to the list printed by printEpochs().
-   *
-   * <p>Epochs are a way to partition the time elapsed so that when overruns occur, one can
-   * determine which parts of an operation consumed the most time.
-   *
-   * <p>This should be called immediately after execution has finished, with a call to this method
-   * or {@link #resetTimer()} before execution.
-   *
-   * @param epochName The name to associate with the epoch.
-   * @deprecated This method is only for compatibility with the 2024 {@code Tracer} and will be
-   *     removed in 2025. Use the static methods in {@link Tracer} instead.
-   */
-  @Deprecated(since = "2025", forRemoval = true)
-  public void addEpoch(String epochName) {
-    long currentTime = RobotController.getFPGATime();
-    m_epochs.put(epochName, currentTime - m_startTime);
-    m_startTime = currentTime;
-  }
-
-  /**
-   * Prints list of epochs added so far and their times to the DriverStation.
-   *
-   * @deprecated This method is only for compatibility with the 2024 {@code Tracer} and will be
-   *     removed in 2025. Use the static methods in {@link Tracer} instead.
-   */
-  @Deprecated(since = "2025", forRemoval = true)
-  public void printEpochs() {
-    printEpochs(out -> DriverStation.reportWarning(out, false));
-  }
-
-  /**
-   * Prints list of epochs added so far and their times to the entered String consumer.
-   *
-   * <p>This overload can be useful for logging to a file, etc.
-   *
-   * @param output the stream that the output is sent to
-   * @deprecated This method is only for compatibility with the 2024 {@code Tracer} and will be
-   *     removed in 2025. Use the static methods in {@link Tracer} instead.
-   */
-  @Deprecated(since = "2025", forRemoval = true)
-  public void printEpochs(Consumer<String> output) {
-    long now = RobotController.getFPGATime();
-    if (now - m_lastEpochsPrintTime > kMinPrintPeriod) {
-      StringBuilder sb = new StringBuilder();
-      m_lastEpochsPrintTime = now;
-      m_epochs.forEach(
-          (key, value) -> sb.append(String.format("\t%s: %.6fs\n", key, value / 1.0e6)));
-      if (sb.length() > 0) {
-        output.accept(sb.toString());
       }
     }
   }

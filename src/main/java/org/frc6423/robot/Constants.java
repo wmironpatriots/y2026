@@ -68,4 +68,19 @@ public final class Constants {
       this.mDriveConstants = drivetrainConstants;
     }
   }
+
+  /** Static constants class for the {@link Intake} subsystem */
+  public static class IntakeConstants {}
+
+  /** Static constants class for the {@link Indexer} subsystem */
+  public static class IndexerConstants {}
+
+  /** Static constants class for the {@link Feeder} subsystem */
+  public static class FeederConstants {}
+
+  /** Static constants class for the {@link Flywheel} subsystem */
+  public static class FlywheelConstants {}
+
+  /** Static constants class for the {@link Hood} subsystem */
+  public static class HoodConstants {}
 }

@@ -6,12 +6,6 @@
 
 package org.frc6423.lib.io;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
-import static edu.wpi.first.units.Units.Revolutions;
-import static edu.wpi.first.units.Units.RevolutionsPerSecond;
-import static edu.wpi.first.units.Units.Volts;
-
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.units.measure.Angle;
@@ -19,37 +13,25 @@ import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Temperature;
+import edu.wpi.first.units.measure.Torque;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.util.sendable.Sendable;
-import edu.wpi.first.util.sendable.SendableBuilder;
-import java.util.function.UnaryOperator;
 
 /**
  * A Hardware Interface for controlling a servo
  *
- * <p>A {@link ServoIO} instance can be given a {@link Setpoint} by using the applySetpoint method
- *
  * <p>A {@link ServoIO} instance <strong>must</strong> have its <strong>periodic method called every
  * robot loop for values to be properly logged</strong>
- *
- * <p>It's recommended to utilize {@link MotorSubsystem} or its extensions to create a servo based
- * subsystem instead of utilizing this class directly
  */
 public abstract class ServoIO {
-  public final String mName;
-  public final int mCanDeviceId;
-
-  private Setpoint mCurrentSetpoint = Setpoint.stop();
+  public final ServoConfig mConfig;
 
   /**
    * Create new {@link ServoIO}
    *
-   * @param name friendly "nickname" for servo
-   * @param canDeviceId integer ID on CAN loop
+   * @param config {@link SwerveConfig} representing the configuration of servo
    */
-  protected ServoIO(String name, int canDeviceId) {
-    mName = name;
-    mCanDeviceId = canDeviceId;
+  protected ServoIO(ServoConfig config) {
+    mConfig = config;
   }
 
   /** Update all logged values */
@@ -60,15 +42,7 @@ public abstract class ServoIO {
    */
   @Logged(name = "Servo Name", importance = Importance.INFO)
   public String getName() {
-    return mName;
-  }
-
-  /**
-   * @return {@link Setpoint} representing the goal of servo
-   */
-  @Logged(name = "Setpoint", importance = Importance.INFO)
-  public Setpoint getSetpoint() {
-    return mCurrentSetpoint;
+    return mConfig.name();
   }
 
   /**
@@ -120,15 +94,13 @@ public abstract class ServoIO {
   public abstract Temperature getTemperature();
 
   /**
-   * Set new {@link Setpoint}
+   * Setup servo for follower mode When in follower mode, servo will mimic the servo set as its
+   * leader
    *
-   * @param setpoint {@link Setpoint} representing desired goal
+   * @param leader {@link ServoIO} to mimic
+   * @param flipped when true follower will mimic actions in the opposite direction
    */
-  public void applySetpoint(Setpoint setpoint) {
-    this.mCurrentSetpoint = setpoint;
-
-    setpoint.applySetpoint(this);
-  }
+  public abstract void setLeader(ServoIO leader, boolean flipped);
 
   /**
    * Set the status of motor brake
@@ -138,416 +110,139 @@ public abstract class ServoIO {
   public abstract void setBrakeStatus(boolean active);
 
   /**
-   * Set the status of Field-Oriented Control (FOC)
+   * Reset internal relative encoder to specified angular position
    *
-   * <p><strong>WARNING</strong>: When FOC based control is active, the control output calculated
-   * will be a Torque Current (Amps) in contrast to the control output with foc disabled (Volts).
-   * This means gains that work with voltage based control will never work with FOC based control
-   *
-   * @param active when true motor will utilize FOC based control methods
-   * @see
-   *     https://v6.docs.ctr-electronics.com/en/latest/docs/api-reference/device-specific/talonfx/talonfx-control-intro.html#field-oriented-control
+   * @param angle {@link Angle} representing angular position to reset to
    */
-  public abstract void setFocStatus(boolean active);
+  public abstract void resetEncoder(Angle angle);
 
-  /**
-   * Setup servo for follower mode When in follower mode, servo will mimic the servo set as its
-   * leader
-   *
-   * @param leader {@link ServoIO} to mimic
-   * @param flipped when true follower will mimic actions in the opposite direction
-   */
-  public abstract void setLeader(ServoIO leader, boolean flipped);
-
-  /** Stop all servo control */
+  /** Stop servo completely */
   public abstract void stop();
 
   /**
-   * Set voltage setpoint
+   * Set Voltage Setpoint
    *
-   * @param volts {@link Voltage} representing desired voltage
+   * @param voltage {@link Voltage} representing desired voltage output
+   * @param withFoc when true, FOC will be enabled
    */
-  protected abstract void setVoltageSetpoint(Voltage voltage);
+  public abstract void setVoltageSetpoint(Voltage voltage, boolean withFoc);
 
   /**
-   * Set Torque Current Setpoint Only works for FOC supported servos; Will not run on non-FOC
-   * supported servos
+   * Set Torque Current Setpoint
    *
-   * @param current {@link Current} representing desired torque current
+   * @param current {@link Current} representing desired current output
    */
-  protected abstract void setTorqueCurrentSetpoint(Current current);
+  public abstract void setTorqueCurrentSetpoint(Current current);
 
   /**
-   * Set dutycycle setpoint
+   * Set Voltage based Position Setpoint
    *
-   * @param dutycycle desired dutycycle output
+   * @param angle {@link Angle} representing desired angular position
+   * @param withFoc when true, FOC will be enabled
    */
-  protected abstract void setDutycycleSetpoint(double dutycycle);
+  public abstract void setVoltagePositionSetpoint(Angle angle, boolean withFoc);
 
   /**
-   * Set position setpoint
+   * Set Torque based Position Setpoint
    *
-   * @param position {@link Angle} representing desired angular position
-   * @param slot control gains slot to use
+   * @param angle {@link Angle} representing desired angular position
    */
-  protected abstract void setPositionSetpoint(Angle position, int slot);
+  public abstract void setTorquePositionSetpoint(Angle angle);
 
   /**
-   * Set velocity setpoint
+   * Set Torque based Position Setpoint /w specified output torque
+   *
+   * @param angle {@link Angle} representing desired angular position
+   * @param torque {@link Torque} representing desired torque output of system
+   */
+  public abstract void setTorquePositionSetpoint(Angle angle, Torque torque);
+
+  /**
+   * Set Voltage based Velocity Setpoint
+   *
+   * @param velocity {@link AngularVelocity} representing desired angular velocity
+   * @param withFoc when true, FOC will be enabled
+   */
+  public abstract void setVoltageVelocitySetpoint(AngularVelocity velocity, boolean withFoc);
+
+  /**
+   * Set Torque based Velocity Setpoint
+   *
+   * @param velocity {@link AngularVelocity} representing desired angular velocity
+   */
+  public abstract void setTorqueVelocitySetpoint(AngularVelocity velocity);
+
+  /**
+   * Set Torque based Velocity Setpoint /w specified acceleration
    *
    * @param velocity {@link AngularVelocity} representing desired angular velocity
    * @param acceleration {@link AngularAcceleration} representing desired angular acceleration
-   * @param slot control gains slot to use
    */
-  protected abstract void setVelocitySetpoint(
-      AngularVelocity velocity, AngularAcceleration acceleration, int slot);
+  public abstract void setTorqueVelocitySetpoint(
+      AngularVelocity velocity, AngularAcceleration acceleration);
 
   /**
-   * Set position motion profiled setpoint
+   * Set Torque based Velocity Setpoint /w specified output torque
    *
-   * @param position {@link Angle} representing desired angular position
-   * @param slot control gains slot to use
+   * @param velocity {@link AngularVelocity} representing desired angular velocity
+   * @param torque {@link torque} representing desired torque output of system
    */
-  protected abstract void setPositionProfiledSetpoint(Angle position, int slot);
+  public abstract void setTorqueVelocitySetpoint(AngularVelocity velocity, Torque torque);
 
   /**
-   * Set velocity motion profiled setpoint
+   * Set Voltage based Motion Profiled Position Setpoint
+   *
+   * @param angle {@link Angle} representing desired angular position
+   * @param withFoc when true, FOC will be enabled
+   */
+  public abstract void setVoltageMotionProfiledPositionSetpoint(Angle angle, boolean withFoc);
+
+  /**
+   * Set Torque based Motion Profiled Velocity Setpoint
+   *
+   * @param angle {@link Angle} representing desired angular velocity
+   */
+  public abstract void setTorqueMotionProfiledPositionSetpoint(Angle angle);
+
+  /**
+   * Set Torque based Motion Profiled Velocity Setpoint /w specified output torque
+   *
+   * @param angle {@link Angle} representing desired angular velocity
+   * @param torque {@link torque} representing desired torque output of system
+   */
+  public abstract void setTorqueMotionProfiledPositionSetpoint(Angle angle, Torque torque);
+
+  /**
+   * Set Voltage based Motion Profiled Velocity Setpoint
+   *
+   * @param velocity {@link AngularVelocity} representing desired angular velocity
+   * @param withFoc when true, FOC will be enabled
+   */
+  public abstract void setVoltageMotionProfiledVelocitySetpoint(
+      AngularVelocity velocity, boolean withFoc);
+
+  /**
+   * Set Torque based Motion Profiled Velocity Setpoint
+   *
+   * @param velocity {@link AngularVelocity} representing desired angular velocity
+   */
+  public abstract void setTorqueMotionProfiledVelocitySetpoint(AngularVelocity velocity);
+
+  /**
+   * Set Torque based Motion Profiled Velocity Setpoint /w specified angular acceleration
    *
    * @param velocity {@link AngularVelocity} representing desired angular velocity
    * @param acceleration {@link AngularAcceleration} representing desired angular acceleration
-   * @param slot control gains slot to use
    */
-  protected abstract void setVelocityProfiledSetpoint(
-      AngularVelocity velocity, AngularAcceleration acceleration, int slot);
+  public abstract void setTorqueMotionProfiledVelocitySetpoint(
+      AngularVelocity velocity, AngularAcceleration acceleration);
 
   /**
-   * Represents a goal state of a {@link ServoIO} instance
+   * Set Torque based Motion Profiled Velocity Setpoint /w specified angular acceleration
    *
-   * <p>A Setpoint has two components: its {@link ControlType} & its value
+   * @param velocity {@link AngularVelocity} representing desired angular velocity
+   * @param torque {@link torque} representing desired torque output of system
    */
-  public static class Setpoint implements Sendable {
-    /** Represents a method of Motor Control */
-    public static enum ControlType {
-      /** Idle */
-      IDLE,
-      /** Open loop voltage control */
-      VOLTAGE,
-      /** Open loop torque current control (FOC only) */
-      TORQUE_CURRENT,
-      /** Open loop dutycycle control */
-      DUTYCYCLE,
-      /** Closed loop position control */
-      POSITION,
-      /** Closed loop velocity control */
-      VELOCITY,
-      /** Motion Profiled closed loop position control */
-      POSITION_PROFILED,
-      /** Motion Profiled closed loop velocity control */
-      VELOCITY_PROFILED;
-
-      /**
-       * @return true if {@link ControlType} selected is a form of open loop control
-       */
-      public boolean isOpenLoopControl() {
-        if (this == VOLTAGE || this == TORQUE_CURRENT || this == DUTYCYCLE) {
-          return true;
-        }
-
-        return false;
-      }
-
-      /**
-       * @return true if {@link ControlType} selected is a form of closed loop control
-       */
-      public boolean isClosedLoopControl() {
-        if (!isOpenLoopControl() && this == IDLE) {
-          return true;
-        }
-
-        return false;
-      }
-
-      /**
-       * @return true if {@link ControlType} selected is a form of closed loop position control
-       */
-      public boolean isPositionControl() {
-        if (this == POSITION || this == POSITION_PROFILED) {
-          return true;
-        }
-
-        return false;
-      }
-
-      /**
-       * @return true if {@link ControlType} selected is a form of closed loop velocity control
-       */
-      public boolean isVelocityControl() {
-        if (this == POSITION || this == POSITION_PROFILED) {
-          return true;
-        }
-
-        return false;
-      }
-    }
-
-    private final double value;
-    private final ControlType type;
-    private final UnaryOperator<ServoIO> applier;
-
-    private Setpoint(double value, ControlType type, UnaryOperator<ServoIO> applier) {
-      this.value = value;
-      this.type = type;
-      this.applier = applier;
-    }
-
-    /**
-     * @return get {@link Setpoint} value in BaseUnits
-     */
-    public double getValue() {
-      return value;
-    }
-
-    /**
-     * @return get {@link Setpoint} {@link ControlType}
-     */
-    public ControlType getControlType() {
-      return type;
-    }
-
-    @Override
-    public void initSendable(SendableBuilder builder) {
-      builder.addStringProperty("Type", () -> getControlType().toString(), null);
-      builder.addDoubleProperty("Value", this::getValue, null);
-    }
-
-    /**
-     * Create new idle {@link Setpoint}
-     *
-     * @return {@link Setpoint}
-     */
-    public static Setpoint stop() {
-      UnaryOperator<ServoIO> applier =
-          (ServoIO io) -> {
-            io.stop();
-            return io;
-          };
-
-      return new Setpoint(0, ControlType.IDLE, applier);
-    }
-
-    /**
-     * Create new Voltage {@link Setpoint}
-     *
-     * @param voltage {@link Voltage} representing desired voltage
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createVoltageSetpoint(Voltage voltage) {
-      UnaryOperator<ServoIO> applier =
-          (ServoIO io) -> {
-            io.setVoltageSetpoint(voltage);
-            return io;
-          };
-
-      return new Setpoint(voltage.in(Volts), ControlType.VOLTAGE, applier);
-    }
-
-    /**
-     * Create new Torque Current {@link Setpoint}
-     *
-     * @param torqueCurrent {@link Current} representing desired torque current
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createTorqueCurrentSetpoint(Current torqueCurrent) {
-      UnaryOperator<ServoIO> applier =
-          (ServoIO io) -> {
-            io.setTorqueCurrentSetpoint(torqueCurrent);
-            return io;
-          };
-
-      return new Setpoint(torqueCurrent.in(Amps), ControlType.VOLTAGE, applier);
-    }
-
-    /**
-     * Create new Dutycycle {@link Setpoint}
-     *
-     * @param dutycycle desired dutycycle
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createDutycycleSetpoint(double dutycycle) {
-      UnaryOperator<ServoIO> applier =
-          (ServoIO io) -> {
-            io.setDutycycleSetpoint(dutycycle);
-            return io;
-          };
-
-      return new Setpoint(dutycycle, ControlType.VOLTAGE, applier);
-    }
-
-    /**
-     * Create new Position {@link Setpoint}
-     *
-     * @param angle {@link Angle} representing desired position
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createPositionSetpoint(Angle angle) {
-      return createPositionSetpoint(angle, 0);
-    }
-
-    /**
-     * Create new Position {@link Setpoint}
-     *
-     * @param angle {@link Angle} representing desired position
-     * @param slot integer representing gains slot to use
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createPositionSetpoint(Angle angle, int slot) {
-      UnaryOperator<ServoIO> applier =
-          (ServoIO io) -> {
-            io.setPositionSetpoint(angle, slot);
-            return io;
-          };
-
-      return new Setpoint(angle.in(Revolutions), ControlType.POSITION, applier);
-    }
-
-    /**
-     * Create new Velocity {@link Setpoint}
-     *
-     * @param velocity {@link AngularVelocity} representing desired velocity
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createVelocitySetpoint(AngularVelocity velocity) {
-      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), 0);
-    }
-
-    /**
-     * Create new Velocity {@link Setpoint}
-     *
-     * @param velocity {@link AngularVelocity} representing desired velocity
-     * @param acceleration {@link AngularAcceleration} representing the acceleration limit
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createVelocitySetpoint(
-        AngularVelocity velocity, AngularAcceleration acceleration) {
-      return createVelocitySetpoint(velocity, acceleration, 0);
-    }
-
-    /**
-     * Create new Velocity {@link Setpoint}
-     *
-     * @param velocity {@link AngularVelocity} representing desired velocity
-     * @param slot integer representing gains slot to use
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createVelocitySetpoint(AngularVelocity velocity, int slot) {
-      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), slot);
-    }
-
-    /**
-     * Create new Velocity {@link Setpoint}
-     *
-     * @param velocity {@link AngularVelocity} representing desired velocity
-     * @param acceleration {@link AngularAcceleration} representing the acceleration limit
-     * @param slot integer representing gains slot to use
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createVelocitySetpoint(
-        AngularVelocity velocity, AngularAcceleration acceleration, int slot) {
-      UnaryOperator<ServoIO> applier =
-          (ServoIO io) -> {
-            io.setVelocitySetpoint(velocity, acceleration, slot);
-            return io;
-          };
-
-      return new Setpoint(velocity.in(RevolutionsPerSecond), ControlType.VELOCITY, applier);
-    }
-
-    /**
-     * Create new Motion Profiled Position {@link Setpoint}
-     *
-     * @param angle {@link Angle} representing desired position
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createProfiledPositionSetpoint(Angle angle) {
-      return createProfiledPositionSetpoint(angle, 0);
-    }
-
-    /**
-     * Create new Motion Profiled Position {@link Setpoint}
-     *
-     * @param angle {@link Angle} representing desired position
-     * @param slot integer representing gains slot to use
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createProfiledPositionSetpoint(Angle angle, int slot) {
-      UnaryOperator<ServoIO> applier =
-          (ServoIO io) -> {
-            io.setPositionProfiledSetpoint(angle, slot);
-            return io;
-          };
-
-      return new Setpoint(angle.in(Revolutions), ControlType.POSITION, applier);
-    }
-
-    /**
-     * Create new Motion Profiled Velocity {@link Setpoint}
-     *
-     * @param velocity {@link AngularVelocity} representing desired velocity
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createProfiledVelocitySetpoint(AngularVelocity velocity) {
-      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), 0);
-    }
-
-    /**
-     * Create new Motion Profiled Velocity {@link Setpoint}
-     *
-     * @param velocity {@link AngularVelocity} representing desired velocity
-     * @param acceleration {@link AngularAcceleration} representing the acceleration limit
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createProfiledVelocitySetpoint(
-        AngularVelocity velocity, AngularAcceleration acceleration) {
-      return createVelocitySetpoint(velocity, acceleration, 0);
-    }
-
-    /**
-     * Create new Motion Profiled Velocity {@link Setpoint}
-     *
-     * @param velocity {@link AngularVelocity} representing desired velocity
-     * @param slot integer representing gains slot to use
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createProfiledVelocitySetpoint(AngularVelocity velocity, int slot) {
-      return createVelocitySetpoint(velocity, RadiansPerSecondPerSecond.of(0.0), slot);
-    }
-
-    /**
-     * Create new Motion Profiled Velocity {@link Setpoint}
-     *
-     * @param velocity {@link AngularVelocity} representing desired velocity
-     * @param acceleration {@link AngularAcceleration} representing the acceleration limit
-     * @param slot integer representing gains slot to use
-     * @return {@link Setpoint}
-     */
-    public static Setpoint createProfiledVelocitySetpoint(
-        AngularVelocity velocity, AngularAcceleration acceleration, int slot) {
-      UnaryOperator<ServoIO> applier =
-          (ServoIO io) -> {
-            io.setVelocityProfiledSetpoint(velocity, acceleration, slot);
-            return io;
-          };
-
-      return new Setpoint(velocity.in(RevolutionsPerSecond), ControlType.VELOCITY, applier);
-    }
-
-    /**
-     * Apply setpoint request to {@link ServoIO}
-     *
-     * @param io {@link ServoIO} to run {@link Setpoint}
-     */
-    void applySetpoint(ServoIO io) {
-      applier.apply(io);
-    }
-  }
+  public abstract void setTorqueMotionProfiledVelocitySetpoint(
+      AngularVelocity velocity, Torque torque);
 }
