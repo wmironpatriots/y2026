@@ -1,3 +1,0 @@
-Diagnostics:
-  ClangTidy:
-    Add: [modernize-*, performance-*]
