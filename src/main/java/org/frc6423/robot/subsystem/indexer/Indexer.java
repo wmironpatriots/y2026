@@ -21,6 +21,16 @@ import org.frc6423.lib.io.ServoIO;
  * <p>The roller will only spin towards the shooter/feeder
  */
 public class Indexer extends SubsystemBase {
+  /** Represents a mode of being the {@link Indexer} subsystem can be in */
+  public static enum State {
+    /** {@link State} where the {@link Indexer} is not running */
+    STOPPED,
+    /** {@link State} where the {@link Indexer} is running */
+    RUNNING,
+    /** {@link State} where the {@link Indexer} is periodically pulsing */
+    PULSING
+  }
+
   @Logged private final ServoIO mServo;
 
   private State mState = State.STOPPED;
@@ -38,7 +48,14 @@ public class Indexer extends SubsystemBase {
   public void periodic() {
     mServo.periodic();
 
-    // TODO state machine
+    switch (mState) {
+      case PULSING:
+        break;
+      case RUNNING:
+        break;
+      case STOPPED:
+        break;
+    }
   }
 
   /**
@@ -74,15 +91,5 @@ public class Indexer extends SubsystemBase {
    */
   public Command pulse() {
     return Commands.none();
-  }
-
-  /** Represents a mode of being the {@link Indexer} subsystem can be in */
-  public static enum State {
-    /** {@link State} where the {@link Indexer} is not running */
-    STOPPED,
-    /** {@link State} where the {@link Indexer} is running */
-    RUNNING,
-    /** {@link State} where the {@link Indexer} is periodically pulsing */
-    PULSING
   }
 }
