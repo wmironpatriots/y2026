@@ -10,6 +10,9 @@ import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.ChassisReference;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.Notifier;
 import org.frc6423.lib.sim.MechSim;
 
@@ -57,5 +60,20 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
         .getSimState()
         .setRotorVelocity(
             mModel.getAngularVelocity().times(mTalonConfig.Feedback.SensorToMechanismRatio));
+  }
+
+  @Override
+  public Angle getAngle() {
+    return mModel.getAngle();
+  }
+
+  @Override
+  public AngularVelocity getAngularVelocity() {
+    return mModel.getAngularVelocity();
+  }
+
+  @Override
+  public Current getStatorCurrent() {
+    return mModel.getStatorCurrent();
   }
 }
