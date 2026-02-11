@@ -23,6 +23,16 @@ import org.frc6423.lib.io.ServoIO;
  * <p>The {@link Flywheel} has two servos that drive it
  */
 public class Flywheel extends SubsystemBase {
+  /** Represents a mode of being the {@link Flywheel} subsystem can be in */
+  public static enum State {
+    /** {@link State} where the {@link Flywheel} is freely spinning with no forces applied */
+    COASTING,
+    /** {@link State} where the {@link Flywheel} is accelerating to a specified setpoint */
+    ACCELERATING,
+    /** {@link State} where the {@link Flywheel} is spinning at a specified setpoint */
+    CRUISING
+  }
+
   private final ServoIO mLeft, mRight;
 
   private State mState = State.COASTING;
@@ -51,7 +61,17 @@ public class Flywheel extends SubsystemBase {
     mLeft.periodic();
     mRight.periodic();
 
-    // TODO state machine
+    switch (mState) {
+      case COASTING:
+        // TODO coast logic
+        break;
+      case ACCELERATING:
+        // TODO accel logic
+        break;
+      case CRUISING:
+        // TODO cruise logic
+        break;
+    }
   }
 
   /**
@@ -114,15 +134,5 @@ public class Flywheel extends SubsystemBase {
    */
   public Command accelerateTo(Supplier<AngularVelocity> velocity) {
     return Commands.none();
-  }
-
-  /** Represents a mode of being the {@link Flywheel} subsystem can be in */
-  public static enum State {
-    /** {@link State} where the {@link Flywheel} is freely spinning with no forces applied */
-    COASTING,
-    /** {@link State} where the {@link Flywheel} is accelerating to a specified setpoint */
-    ACCELERATING,
-    /** {@link State} where the {@link Flywheel} is spinning at a specified setpoint */
-    CRUISING
   }
 }

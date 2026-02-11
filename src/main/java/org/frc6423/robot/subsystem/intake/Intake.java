@@ -55,7 +55,22 @@ public class Intake extends SubsystemBase {
     mPivot.periodic();
     mRoller.periodic();
 
-    // TODO state machine
+    switch (mState) {
+      case DEPLOYED_INTAKING:
+        break;
+      case DEPLOYED_OUTAKING:
+        break;
+      case DEPLOYING:
+        break;
+      case DEPLOYING_KICKER:
+        break;
+      case FULLY_STOWED:
+        break;
+      case STOWED:
+        break;
+      case STOWING:
+        break;
+    }
   }
 
   /**

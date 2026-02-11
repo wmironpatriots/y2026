@@ -26,6 +26,18 @@ import org.frc6423.lib.io.ServoIO;
  * <p>The {@link Hood} moving to a setpoint angle is referred as "adjusting"
  */
 public class Hood extends SubsystemBase {
+  /** Represents a mode of being the {@link Hood} subsystem can be in */
+  public static enum State {
+    /** {@link State} where the {@link Hood} is completely folded */
+    STOWED,
+    /** {@link State} where the {@link Hood} is unfolding to a specified setpoint */
+    ADJUSTING,
+    /** {@link State} where the {@link Hood} is unfolded at a specified setpoint */
+    ANGLED,
+    /** {@link State} where the {@link Hood} is folding into a STOWED state */
+    STOWING
+  }
+
   private final ServoIO mServo;
 
   private State mState = State.STOWED;
@@ -49,7 +61,16 @@ public class Hood extends SubsystemBase {
   public void periodic() {
     mServo.periodic();
 
-    // TODO state machine
+    switch (mState) {
+      case ADJUSTING:
+        break;
+      case ANGLED:
+        break;
+      case STOWED:
+        break;
+      case STOWING:
+        break;
+    }
   }
 
   /**
@@ -111,17 +132,5 @@ public class Hood extends SubsystemBase {
    */
   public Command adjustToAngle(Supplier<Angle> angle) {
     return Commands.none();
-  }
-
-  /** Represents a mode of being the {@link Hood} subsystem can be in */
-  public static enum State {
-    /** {@link State} where the {@link Hood} is completely folded */
-    STOWED,
-    /** {@link State} where the {@link Hood} is unfolding to a specified setpoint */
-    ADJUSTING,
-    /** {@link State} where the {@link Hood} is unfolded at a specified setpoint */
-    ANGLED,
-    /** {@link State} where the {@link Hood} is folding into a STOWED state */
-    STOWING
   }
 }

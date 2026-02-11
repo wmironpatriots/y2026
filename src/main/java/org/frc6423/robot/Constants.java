@@ -6,11 +6,30 @@
 
 package org.frc6423.robot;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.KilogramSquareMeters;
+
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.AudioConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.units.measure.Angle;
+import org.frc6423.lib.io.ServoConfig;
 import org.frc6423.robot.subsystem.drive.constants.Cascade;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL1;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
+import org.frc6423.robot.subsystem.flywheel.Flywheel;
+import org.frc6423.robot.subsystem.hood.Hood;
+import org.frc6423.robot.subsystem.indexer.Indexer;
+import org.frc6423.robot.subsystem.intake.Intake;
 
 /**
  * This is a globally accessible class for storing immutable values.
@@ -76,7 +95,50 @@ public final class Constants {
   public static class IndexerConstants {}
 
   /** Static constants class for the {@link Feeder} subsystem */
-  public static class FeederConstants {}
+  public static class FeederConstants {
+    /** {@link Double} representing the gear ratio between the sensor to mechanism shaft */
+    public static double kSensorToMechRatio = 1.0 / 1.0;
+
+    /** {@link Angle} representing acceptable amount of error */
+    public static Angle kEpsilon = Degrees.of(0.4);
+
+    /**
+     * {@link TalonFXConfiguration} representing the hardware configuration of servo driving
+     * subsystem
+     */
+    public static TalonFXConfiguration kServoHardwareConfig =
+        new TalonFXConfiguration()
+            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withInverted(InvertedValue.CounterClockwise_Positive)
+                    .withNeutralMode(NeutralModeValue.Brake))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withStatorCurrentLimit(Amps.of(20.0))
+                    .withStatorCurrentLimitEnable(true))
+            .withTorqueCurrent(new TorqueCurrentConfigs().withTorqueNeutralDeadband(Amps.of(10.0)))
+            .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(kSensorToMechRatio))
+            .withSlot0(
+                new Slot0Configs()
+                    .withKS(0.0)
+                    .withKV(0.0)
+                    .withKA(0.0)
+                    .withKP(0.0)
+                    .withKD(0.0)); // Torque Based Velocity Controls
+
+    /** {@link ServoConfig} representing the full config of servo driving subsystem */
+    public static ServoConfig kServoConfig =
+        new ServoConfig(
+            "Feeder",
+            Matrix.kSubsystemCanBus,
+            Matrix.kFeederId,
+            kServoHardwareConfig,
+            KilogramSquareMeters.of(0.001),
+            kSensorToMechRatio,
+            0,
+            0);
+  }
 
   /** Static constants class for the {@link Flywheel} subsystem */
   public static class FlywheelConstants {}
