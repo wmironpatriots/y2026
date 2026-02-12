@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -154,23 +155,28 @@ public class Drive extends SubsystemBase {
   }
 
   public ChassisSpeeds getFieldRelativeChassisSpeeds() {
-    return null;
+    return ChassisSpeeds.fromRobotRelativeSpeeds(getRobotRelativeChassisSpeeds(), getRotation2d());
   }
 
   public ChassisSpeeds getRobotRelativeChassisSpeeds() {
-    return null;
+    return mKinematics.toChassisSpeeds(getSwerveModuleStates());
   }
 
   public SwerveModulePosition[] getSwerveModulePositions() {
-    return null;
+    // Find SwerveModuleIO equivalent of position getter method. This implementation is for ModuleIO
+    return Arrays.stream(mModules)
+        .map(SwerveModuleIO::getSwerveModulePosition)
+        .toArray(SwerveModulePosition[]::new);
   }
 
   public SwerveModuleState[] getSwerveModuleStates() {
-    return null;
+    return Arrays.stream(mModules)
+        .map(SwerveModuleIO::getSwerveModuleState)
+        .toArray(SwerveModuleState[]::new);
   }
 
   public SwerveModuleState[] getSetpointSwerveModuleStates() {
-    return null;
+    return null; // Arrays.stream(mModules).map(SwerveModuleIO::desiredState).toArray(SwerveModuleState[]::new);
   }
 
   /**
