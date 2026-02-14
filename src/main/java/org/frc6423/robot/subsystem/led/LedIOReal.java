@@ -12,19 +12,19 @@ import edu.wpi.first.wpilibj.util.Color;
 
 public class LedIOReal extends LedIO {
 
-  private final AddressableLED Addressable_LED;
-  private final AddressableLEDBuffer buffer;
+  private final AddressableLED mAddressableLED;
+  private final AddressableLEDBuffer mbuffer;
 
   public LedIOReal(int port, int length) {
     super(port, length);
-    Addressable_LED = new AddressableLED(LED.LED_PORT);
-    buffer = new AddressableLEDBuffer(LED.LED_LENGTH);
-    Addressable_LED.setLength(buffer.getLength());
-    Addressable_LED.start();
+    mAddressableLED = new AddressableLED(port);
+    mbuffer = new AddressableLEDBuffer(length);
+    mAddressableLED.setLength(mbuffer.getLength());
+    mAddressableLED.start();
   }
 
   @Override
   public void setPixelColor(int pixel, Color color) {
-    buffer.setLED(pixel, color);
+    mbuffer.setLED(pixel, color);
   }
 }
