@@ -107,7 +107,7 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
   }
 
   @Override
-  protected void setPivotTorqueCurrentFocSetpoint(Current current) {
+  public void setPivotTorqueCurrentFocSetpoint(Current current) {
     mPivot.setControl(mTorqueOut.withOutput(current));
   }
 
@@ -117,12 +117,12 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
   }
 
   @Override
-  protected void setDriveVoltageSetpoint(Voltage voltage, boolean focEnabled) {
+  public void setDriveVoltageSetpoint(Voltage voltage, boolean focEnabled) {
     mDrive.setControl(mVoltageOut.withOutput(voltage).withEnableFOC(focEnabled));
   }
 
   @Override
-  protected void setDriveTorqueCurrentFocSetpoint(Current current) {
+  public void setDriveTorqueCurrentFocSetpoint(Current current) {
     mDrive.setControl(mTorqueOut.withOutput(current));
   }
 

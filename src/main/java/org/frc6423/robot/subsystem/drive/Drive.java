@@ -6,23 +6,34 @@
 
 package org.frc6423.robot.subsystem.drive;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.InchesPerSecond;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.NewtonMeters;
+import static edu.wpi.first.units.Units.Volts;
 
 import choreo.trajectory.SwerveSample;
+import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import java.util.Arrays;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import java.lang.reflect.Array;
 import java.util.function.Consumer;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
@@ -50,7 +61,11 @@ public class Drive extends SubsystemBase {
 
   private SwerveModuleState[] mSetpointStates;
 
-  private boolean mAutoFocToggle = true;
+  private final PIDController mVelXController = new PIDController(5.0, 0.0, 0.0);
+  private final PIDController mVelYController = new PIDController(5.0, 0.0, 0.0);
+  private final PIDController mOmegaController = new PIDController(2.5, 0.0, 0.0);
+
+  private final SysIdRoutine mWheelPivotCharacterization;
 
   /**
    * Create new {@link Drive}
@@ -78,12 +93,40 @@ public class Drive extends SubsystemBase {
     }
 
     mModules = new SwerveModuleIO[] {mFrModule, mFlModule, mBlModule, mBrModule};
+
+    mWheelPivotCharacterization =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                Volts.of(4),
+                null,
+                (state) -> SignalLogger.writeString("state", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (Voltage) -> {
+                  for (int i = 0; i < mModules.length; i++) {
+                    mModules[i].setPivotTorqueCurrentFocSetpoint(Amps.of(Voltage.in(Volts)));
+                  }
+                },
+                null,
+                this,
+                "SwervePivotSysId"));
+
+    SmartDashboard.putData(
+        "Swerve Pivot Characterization (Dynamic Forward)",
+        mWheelPivotCharacterization.dynamic(Direction.kForward));
+    SmartDashboard.putData(
+        "Swerve Pivot Characterization (Dynamic Reverse)",
+        mWheelPivotCharacterization.dynamic(Direction.kReverse));
+    SmartDashboard.putData(
+        "Swerve Pivot Characterization (Quasistatic Forward)",
+        mWheelPivotCharacterization.quasistatic(Direction.kForward));
+    SmartDashboard.putData(
+        "Swerve Pivot Characterization (Quasistatic Reverse)",
+        mWheelPivotCharacterization.quasistatic(Direction.kReverse));
   }
 
   @Override
   public void periodic() {
-    // TODO odometry thread
-
     // Update Swerve Module Signals
     for (var module : mModules) {
       module.periodic();
@@ -91,41 +134,22 @@ public class Drive extends SubsystemBase {
 
     // Stop dt when disabled
     if (DriverStation.isDisabled()) {
-      stop();
+      xStop();
     }
   }
 
   /**
    * @return {@link Rotation2d} representing estimated chassis yaw orientation
    */
-  @Logged(name = "Rotation2d", importance = Importance.INFO)
-  public Rotation2d getRotation2d() {
+  private Rotation2d getEstimatedRotation2d() {
     return mRobotState.getRotation2d();
-  }
-
-  /**
-   * @return {@link Rotation3d} representing estimated chassis orientation in 3D space (yaw, pitch,
-   *     roll)
-   */
-  @Logged(name = "Rotation3d", importance = Importance.INFO)
-  public Rotation3d getRotation3d() {
-    return mRobotState.getRotation3d();
   }
 
   /**
    * @return {@link Pose3d} representing estimated chassis position in 2D space (x, y)
    */
-  @Logged(name = "Pose2d", importance = Importance.INFO)
-  public Pose2d getPose2d() {
+  private Pose2d getEstimatedPose2d() {
     return mRobotState.getPose2d();
-  }
-
-  /**
-   * @return {@link Pose3d} representing estimated chassis position in 3D space (x, y, z)
-   */
-  @Logged(name = "Pose3d", importance = Importance.INFO)
-  public Pose3d getPose3d() {
-    return mRobotState.getPose3d();
   }
 
   /**
@@ -161,9 +185,12 @@ public class Drive extends SubsystemBase {
    */
   @Logged(name = "Module Poses", importance = Importance.INFO)
   public SwerveModulePosition[] getSwerveModulePositions() {
-    return Arrays.stream(mModules)
-        .map(SwerveModuleIO::getSwerveModulePosition)
-        .toArray(SwerveModulePosition[]::new);
+    var poses = new SwerveModulePosition[mModules.length];
+
+    for (int i = 0; i < mModules.length; i++) {
+      poses[i] = mModules[i].getSwerveModulePosition();
+    }
+    return poses;
   }
 
   /**
@@ -172,9 +199,12 @@ public class Drive extends SubsystemBase {
    */
   @Logged(name = "Module States", importance = Importance.INFO)
   public SwerveModuleState[] getSwerveModuleStates() {
-    return Arrays.stream(mModules)
-        .map(SwerveModuleIO::getSwerveModuleState)
-        .toArray(SwerveModuleState[]::new);
+    var states = new SwerveModuleState[mModules.length];
+
+    for (int i = 0; i < mModules.length; i++) {
+      states[i] = mModules[i].getSwerveModuleState();
+    }
+    return states;
   }
 
   /**
@@ -183,7 +213,7 @@ public class Drive extends SubsystemBase {
    */
   @Logged(name = "Setpoint Module States", importance = Importance.INFO)
   public SwerveModuleState[] getSetpointSwerveModuleStates() {
-    return null; // Arrays.stream(mModules).map(SwerveModuleIO::desiredState).toArray(SwerveModuleState[]::new);
+    return mSetpointStates;
   }
 
   /**
@@ -191,56 +221,96 @@ public class Drive extends SubsystemBase {
    */
   @Logged(name = "FOC enabled", importance = Importance.INFO)
   public boolean isFocEnabled() {
-    return mAutoFocToggle
-        && getLinearVelocity()
+    return getLinearVelocity()
+        .gt(mConstants.getMaxLinearVelocity().times(mConstants.getFocAutoToggleMagnitude()));
+  }
+
+  /**
+   * Set a {@link ChassisSpeeds} setpoint
+   *
+   * @param speeds {@link ChassisSpeeds} representing the desired velocity components
+   */
+  protected void setChassisSpeedsSetpoint(ChassisSpeeds speeds) {
+    // Generate a time-specific setpoint from continous-time speeds
+    speeds = ChassisSpeeds.discretize(speeds, 0.02);
+
+    // Convert to SwerveModuleState setpoints & clamp their velocities
+    var states = mKinematics.toSwerveModuleStates(speeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(states, mConstants.getMaxLinearVelocity());
+
+    // Auto FOC Toggle calculations
+    var focEnabled =
+        !getLinearVelocity()
             .gt(mConstants.getMaxLinearVelocity().times(mConstants.getFocAutoToggleMagnitude()));
-  }
 
-  /**
-   * Disable Auto Field-Oriented Control (FOC) Toggle
-   *
-   * <p>Auto FOC Toggle is a system that automatically enables FOC while drivetrain is accelerating
-   * and then disables it once a certain magnitude of the maximum possible drivetrain speed is
-   * reached. This allows the drivetrain to utilize the high acceleration offered by FOC without the
-   * cost of maximum speed
-   *
-   * <p>When Auto FOC Toggle is disabled, drivetrain will default to utilizing FOC control.
-   *
-   * <p><strong> WARNING </strong> ~ FOC is required when controlling wheel torques; You must
-   * disable auto toggle if you wish to.
-   */
-  public void disableAutoFocToggle() {
-    mAutoFocToggle = false;
-  }
+    // Send setpoints
+    for (int i = 0; i < mModules.length; i++) {
+      mModules[i].setSetpoint(states[i], focEnabled);
+    }
 
-  /**
-   * Enable Auto Field-Oriented Control (FOC) Toggle
-   *
-   * <p>Auto FOC Toggle is a system that automatically enables FOC while drivetrain is accelerating
-   * and then disables it once a certain magnitude of the maximum possible drivetrain speed is
-   * reached. This allows the drivetrain to utilize the high acceleration offered by FOC without the
-   * cost of maximum speed
-   *
-   * <p>When Auto FOC Toggle is disabled, drivetrain will default to utilizing FOC control.
-   *
-   * <p><strong> WARNING </strong> ~ FOC is required when controlling wheel torques; You must
-   * disable auto toggle if you wish to.
-   */
-  public void enableAutoFocToggle() {
-    mAutoFocToggle = true;
+    // Log setpoints
+    mSetpointStates = states;
   }
-
-  protected void setChassisSpeedsSetpoint(ChassisSpeeds speeds, boolean openLoopEnabled) {}
 
   /**
    * @return {@link Consumer} for running {@link SwerveSample} setpoints
    */
   public Consumer<SwerveSample> getSwerveSampleConsumer() {
-    return (sample) -> {};
+    return (sample) -> {
+      // Get sample velocities & feedback velocities
+      var speeds = sample.getChassisSpeeds();
+      var feedbackSpeeds =
+          new ChassisSpeeds(
+              mVelXController.calculate(getEstimatedPose2d().getX(), sample.x),
+              mVelYController.calculate(getEstimatedPose2d().getY(), sample.y),
+              mOmegaController.calculate(getEstimatedRotation2d().getRadians(), sample.heading));
+
+      // Create full velocities & convert to states
+      speeds = speeds.plus(feedbackSpeeds);
+      var states = mKinematics.toSwerveModuleStates(speeds);
+
+      // Get desired Module forces
+      var xForces = sample.moduleForcesX();
+      var yForces = sample.moduleForcesY();
+
+      for (int i = 0; i < mModules.length; i++) {
+        // Get desired angle of module
+        var angle = states[i].angle;
+
+        // Calculate desired force vector of module and account for chassis orientation
+        var force =
+            new Translation2d(xForces[i], yForces[i])
+                .rotateBy(Rotation2d.fromRadians(sample.heading).unaryMinus())
+                .toVector();
+        var forceDirection = VecBuilder.fill(angle.getCos(), angle.getSin());
+
+        // Convert desired force vector into wheel torque
+        var torque =
+            NewtonMeters.of(force.dot(forceDirection) * mConstants.getWheelRadius().in(Meters));
+
+        // Send setpoint
+        mModules[i].setSetpointWithWheelTorque(states[i], torque);
+      }
+
+      // Log setpoints
+      mSetpointStates = states;
+    };
   }
 
   /** Stop drivetrain completely with the wheel forming an X */
-  public void xStop() {}
+  public void xStop() {
+    var states =
+        new SwerveModuleState[] {
+          new SwerveModuleState(InchesPerSecond.zero(), Rotation2d.fromDegrees(45)),
+          new SwerveModuleState(InchesPerSecond.zero(), Rotation2d.fromDegrees(-45)),
+          new SwerveModuleState(InchesPerSecond.zero(), Rotation2d.fromDegrees(45)),
+          new SwerveModuleState(InchesPerSecond.zero(), Rotation2d.fromDegrees(-45))
+        };
+
+    for (int i = 0; i < mModules.length; i++) {
+      mModules[i].setSetpoint(states[i], false);
+    }
+  }
 
   /** Stop drivetrain completely */
   public void stop() {
