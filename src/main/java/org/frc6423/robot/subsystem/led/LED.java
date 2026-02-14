@@ -10,6 +10,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** {@link SubsystemBase} extension representing the LED subsystem */
 public class LED extends SubsystemBase {
-    public static int LED_PORT;
-    public static int LED_LENGTH;
+  public static int LED_PORT;
+  public static int LED_LENGTH;
 }
