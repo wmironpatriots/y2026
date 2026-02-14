@@ -6,6 +6,8 @@
 
 package org.frc6423.robot;
 
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
@@ -68,28 +70,32 @@ public class RobotState {
   /**
    * @return {@link Rotation2d} representing the estimated robot rotation in 2d space (yaw)
    */
+  @Logged(name = "Estimated Robot Rotation (2d)", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
-    return getRotation3d().toRotation2d();
-  }
-
-  /**
-   * @return {@link Pose2d} representing the estimated robot position in 2d space (x, y)
-   */
-  public Pose2d getPose2d() {
-    return getPose3d().toPose2d();
+    return getPose2d().getRotation();
   }
 
   /**
    * @return {@link Rotation3d} representing the estimated robot rotation in 3d space (yaw, pitch,
    *     roll)
    */
+  @Logged(name = "Estimated Robot Rotation (3d)", importance = Importance.INFO)
   public Rotation3d getRotation3d() {
     return getPose3d().getRotation();
   }
 
   /**
+   * @return {@link Pose2d} representing the estimated robot position in 2d space (x, y)
+   */
+  @Logged(name = "Estimated Robot Pose (2d)", importance = Importance.INFO)
+  public Pose2d getPose2d() {
+    return getPose3d().toPose2d();
+  }
+
+  /**
    * @return {@link Pose3d} representing the estimated robot position in 3d space (x, y, z)
    */
+  @Logged(name = "Estimated Robot Pose (3d)", importance = Importance.INFO)
   public Pose3d getPose3d() {
     return mEstPose;
   }
