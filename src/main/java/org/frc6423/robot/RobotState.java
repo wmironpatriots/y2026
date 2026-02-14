@@ -6,8 +6,6 @@
 
 package org.frc6423.robot;
 
-import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
@@ -16,7 +14,6 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.geometry.Twist3d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -28,88 +25,101 @@ import edu.wpi.first.math.numbers.N6;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.Optional;
+import org.frc6423.lib.util.CoordUtil;
 import org.frc6423.lib.util.Tracer;
-import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
+import org.frc6423.robot.Constants.Flags;
 
-/** A singleton that tracks the robot's estimated position */
+/** A class for tracking the robot on the field */
 public class RobotState {
-  // * CONSTANTS
-  public static final Matrix<N4, N1> kPoseEstimateStdevs = VecBuilder.fill(0.6, 0.6, 0.07, 0.0);
+  /** {@link Matrix} representing the standard deviations of vision in the x, y, z, yaw */
+  private static final Matrix<N4, N1> kPoseEstimateStdevs = VecBuilder.fill(0.6, 0.6, 0.07, 0.0);
 
-  public static final double kBufferDuration = 1.5;
+  /** Represents how long a pose estimate should remain in the buffer */
+  public static final double kBufferDurationSec = 1.5;
 
-  @Logged public static RobotState kInstance;
-
-  /**
-   * @return {@link RobotState} singleton instance
-   */
-  public static RobotState getInstance() {
-    if (kInstance == null) {
-      kInstance = new RobotState(Main.Flags.kRobotType.mDriveConstants);
-    }
-
-    return kInstance;
-  }
+  private final SwerveDriveKinematics mKinematics;
+  private SwerveModulePosition[] mPreviousSwerveModulePoses;
 
   private Pose3d mPreviousOdoPose = new Pose3d();
   private Pose3d mOdoPose = new Pose3d();
   private Pose3d mEstPose = new Pose3d();
   private final TimeInterpolatableBuffer<Pose3d> mOdoPoseBuffer =
-      TimeInterpolatableBuffer.createBuffer(kBufferDuration);
-
-  private final Field2d mF2d = new Field2d();
+      TimeInterpolatableBuffer.createBuffer(kBufferDurationSec);
 
   private Rotation2d mOffset = Rotation2d.kZero;
 
-  private final SwerveDriveKinematics mKinematics;
-  private SwerveModulePosition[] mPreviousSwerveModulePoses;
+  private final Field2d mF2d = new Field2d();
 
-  /**
-   * Create new RobotState
-   *
-   * @param driveConstants {@link DriveConstants} representing the drivetrain's constraints
-   */
-  private RobotState(DriveConstants driveConstants) {
-    mPreviousSwerveModulePoses = new SwerveModulePosition[4];
+  /** Create new RobotState */
+  public RobotState() {
+    var constants = Flags.kDriveConstants;
+
+    mPreviousSwerveModulePoses =
+        new SwerveModulePosition[constants.getModuleDisplacements().length];
     for (int i = 0; i < mPreviousSwerveModulePoses.length; i++) {
       mPreviousSwerveModulePoses[i] = new SwerveModulePosition();
     }
 
-    mKinematics = driveConstants.getKinematics();
+    mKinematics = constants.getKinematics();
 
     SmartDashboard.putData(mF2d);
   }
 
   /**
-   * @return {@link Rotation3d} representing the estimated robot rotation in 3d space
+   * @return {@link Rotation2d} representing the estimated robot rotation in 2d space (yaw)
    */
-  @Logged(name = "Rotation3d", importance = Importance.INFO)
+  public Rotation2d getRotation2d() {
+    return getRotation3d().toRotation2d();
+  }
+
+  /**
+   * @return {@link Pose2d} representing the estimated robot position in 2d space (x, y)
+   */
+  public Pose2d getPose2d() {
+    return getPose3d().toPose2d();
+  }
+
+  /**
+   * @return {@link Rotation3d} representing the estimated robot rotation in 3d space (yaw, pitch,
+   *     roll)
+   */
   public Rotation3d getRotation3d() {
     return getPose3d().getRotation();
   }
 
   /**
-   * @return {@link Pose3d} representing the estimated robot position in 3d space
+   * @return {@link Pose3d} representing the estimated robot position in 3d space (x, y, z)
    */
-  @Logged(name = "Pose3d", importance = Importance.INFO)
   public Pose3d getPose3d() {
     return mEstPose;
   }
 
+  /**
+   * Reset estimated robot position to specified position
+   *
+   * @param pose {@link Pose2d} to reset estimated position to
+   */
   public void resetPose(Pose2d pose) {
+    // Account for gyro
     mOffset = pose.getRotation().minus(mOdoPose.getRotation().toRotation2d().minus(mOffset));
+
     mEstPose = new Pose3d(pose);
     mOdoPose = new Pose3d(pose);
     mOdoPoseBuffer.clear();
   }
 
-  public void addOdometryMeasurement(OdometryMeasurement sample) {
+  /**
+   * Adjust estimated position based off of swerve drive odometry measurements
+   *
+   * @param sample {@link OdometrySample} representing an odometry measurement
+   */
+  public void addOdometryMeasurement(OdometrySample sample) {
     Tracer.traceFunc(
         "RecordOdometryMeasurement",
         () -> {
           // Calculate the change in distance of swerve module poses and apply to odometry pose
           Twist3d odoPoseTwist =
-              toTwist3d(
+              CoordUtil.toTwist3d(
                   mKinematics.toTwist2d(mPreviousSwerveModulePoses, sample.swerveModulePoses()));
           mPreviousSwerveModulePoses = sample.swerveModulePoses;
           mOdoPose = mOdoPose.exp(odoPoseTwist);
@@ -118,7 +128,7 @@ public class RobotState {
           sample.gyroRotation3d.ifPresent(r -> mOdoPose = new Pose3d(mOdoPose.getTranslation(), r));
 
           // Add odometry sample of specified timestamp to odo buffer
-          mOdoPoseBuffer.addSample(kBufferDuration, mOdoPose);
+          mOdoPoseBuffer.addSample(kBufferDurationSec, mOdoPose);
 
           // Calculate change in distance between odometry positions and apply to estimated pose
           Twist3d estPoseTwist = mPreviousOdoPose.log(mOdoPose);
@@ -127,14 +137,20 @@ public class RobotState {
         });
   }
 
-  public void addVisionMeasurement(VisionMeasurement... measurements) {
+  /**
+   * Adjust estimated position based off of vision position measurement
+   *
+   * @param measurements {@link VisionSample} {@link Array} representing new vision position
+   *     estimations
+   */
+  public void addVisionMeasurement(VisionSample... measurements) {
     for (var measurement : measurements) {
       Tracer.traceFunc(
           "RecordVisionMeasurement",
           () -> {
             // exit if sample is too old or there are no recent odometry samples
             if (mOdoPoseBuffer.getInternalBuffer().isEmpty()
-                || mOdoPoseBuffer.getInternalBuffer().lastKey() - kBufferDuration
+                || mOdoPoseBuffer.getInternalBuffer().lastKey() - kBufferDurationSec
                     > measurement.timestampSeconds) {
               return;
             }
@@ -207,16 +223,6 @@ public class RobotState {
   }
 
   /**
-   * Convert a specified {@link Twist2d} to a {@link Twist3d}
-   *
-   * @param twist2d {@link Twist2d} to convert
-   * @return {@link Twist3d}
-   */
-  public static Twist3d toTwist3d(Twist2d twist2d) {
-    return new Twist3d(twist2d.dx, twist2d.dy, 0.0, 0.0, 0.0, twist2d.dtheta);
-  }
-
-  /**
    * Represents a swerve drive position measurement using encoders
    *
    * @param timestampSeconds the timestamp when the measurement was taken
@@ -224,19 +230,29 @@ public class RobotState {
    *     of swerve modules
    * @param gyroRotation3d {@link Rotation3d} representing the orientation of gyro in 3D space
    */
-  public record OdometryMeasurement(
+
+  /**
+   * Represents position measurements of swerve modules & gyro at a specific timestamp
+   *
+   * @param timestampSeconds the timestamp representing when the sample was recorded
+   * @param swerveModulePoses {@link SwerveModulePosition} {@link Array} representing the measured
+   *     positions of modules
+   * @param gyroRotation3d {@link Rotation3d} representing the orientation of gyro in 3D space (yaw,
+   *     pitch, roll)
+   */
+  public record OdometrySample(
       double timestampSeconds,
       SwerveModulePosition[] swerveModulePoses,
       Optional<Rotation3d> gyroRotation3d) {}
 
   /**
-   * Represents a vision position estimation in 3d space
+   * Represents position measurement of cameras
    *
-   * @param timestampSeconds timestamp estimation was measured at
-   * @param pose3d {@link Pose3d} representing the estimated position in 3d space
+   * @param timestampSeconds timestamp representing when the sample was recorded
+   * @param pose3d {@link Pose3d} representing the estimated position in 3d space (x, y, z)
    * @param stdevsMatrix {@link Matrix} of 3x1 dimension representing standard deviations of pose
    *     estimation
    */
-  public record VisionMeasurement(
+  public record VisionSample(
       double timestampSeconds, Pose3d pose3dMeasurement, Matrix<N3, N1> measurementStdevs) {}
 }

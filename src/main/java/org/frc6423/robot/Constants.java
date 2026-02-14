@@ -7,7 +7,6 @@
 package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
-import org.frc6423.robot.subsystem.drive.constants.Cascade;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL1;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
@@ -21,6 +20,21 @@ import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
  * subclasses
  */
 public final class Constants {
+  /** Runtime flags determining the robots initialization */
+  public static final class Flags {
+    /** {@link RobotType} representing the robot chassis being used */
+    protected static RobotType kRobotType = RobotType.Y2026_L2;
+
+    /** {@link DriveConstants} representing the drivetrain configuration to use */
+    protected static DriveConstants kDriveConstants = new RebuiltL2();
+
+    /** When true, subsystems will not be initialized */
+    protected static boolean kSubsystemDisabled = false;
+
+    /** When true, drive will not be initialized */
+    protected static boolean kDriveDisabled = false;
+  }
+
   /** The matrix contains the CAN identification information for all devices */
   public static final class Matrix {
     public static final CANBus kDriveCanBus = new CANBus("DRIVE");
@@ -58,9 +72,7 @@ public final class Constants {
     /** {@link RobotType} representing the 2026 competition robot chassis /w L2 Ratio */
     Y2026_L2(new RebuiltL2()),
     /** {@link RobotType} representing the 2026 competition robot chassis /w L3 Ratio */
-    Y2026_L3(new RebuiltL2()),
-    /** {@link Robot} representing the 2025 competition robot chassis, cascade */
-    Y2025(new Cascade());
+    Y2026_L3(new RebuiltL2());
 
     public final DriveConstants mDriveConstants;
 
@@ -68,19 +80,4 @@ public final class Constants {
       this.mDriveConstants = drivetrainConstants;
     }
   }
-
-  /** Static constants class for the {@link Intake} subsystem */
-  public static class IntakeConstants {}
-
-  /** Static constants class for the {@link Indexer} subsystem */
-  public static class IndexerConstants {}
-
-  /** Static constants class for the {@link Feeder} subsystem */
-  public static class FeederConstants {}
-
-  /** Static constants class for the {@link Flywheel} subsystem */
-  public static class FlywheelConstants {}
-
-  /** Static constants class for the {@link Hood} subsystem */
-  public static class HoodConstants {}
 }
