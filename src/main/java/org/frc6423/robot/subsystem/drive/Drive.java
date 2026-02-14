@@ -8,6 +8,7 @@ package org.frc6423.robot.subsystem.drive;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
+import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -20,17 +21,12 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Arrays;
-import java.util.Optional;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
+import java.util.function.Consumer;
+import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
 import org.frc6423.robot.RobotState;
-import org.frc6423.robot.RobotState.OdometryMeasurement;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.gyro.GyroIO;
 import org.frc6423.robot.subsystem.drive.gyro.GyroIOPigeon2;
@@ -40,9 +36,9 @@ import org.frc6423.robot.subsystem.drive.module.SwerveModuleIOTalonFxSim;
 
 /** {@link SubsystemBase} extension representing swerve drivetrain */
 public class Drive extends SubsystemBase {
-  private final DriveConstants mConstants;
-
   private final RobotState mRobotState;
+
+  private final DriveConstants mConstants;
   private final SwerveDriveKinematics mKinematics;
 
   @Logged private final SwerveModuleIO mFrModule;
@@ -54,33 +50,31 @@ public class Drive extends SubsystemBase {
 
   private SwerveModuleState[] mSetpointStates;
 
-  private Rotation2d mSimRotation2d = Rotation2d.kZero;
-
-  private boolean mIsFocAutoToggleEnabled = true;
+  private boolean mAutoFocToggle = true;
 
   /**
    * Create new {@link Drive}
    *
-   * @param constants {@link DriveConstants} representing subsystem configuration
+   * @param robotState {@link RobotState} instance to send odometry samples to
    */
-  public Drive(DriveConstants constants) {
-    mConstants = constants;
+  public Drive(RobotState robotState) {
+    mRobotState = robotState;
 
-    mRobotState = RobotState.getInstance();
-    mKinematics = constants.getKinematics();
+    mConstants = Flags.kDriveConstants;
+    mKinematics = mConstants.getKinematics();
 
     mGyro = new GyroIOPigeon2(mConstants.getGyroConfig());
 
     if (Robot.isReal()) {
-      mFrModule = new SwerveModuleIOTalonFx(mConstants.getFrontRightModuleConfig(), constants);
-      mFlModule = new SwerveModuleIOTalonFx(mConstants.getFrontLeftModuleConfig(), constants);
-      mBlModule = new SwerveModuleIOTalonFx(mConstants.getBackLeftModuleConfig(), constants);
-      mBrModule = new SwerveModuleIOTalonFx(mConstants.getBackRightModuleConfig(), constants);
+      mFrModule = new SwerveModuleIOTalonFx(mConstants.getFrontRightModuleConfig(), mConstants);
+      mFlModule = new SwerveModuleIOTalonFx(mConstants.getFrontLeftModuleConfig(), mConstants);
+      mBlModule = new SwerveModuleIOTalonFx(mConstants.getBackLeftModuleConfig(), mConstants);
+      mBrModule = new SwerveModuleIOTalonFx(mConstants.getBackRightModuleConfig(), mConstants);
     } else {
-      mFrModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontRightModuleConfig(), constants);
-      mFlModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontLeftModuleConfig(), constants);
-      mBlModule = new SwerveModuleIOTalonFxSim(mConstants.getBackLeftModuleConfig(), constants);
-      mBrModule = new SwerveModuleIOTalonFxSim(mConstants.getBackRightModuleConfig(), constants);
+      mFrModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontRightModuleConfig(), mConstants);
+      mFlModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontLeftModuleConfig(), mConstants);
+      mBlModule = new SwerveModuleIOTalonFxSim(mConstants.getBackLeftModuleConfig(), mConstants);
+      mBrModule = new SwerveModuleIOTalonFxSim(mConstants.getBackRightModuleConfig(), mConstants);
     }
 
     mModules = new SwerveModuleIO[] {mFrModule, mFlModule, mBlModule, mBrModule};
@@ -88,12 +82,7 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Update odometry /w measurements
-    mRobotState.addOdometryMeasurement(
-        new OdometryMeasurement(
-            Timer.getTimestamp(),
-            getSwerveModulePositions(),
-            Robot.isReal() ? Optional.of(getRotation3d()) : Optional.empty()));
+    // TODO odometry thread
 
     // Update Swerve Module Signals
     for (var module : mModules) {
@@ -106,75 +95,93 @@ public class Drive extends SubsystemBase {
     }
   }
 
-  @Override
-  public void simulationPeriodic() {
-    // Rotate simulated gyro by omega, but only if omega exists
-    mSimRotation2d =
-        mSimRotation2d.rotateBy(
-            Rotation2d.fromRadians(
-                !Double.isNaN(getRobotRelativeChassisSpeeds().omegaRadiansPerSecond)
-                    ? getRobotRelativeChassisSpeeds().omegaRadiansPerSecond * 0.02
-                    : 0.0));
-  }
-
   /**
-   * @return {@link Rotation2d} representing measured yaw rotation
+   * @return {@link Rotation2d} representing estimated chassis yaw orientation
    */
   @Logged(name = "Rotation2d", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
-    return Robot.isReal() ? mGyro.getRotation2d() : mSimRotation2d;
+    return mRobotState.getRotation2d();
   }
 
   /**
-   * @return {@link Rotation3d} representing the measured orientation of the robot in 3D space
+   * @return {@link Rotation3d} representing estimated chassis orientation in 3D space (yaw, pitch,
+   *     roll)
    */
   @Logged(name = "Rotation3d", importance = Importance.INFO)
   public Rotation3d getRotation3d() {
-    return Robot.isReal() ? mGyro.getRotation3d() : new Rotation3d(mSimRotation2d);
+    return mRobotState.getRotation3d();
   }
 
   /**
-   * @return {@link Pose3d} representing field position WRT to alliance origin in 2D space
+   * @return {@link Pose3d} representing estimated chassis position in 2D space (x, y)
    */
   @Logged(name = "Pose2d", importance = Importance.INFO)
   public Pose2d getPose2d() {
-    return getPose3d().toPose2d();
+    return mRobotState.getPose2d();
   }
 
   /**
-   * @return {@link Pose3d} representing field position WRT to alliance origin in 3D space
+   * @return {@link Pose3d} representing estimated chassis position in 3D space (x, y, z)
    */
   @Logged(name = "Pose3d", importance = Importance.INFO)
   public Pose3d getPose3d() {
     return mRobotState.getPose3d();
   }
 
+  /**
+   * @return {@link LinearVelocity} representing estimated chassis speed
+   */
+  @Logged(name = "Linear Velocity", importance = Importance.INFO)
   public LinearVelocity getLinearVelocity() {
     var speeds = getRobotRelativeChassisSpeeds();
     return MetersPerSecond.of(Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond));
   }
 
+  /**
+   * @return {@link ChassisSpeeds} representing estimated chassis velocity components relative to
+   *     field
+   */
+  @Logged(name = "Chassis Speeds WRT Field", importance = Importance.INFO)
   public ChassisSpeeds getFieldRelativeChassisSpeeds() {
-    return ChassisSpeeds.fromRobotRelativeSpeeds(getRobotRelativeChassisSpeeds(), getRotation2d());
+    return ChassisSpeeds.fromRobotRelativeSpeeds(
+        getRobotRelativeChassisSpeeds(), mGyro.getRotation2d());
   }
 
+  /**
+   * @return {@link ChassisSpeeds} representing estimated chassis velocity components
+   */
+  @Logged(name = "Chassis Speeds", importance = Importance.INFO)
   public ChassisSpeeds getRobotRelativeChassisSpeeds() {
     return mKinematics.toChassisSpeeds(getSwerveModuleStates());
   }
 
+  /**
+   * @return {@link SwerveModulePosition} {@link Array} representing the field position of each
+   *     swerve module WRT to its initial position
+   */
+  @Logged(name = "Module Poses", importance = Importance.INFO)
   public SwerveModulePosition[] getSwerveModulePositions() {
-    // Find SwerveModuleIO equivalent of position getter method. This implementation is for ModuleIO
     return Arrays.stream(mModules)
         .map(SwerveModuleIO::getSwerveModulePosition)
         .toArray(SwerveModulePosition[]::new);
   }
 
+  /**
+   * @return {@link SwerveModuleState} {@link Array} representing the velocity components of each
+   *     swerve module
+   */
+  @Logged(name = "Module States", importance = Importance.INFO)
   public SwerveModuleState[] getSwerveModuleStates() {
     return Arrays.stream(mModules)
         .map(SwerveModuleIO::getSwerveModuleState)
         .toArray(SwerveModuleState[]::new);
   }
 
+  /**
+   * @return {@link SwerveModuleState} {@link Array} representing the desired velocity components of
+   *     each swerve module
+   */
+  @Logged(name = "Setpoint Module States", importance = Importance.INFO)
   public SwerveModuleState[] getSetpointSwerveModuleStates() {
     return null; // Arrays.stream(mModules).map(SwerveModuleIO::desiredState).toArray(SwerveModuleState[]::new);
   }
@@ -182,46 +189,55 @@ public class Drive extends SubsystemBase {
   /**
    * @return true if FOC is enabled
    */
+  @Logged(name = "FOC enabled", importance = Importance.INFO)
   public boolean isFocEnabled() {
-    return mIsFocAutoToggleEnabled
+    return mAutoFocToggle
         && getLinearVelocity()
             .gt(mConstants.getMaxLinearVelocity().times(mConstants.getFocAutoToggleMagnitude()));
   }
 
-  public Command driveTeleop(
-      DoubleSupplier xSpeedMag,
-      DoubleSupplier ySpeedMag,
-      DoubleSupplier omegaSpeedMag,
-      BooleanSupplier isSpeedReduced,
-      double reducedSpeedMag) {
-    return driveTeleop(xSpeedMag, ySpeedMag, omegaSpeedMag, isSpeedReduced, reducedSpeedMag, false);
-  }
-
-  public Command driveTeleop(
-      DoubleSupplier xSpeedMag,
-      DoubleSupplier ySpeedMag,
-      DoubleSupplier omegaSpeedMag,
-      BooleanSupplier isSpeedReduced,
-      double reducedSpeedMag,
-      boolean openLoopEnabled) {
-    return Commands.none();
+  /**
+   * Disable Auto Field-Oriented Control (FOC) Toggle
+   *
+   * <p>Auto FOC Toggle is a system that automatically enables FOC while drivetrain is accelerating
+   * and then disables it once a certain magnitude of the maximum possible drivetrain speed is
+   * reached. This allows the drivetrain to utilize the high acceleration offered by FOC without the
+   * cost of maximum speed
+   *
+   * <p>When Auto FOC Toggle is disabled, drivetrain will default to utilizing FOC control.
+   *
+   * <p><strong> WARNING </strong> ~ FOC is required when controlling wheel torques; You must
+   * disable auto toggle if you wish to.
+   */
+  public void disableAutoFocToggle() {
+    mAutoFocToggle = false;
   }
 
   /**
-   * Auto FOC toggle is a system that disables Field Oriented Control once servos reach a certain
-   * magnitude of the maximum drivetrain speed. This allows the drivetrain to reach its maximum
-   * possible speed
+   * Enable Auto Field-Oriented Control (FOC) Toggle
    *
-   * <p><strong> WARNING </strong> ~ FOC is required to control wheel torques; You must disable auto
-   * toggle if you wish to accurate control torques
+   * <p>Auto FOC Toggle is a system that automatically enables FOC while drivetrain is accelerating
+   * and then disables it once a certain magnitude of the maximum possible drivetrain speed is
+   * reached. This allows the drivetrain to utilize the high acceleration offered by FOC without the
+   * cost of maximum speed
    *
-   * @param enabled when true, FOC will automatically toggle on/off to maximize velocity
+   * <p>When Auto FOC Toggle is disabled, drivetrain will default to utilizing FOC control.
+   *
+   * <p><strong> WARNING </strong> ~ FOC is required when controlling wheel torques; You must
+   * disable auto toggle if you wish to.
    */
-  protected void setFocAutoToggleStatus(boolean enabled) {
-    mIsFocAutoToggleEnabled = enabled;
+  public void enableAutoFocToggle() {
+    mAutoFocToggle = true;
   }
 
   protected void setChassisSpeedsSetpoint(ChassisSpeeds speeds, boolean openLoopEnabled) {}
+
+  /**
+   * @return {@link Consumer} for running {@link SwerveSample} setpoints
+   */
+  public Consumer<SwerveSample> getSwerveSampleConsumer() {
+    return (sample) -> {};
+  }
 
   /** Stop drivetrain completely with the wheel forming an X */
   public void xStop() {}

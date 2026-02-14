@@ -23,16 +23,16 @@ public final class Constants {
   /** Runtime flags determining the robots initialization */
   public static final class Flags {
     /** {@link RobotType} representing the robot chassis being used */
-    protected static RobotType kRobotType = RobotType.Y2026_L2;
+    public static RobotType kRobotType = RobotType.Y2026_L2;
 
     /** {@link DriveConstants} representing the drivetrain configuration to use */
-    protected static DriveConstants kDriveConstants = new RebuiltL2();
+    public static DriveConstants kDriveConstants = new RebuiltL2();
 
     /** When true, subsystems will not be initialized */
-    protected static boolean kSubsystemDisabled = false;
+    public static boolean kSubsystemDisabled = false;
 
     /** When true, drive will not be initialized */
-    protected static boolean kDriveDisabled = false;
+    public static boolean kDriveDisabled = false;
   }
 
   /** The matrix contains the CAN identification information for all devices */
