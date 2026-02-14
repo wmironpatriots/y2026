@@ -8,6 +8,8 @@ package org.frc6423.lib.util;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.geometry.Twist3d;
 
 /**
  * Utility class for interacting with classes related to the Field Coordinate System
@@ -38,5 +40,15 @@ public class CoordUtil {
 
     // I think this should work?
     return pose.rotateAround(fieldMidpoint.getTranslation(), angle.times(2).times(-1));
+  }
+
+  /**
+   * Convert a specified {@link Twist2d} to a {@link Twist3d}
+   *
+   * @param twist2d {@link Twist2d} to convert
+   * @return {@link Twist3d}
+   */
+  public static Twist3d toTwist3d(Twist2d twist2d) {
+    return new Twist3d(twist2d.dx, twist2d.dy, 0.0, 0.0, 0.0, twist2d.dtheta);
   }
 }
