@@ -9,4 +9,7 @@ package org.frc6423.robot.subsystem.led;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** {@link SubsystemBase} extension representing the LED subsystem */
-public class Led extends SubsystemBase {}
+public class LED extends SubsystemBase {
+    public static int LED_PORT;
+    public static int LED_LENGTH;
+}
