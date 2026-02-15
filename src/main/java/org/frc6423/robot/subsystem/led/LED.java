@@ -9,7 +9,6 @@ package org.frc6423.robot.subsystem.led;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** {@link SubsystemBase} extension representing the LED subsystem */
-@SuppressWarnings("unused")
 public class LED extends SubsystemBase {
   // When looking at the center strip
   public static final int kLeftStripPort = 67;
