@@ -106,7 +106,7 @@ public abstract class DriveConstants {
   /**
    * @return gear ratio between drive servo rotor to mechanism
    */
-  public abstract double getDriveRotorToMechRatio();
+  public abstract double getDriveSensorToMechRatio();
 
   /**
    * @return {@link Distance} representing the radius of the swerve module wheel
@@ -160,7 +160,7 @@ public abstract class DriveConstants {
    * @return the torque constant of the drive motor through its gearbox
    */
   public double getDriveGearboxKt() {
-    return getDriveRotorToMechRatio() / getDriveMotorKt();
+    return getDriveSensorToMechRatio() / getDriveMotorKt();
   }
 
   /**

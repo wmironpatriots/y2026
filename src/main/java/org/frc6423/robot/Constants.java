@@ -10,6 +10,7 @@ import com.ctre.phoenix6.CANBus;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL1;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
+import org.frc6423.robot.subsystem.drive.constants.RebuiltL3;
 
 /**
  * This is a globally accessible class for storing immutable values.
@@ -72,7 +73,7 @@ public final class Constants {
     /** {@link RobotType} representing the 2026 competition robot chassis /w L2 Ratio */
     Y2026_L2(new RebuiltL2()),
     /** {@link RobotType} representing the 2026 competition robot chassis /w L3 Ratio */
-    Y2026_L3(new RebuiltL2());
+    Y2026_L3(new RebuiltL3());
 
     public final DriveConstants mDriveConstants;
 

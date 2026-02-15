@@ -14,12 +14,12 @@ import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 
-/** {@link RebuiltL2} but for L2 drive ratio */
-public class RebuiltL1 extends RebuiltL2 {
+/** {@link RebuiltL2} but for MK5i /w L3 ratio */
+public class RebuiltL3 extends RebuiltL2 {
   @Override
   public LinearVelocity getMaxLinearVelocity() {
     // https://www.swervedrivespecialties.com/products/mk5i-swerve-module
-    return FeetPerSecond.of(14.9);
+    return FeetPerSecond.of(19.9);
   }
 
   @Override
@@ -36,6 +36,6 @@ public class RebuiltL1 extends RebuiltL2 {
 
   @Override
   public double getDriveSensorToMechRatio() {
-    return (54.0 / 14.0) * (25.0 / 32.0) * (30.0 / 15.0);
+    return (54.0 / 16.0) * (25.0 / 32.0) * (30.0 / 15.0);
   }
 }

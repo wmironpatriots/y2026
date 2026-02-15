@@ -37,7 +37,7 @@ public class SwerveModuleIOTalonFxSim extends SwerveModuleIOTalonFx {
     mDriveModel =
         new DCMotorSim(
             LinearSystemId.createDCMotorSystem(
-                DCMotor.getKrakenX60Foc(1), 0.025, mDriveConstants.getDriveRotorToMechRatio()),
+                DCMotor.getKrakenX60Foc(1), 0.025, mDriveConstants.getDriveSensorToMechRatio()),
             DCMotor.getKrakenX60Foc(1),
             0.0,
             0.0);

@@ -112,11 +112,11 @@ public class RebuiltL2 extends DriveConstants {
   @Override
   public boolean getPivotInverted() {
     // https://www.swervedrivespecialties.com/products/mk5i-swerve-module
-    return false;
+    return true;
   }
 
   @Override
-  public double getDriveRotorToMechRatio() {
+  public double getDriveSensorToMechRatio() {
     return (54.0 / 14.0) * (25.0 / 32.0) * (30.0 / 15.0);
   }
 
@@ -167,7 +167,7 @@ public class RebuiltL2 extends DriveConstants {
                 .withKS(0.0)
                 .withKV(0.0)
                 .withKA(0.0)
-                .withKP(20.0)
+                .withKP(0.0)
                 .withKD(0.0)); // Torque Based Motion Magic Position Controls
   }
 
@@ -184,7 +184,7 @@ public class RebuiltL2 extends DriveConstants {
                 .withStatorCurrentLimit(Amps.of(20.0))
                 .withStatorCurrentLimitEnable(true))
         .withTorqueCurrent(new TorqueCurrentConfigs().withTorqueNeutralDeadband(Amps.of(10.0)))
-        .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(getDriveRotorToMechRatio()))
+        .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(getDriveSensorToMechRatio()))
         .withMotionMagic(
             new MotionMagicConfigs()
                 .withMotionMagicCruiseVelocity(
@@ -241,7 +241,7 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveFrEncoderId,
         getPivotServoConfig(Matrix.kDriveFrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.0)));
+        getCANcoderConfig(Degrees.of(-130.61).times(getPivotInverted() ? -1 : 1)));
   }
 
   @Override
@@ -254,7 +254,7 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveFlEncoderId,
         getPivotServoConfig(Matrix.kDriveFlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.0)));
+        getCANcoderConfig(Degrees.of(80.68).times(getPivotInverted() ? -1 : 1)));
   }
 
   @Override
@@ -267,7 +267,7 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveBlEncoderId,
         getPivotServoConfig(Matrix.kDriveBlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.0)));
+        getCANcoderConfig(Degrees.of(47.11).times(getPivotInverted() ? -1 : 1)));
   }
 
   @Override
@@ -280,6 +280,6 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveBrEncoderId,
         getPivotServoConfig(Matrix.kDriveBrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.0)));
+        getCANcoderConfig(Degrees.of(-144.32).times(getPivotInverted() ? -1 : 1)));
   }
 }
