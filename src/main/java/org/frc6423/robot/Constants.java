@@ -40,17 +40,17 @@ public final class Constants {
     public static final CANBus kDriveCanBus = new CANBus("DRIVE");
 
     public static final int kDriveFrPivotId = 1;
-    public static final int kDriveFrEncoderId = 2;
-    public static final int kDriveFrDriveId = 3;
-    public static final int kDriveFlPivotId = 4;
-    public static final int kDriveFlEncoderId = 5;
-    public static final int kDriveFlDriveId = 6;
+    public static final int kDriveFrDriveId = 2;
+    public static final int kDriveFlPivotId = 3;
+    public static final int kDriveFlDriveId = 4;
+    public static final int kDriveBlPivotId = 5;
+    public static final int kDriveBlDriveId = 6;
     public static final int kDriveBrPivotId = 7;
-    public static final int kDriveBrEncoderId = 8;
-    public static final int kDriveBrDriveId = 9;
-    public static final int kDriveBlPivotId = 10;
+    public static final int kDriveBrDriveId = 8;
+    public static final int kDriveFrEncoderId = 9;
+    public static final int kDriveFlEncoderId = 10;
     public static final int kDriveBlEncoderId = 11;
-    public static final int kDriveBlDriveId = 12;
+    public static final int kDriveBrEncoderId = 12;
     public static final int kDriveGyroId = 13;
 
     public static final CANBus kSubsystemCanBus = new CANBus("SOUP");

@@ -65,7 +65,9 @@ public class Drive extends SubsystemBase {
   private final PIDController mVelYController = new PIDController(5.0, 0.0, 0.0);
   private final PIDController mOmegaController = new PIDController(2.5, 0.0, 0.0);
 
-  private final SysIdRoutine mWheelPivotCharacterization;
+  private final SysIdRoutine mWheelPivotCharacterization,
+      mDriveLinearCharacterization,
+      mDriveAngularCharacterization;
 
   /**
    * Create new {@link Drive}
@@ -110,6 +112,32 @@ public class Drive extends SubsystemBase {
                 null,
                 this,
                 "SwervePivotSysId"));
+
+    mDriveLinearCharacterization =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                Volts.of(4),
+                null,
+                (state) -> SignalLogger.writeString("state", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (Voltage) -> {}, // TODO
+                null,
+                this,
+                "SwerveLinearSysId"));
+
+    mDriveAngularCharacterization =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                Volts.of(4),
+                null,
+                (state) -> SignalLogger.writeString("state", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (Voltage) -> {}, // TODO
+                null,
+                this,
+                "SwerveAngularSysId"));
 
     SmartDashboard.putData(
         "Swerve Pivot Characterization (Dynamic Forward)",
