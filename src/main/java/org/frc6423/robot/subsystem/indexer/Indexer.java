@@ -8,14 +8,11 @@ package org.frc6423.robot.subsystem.indexer;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
-import edu.wpi.first.wpilibj.Timer;
-
-
-
 
 /**
  * {@link SubsystemBase} extension representing the indexer subsystem
@@ -39,6 +36,7 @@ public class Indexer extends SubsystemBase {
 
   private State mState = State.STOPPED;
   private final Timer motorPulseTimer = new Timer();
+
   /**
    * Create new {@link Indexer}
    *
@@ -52,26 +50,23 @@ public class Indexer extends SubsystemBase {
   public void periodic() {
     mServo.periodic();
 
-    switch (mState) {    
+    switch (mState) {
       case PULSING:
-        
         double time = motorPulseTimer.get();
         if (time < 0.5) {
           mServo.setVoltageSetpoint(Volts.of(12.0));
-        }
-        else if (time < 1.0) {
+        } else if (time < 1.0) {
           mServo.setVoltageSetpoint(Volts.of(0.0));
-        }
-        else {
+        } else {
           motorPulseTimer.restart();
         }
         break;
-        
+
       case RUNNING:
-        mServo.setVoltageSetpoint(Volts.of(12.0)); 
+        mServo.setVoltageSetpoint(Volts.of(12.0));
         break;
       case STOPPED:
-        mServo.setVoltageSetpoint(Volts.of(0.0)); 
+        mServo.setVoltageSetpoint(Volts.of(0.0));
         break;
     }
   }
@@ -83,22 +78,26 @@ public class Indexer extends SubsystemBase {
   public State getState() {
     return mState;
   }
+
   public Command stop() {
-    return Commands.runOnce(() -> {
-      mState = State.STOPPED;
-    });
+    return Commands.runOnce(
+        () -> {
+          mState = State.STOPPED;
+        });
   }
 
   public Command run() {
-    return Commands.runOnce(() -> {
-      mState = State.RUNNING;
-    });
+    return Commands.runOnce(
+        () -> {
+          mState = State.RUNNING;
+        });
   }
 
   public Command pulse() {
-    return Commands.runOnce(() -> {
-      mState = State.PULSING;
-      motorPulseTimer.restart();
-    });
+    return Commands.runOnce(
+        () -> {
+          mState = State.PULSING;
+          motorPulseTimer.restart();
+        });
   }
 }
