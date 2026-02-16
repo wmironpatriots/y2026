@@ -288,6 +288,14 @@ public class Intake extends SubsystemBase {
   }
 
   /**
+   * @return {@link Request} representing the current requested action
+   */
+  @Logged(name = "Request", importance = Importance.INFO)
+  public Request getRequest() {
+    return mRequest;
+  }
+
+  /**
    * @return {@link State} representing the current mode of being subsystem is in
    */
   @Logged(name = "State", importance = Importance.INFO)
