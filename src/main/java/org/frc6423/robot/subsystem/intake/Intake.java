@@ -6,14 +6,42 @@
 
 package org.frc6423.robot.subsystem.intake;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
+
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.AudioConfigs;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.EncoderIO;
+import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
+import org.frc6423.lib.io.ServoIOTalonFx;
+import org.frc6423.robot.Constants.Matrix;
 
 /**
  * {@link SubsystemBase} extension representing the intake subsystem
@@ -25,13 +53,131 @@ import org.frc6423.lib.io.ServoIO;
  * the pivot; This action is set to automatically happen
  */
 public class Intake extends SubsystemBase {
+  /** {@link Intake} subsystem constants */
+  public class Constants {
+    /** {@link CANbus} representing the bus devices are connected to */
+    private static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+
+    /** {@link Integer} representing the Pivot's CAN ID on CANBUS */
+    private static final int kPivotCanDeviceId = Matrix.kIntakePivotId;
+
+    /** {@link Integer} representing the Encoder ID on CANBUS */
+    private static final int kEncoderCanDeviceId = Matrix.kIntakeEncoderId;
+
+    /** {@link Integer} representing the Roller ID on CANBUS */
+    private static final int kRollerCanDeviceId = Matrix.kIntakeRollerId;
+
+    /** {@link Double} representing the gear ratio between the motor rotor to encoder */
+    private static final double kPivotRotorToSensor = 1.0 / 1.0;
+
+    /** {@link Double} representing the gear ratio between the sensor to mechanism */
+    private static final double kPivotSensorToMechRatio = 1.0 / 1.0;
+
+    /** {@link Angle} representing the magnetic angular offset of encoder */
+    private static final Angle kEncoderAngularOffset = Degrees.of(0.0);
+
+    /** {@link TalonFXConfiguration} representing the hardware config of the pivot servo */
+    private static final TalonFXConfiguration kPivotTalonConfig =
+        new TalonFXConfiguration()
+            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withInverted(InvertedValue.CounterClockwise_Positive)
+                    .withNeutralMode(NeutralModeValue.Brake))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withStatorCurrentLimit(Amps.of(20.0))
+                    .withStatorCurrentLimitEnable(true))
+            .withFeedback(
+                new FeedbackConfigs()
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                    .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
+                    .withRotorToSensorRatio(kPivotRotorToSensor)
+                    .withSensorToMechanismRatio(kPivotSensorToMechRatio))
+            .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(true))
+            .withMotionMagic(
+                new MotionMagicConfigs()
+                    .withMotionMagicCruiseVelocity((5800 / 60) / kPivotSensorToMechRatio)
+                    .withMotionMagicAcceleration((5800 / 60) / kPivotSensorToMechRatio * 0.005))
+            .withSlot0(
+                new Slot0Configs()
+                    .withKS(0.0)
+                    .withKV(0.0)
+                    .withKA(0.0)
+                    .withKP(0.0)
+                    .withKD(0.0)); // Torque Based Motion Magic Position Controls
+
+    /** {@link CANcoderConfiguration} representing the hardware config of the encoder servo */
+    private static final CANcoderConfiguration kEncoderConfig =
+        new CANcoderConfiguration()
+            .withMagnetSensor(
+                new MagnetSensorConfigs()
+                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
+                    .withMagnetOffset(kEncoderAngularOffset));
+
+    /** {@link TalonFXConfiguration} representing the hardware config of the roller servo */
+    private static final TalonFXConfiguration kRollerTalonConfig =
+        new TalonFXConfiguration()
+            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withInverted(InvertedValue.CounterClockwise_Positive)
+                    .withNeutralMode(NeutralModeValue.Brake))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withStatorCurrentLimit(Amps.of(20.0))
+                    .withStatorCurrentLimitEnable(true));
+
+    /** {@link Angle} representing maximum possible pivot angle */
+    private static final Angle kMaxAngle = Degrees.of(148.976);
+
+    /** {@link Angle} representing minimum possible pivot angle */
+    private static final Angle kMinAngle = Degrees.of(90.676);
+
+    /** {@link Voltage} representing the voltage required to 'kick' kicker outwards */
+    private static final Voltage kKickVoltage = Volts.of(3.0);
+
+    /** {@link Seconds} representing the time spent 'kicking' kicker outwards */
+    private static final Time kKickTime = Seconds.of(0.5);
+
+    /** {@link Voltage} representing the intaking roller speed */
+    private static final Voltage kIntakingSpeed = Volts.of(5.0);
+
+    /** {@link Angle} representing the maximum allowed error for pivot servo */
+    private static final Angle kEpsilon = Degrees.of(0.4);
+  }
+
   @Logged private final EncoderIO mEncoder;
   @Logged private final ServoIO mPivot, mRoller;
 
+  private Request mRequest = Request.STOW;
   private State mState = State.FULLY_STOWED;
-  private State mPreviousState = State.FULLY_STOWED;
 
-  private final Angle mEpsilon;
+  private final Timer mStateTimer = new Timer();
+
+  private Angle mSetpoint = Degrees.of(0);
+
+  /**
+   * Create new {@link Intake}
+   *
+   * @return {@link Intake}
+   */
+  public static Intake create() {
+    // TODO sim
+    return new Intake(
+        new ServoIOTalonFx(
+            "IntakePivot",
+            Constants.kCanBus,
+            Constants.kPivotCanDeviceId,
+            Constants.kPivotTalonConfig),
+        new EncoderIOCanCoder(
+            Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig),
+        new ServoIOTalonFx(
+            "IntakeRoller",
+            Constants.kCanBus,
+            Constants.kRollerCanDeviceId,
+            Constants.kRollerTalonConfig));
+  }
 
   /**
    * Create new {@link Intake}
@@ -39,38 +185,114 @@ public class Intake extends SubsystemBase {
    * @param pivot {@link ServoIO} representing pivot servo
    * @param encoder {@link EncoderIO} representing pivot abs encoder
    * @param roller {@link ServoIO} representing roller servo
-   * @param epsilon {@link Angle} representing the largest acceptable amount of angular position
-   *     error
    */
-  public Intake(ServoIO pivot, EncoderIO encoder, ServoIO roller, Angle epsilon) {
+  protected Intake(ServoIO pivot, EncoderIO encoder, ServoIO roller) {
     mPivot = pivot;
     mEncoder = encoder;
     mRoller = roller;
-    mEpsilon = epsilon;
   }
 
   @Override
   public void periodic() {
-    mEncoder.periodic();
+    // Update hardware
     mPivot.periodic();
+    mEncoder.periodic();
     mRoller.periodic();
 
-    switch (mState) {
-      case DEPLOYED_INTAKING:
+    // Apply request if edge exists
+    switch (mRequest) {
+      case DEPLOY:
+        if (mState == State.STOWED) mState = State.DEPLOYING;
         break;
-      case DEPLOYED_OUTAKING:
-        break;
-      case DEPLOYING:
-        break;
-      case DEPLOYING_KICKER:
-        break;
-      case FULLY_STOWED:
-        break;
-      case STOWED:
-        break;
-      case STOWING:
+      case STOW:
+        if (mState == State.DEPLOYING || mState == State.DEPLOYED) mState = State.STOWING;
         break;
     }
+
+    // Run state logic
+    switch (mState) {
+      case FULLY_STOWED:
+
+        // Only start kicker deploy routine when robot enables
+        if (DriverStation.isEnabled()) mState = State.DEPLOYING_KICKER;
+
+        break;
+
+      case DEPLOYING_KICKER:
+        if (!mStateTimer.isRunning()) mStateTimer.start();
+        mPivot.setVoltageSetpoint(Constants.kKickVoltage, true);
+
+        if (mStateTimer.hasElapsed(Constants.kKickTime)) {
+          mStateTimer.reset();
+          mState = State.STOWED;
+        }
+
+        break;
+
+      case STOWING:
+        setPivotSetpoint(Constants.kMinAngle);
+        setRollerSetpoint(Constants.kIntakingSpeed);
+
+        if (isNearSetpoint()) {
+          mState = State.STOWED;
+        }
+
+        break;
+
+      case STOWED:
+        mPivot.stop();
+        mRoller.stop();
+
+        break;
+
+      case DEPLOYED:
+        mPivot.stop();
+        setRollerSetpoint(Constants.kIntakingSpeed);
+
+        break;
+
+      case DEPLOYING:
+        setPivotSetpoint(Constants.kMaxAngle);
+        setRollerSetpoint(Constants.kIntakingSpeed);
+
+        if (isNearSetpoint()) {
+          mState = State.DEPLOYED;
+        }
+
+        break;
+    }
+  }
+
+  /**
+   * Clamp and set a pivot angle setpoint
+   *
+   * @param setpoint {@link Angle} representing desired angle
+   */
+  private void setPivotSetpoint(Angle setpoint) {
+    mSetpoint =
+        Rotations.of(
+            MathUtil.clamp(
+                setpoint.in(Rotations),
+                Constants.kMinAngle.in(Rotations),
+                Constants.kMaxAngle.in(Rotations)));
+    mPivot.setTorqueMotionProfiledPositionSetpoint(setpoint, 0);
+  }
+
+  /**
+   * Set a roller speed setpoint
+   *
+   * @param volts {@link Voltage} representing desired speed
+   */
+  private void setRollerSetpoint(Voltage volts) {
+    mRoller.setVoltageSetpoint(volts, true);
+  }
+
+  /**
+   * @return {@link Request} representing the current requested action
+   */
+  @Logged(name = "Request", importance = Importance.INFO)
+  public Request getRequest() {
+    return mRequest;
   }
 
   /**
@@ -86,7 +308,7 @@ public class Intake extends SubsystemBase {
    */
   @Logged(name = "Pivot Angle", importance = Importance.INFO)
   public Angle getAngle() {
-    return null;
+    return mEncoder.getAngle();
   }
 
   /**
@@ -94,34 +316,34 @@ public class Intake extends SubsystemBase {
    */
   @Logged(name = "is Near Setpoint", importance = Importance.INFO)
   public boolean isNearSetpoint() {
-    return false;
+    return MathUtil.isNear(
+        mSetpoint.in(Rotations), getAngle().in(Rotations), Constants.kEpsilon.in(Rotations));
   }
 
   /**
-   * Attempt to stow intake
+   * Request intake to deploy
+   *
+   * @return {@link Command}
+   */
+  public Command deploy() {
+    return this.runOnce(() -> mRequest = Request.DEPLOY);
+  }
+
+  /**
+   * Request intake to stow
    *
    * @return {@link Command}
    */
   public Command stow() {
-    return Commands.none();
+    return this.runOnce(() -> mRequest = Request.STOW);
   }
 
-  /**
-   * Attempt to deploy and start intaking
-   *
-   * @return {@link Command}
-   */
-  public Command intake() {
-    return Commands.none();
-  }
-
-  /**
-   * Attempt to deploy and start outaking
-   *
-   * @return {@link Command}
-   */
-  public Command outake() {
-    return Commands.none();
+  /** Represents a requested mode of being for the {@link Intake} */
+  public static enum Request {
+    /** {@link Request} representing a request for intake to stow */
+    STOW,
+    /** {@link Request} representing a request for intake to deploy */
+    DEPLOY
   }
 
   /** Represents a mode of being the {@link Intake} subsystem can be in */
@@ -131,8 +353,10 @@ public class Intake extends SubsystemBase {
      * deployed
      */
     FULLY_STOWED,
-    /** {@link State} where the {@link Intake} is hitting the kicker to passively deploy it */
+    /** {@link State} where the {@link Intake} is 'kicking' the kicker to passively deploy it */
     DEPLOYING_KICKER,
+    /** {@link State} where the {@link Intake} is attempting to stop and fold */
+    STOWING,
     /**
      * {@link State} where the {@link Intake} is folded & stopped while the kicker is passively
      * deployed
@@ -141,10 +365,6 @@ public class Intake extends SubsystemBase {
     /** {@link State} where the {@link Intake} is unfolding and starting */
     DEPLOYING,
     /** {@link State} where the {@link Intake} is unfolded and running */
-    DEPLOYED_INTAKING,
-    /** {@link State} where the {@link Intake} is unfolded and running inverse */
-    DEPLOYED_OUTAKING,
-    /** {@link State} where the {@link Intake} is attempting to stop and fold */
-    STOWING
+    DEPLOYED
   }
 }
