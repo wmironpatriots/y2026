@@ -6,14 +6,27 @@
 
 package org.frc6423.robot.subsystem.intake;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
@@ -54,14 +67,66 @@ public class Intake extends SubsystemBase {
     /** {@link Integer} representing the Roller ID on CANBUS */
     private static final int kRollerCanDeviceId = Matrix.kIntakeRollerId;
 
+    /** {@link Double} representing the gear ratio between the motor rotor to encoder */
+    private static final double kPivotRotorToSensor = 1.0 / 1.0;
+
+    /** {@link Double} representing the gear ratio between the sensor to mechanism */
+    private static final double kPivotSensorToMechRatio = 1.0 / 1.0;
+
+    /** {@link Angle} representing the magnetic angular offset of encoder */
+    private static final Angle kEncoderAngularOffset = Degrees.of(0.0);
+
     /** {@link TalonFXConfiguration} representing the hardware config of the pivot servo */
-    private static final TalonFXConfiguration kPivotTalonConfig = new TalonFXConfiguration();
+    private static final TalonFXConfiguration kPivotTalonConfig =
+        new TalonFXConfiguration()
+            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withInverted(InvertedValue.CounterClockwise_Positive)
+                    .withNeutralMode(NeutralModeValue.Brake))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withStatorCurrentLimit(Amps.of(20.0))
+                    .withStatorCurrentLimitEnable(true))
+            .withFeedback(
+                new FeedbackConfigs()
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                    .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
+                    .withRotorToSensorRatio(kPivotRotorToSensor)
+                    .withSensorToMechanismRatio(kPivotSensorToMechRatio))
+            .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(true))
+            .withMotionMagic(
+                new MotionMagicConfigs()
+                    .withMotionMagicCruiseVelocity((5800 / 60) / kPivotSensorToMechRatio)
+                    .withMotionMagicAcceleration((5800 / 60) / kPivotSensorToMechRatio * 0.005))
+            .withSlot0(
+                new Slot0Configs()
+                    .withKS(0.0)
+                    .withKV(0.0)
+                    .withKA(0.0)
+                    .withKP(0.0)
+                    .withKD(0.0)); // Torque Based Motion Magic Position Controls
 
     /** {@link CANcoderConfiguration} representing the hardware config of the encoder servo */
-    private static final CANcoderConfiguration kEncoderConfig = new CANcoderConfiguration();
+    private static final CANcoderConfiguration kEncoderConfig =
+        new CANcoderConfiguration()
+            .withMagnetSensor(
+                new MagnetSensorConfigs()
+                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
+                    .withMagnetOffset(kEncoderAngularOffset));
 
     /** {@link TalonFXConfiguration} representing the hardware config of the roller servo */
-    private static final TalonFXConfiguration kRollerTalonConfig = new TalonFXConfiguration();
+    private static final TalonFXConfiguration kRollerTalonConfig =
+        new TalonFXConfiguration()
+            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withInverted(InvertedValue.CounterClockwise_Positive)
+                    .withNeutralMode(NeutralModeValue.Brake))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withStatorCurrentLimit(Amps.of(20.0))
+                    .withStatorCurrentLimitEnable(true));
 
     /** {@link Angle} representing maximum possible pivot angle */
     private static final Angle kMaxAngle = Degrees.of(148.976);
