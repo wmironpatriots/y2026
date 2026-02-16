@@ -24,6 +24,7 @@ import edu.wpi.first.units.measure.MomentOfInertia;
  * @param torqueGainsSlot {@link Integer} representing the gains slot to use for torque based
  *     control
  */
+@Deprecated
 public record ServoConfig(
     String name,
     CANBus canBus,

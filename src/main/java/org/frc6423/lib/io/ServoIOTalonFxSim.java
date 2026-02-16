@@ -8,6 +8,8 @@ package org.frc6423.lib.io;
 
 import static edu.wpi.first.units.Units.Volts;
 
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.ChassisReference;
 import edu.wpi.first.units.measure.Angle;
@@ -24,11 +26,16 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
   /**
    * Create new {@link ServoIOTalonFxSim}
    *
-   * @param config {@link SwerveConfig} representing the configuration of servo
+   * @param name {@link String} representing servo nickname
+   * @param canBus {@link CANBus} representing CAN bus loop device is in
+   * @param canDeviceId {@link Integer} representing the id of CAN device
+   * @param talonConfig {@link TalonFXConfiguration} representing the servo config
+   * @param motorKt {@link Double} representing the servo's kT rating
    * @param model {@link MechSim} representing the physics simulation to use for modeling system
    */
-  protected ServoIOTalonFxSim(ServoConfig config, MechSim model) {
-    super(config);
+  public ServoIOTalonFxSim(
+      String name, CANBus canBus, int deviceId, TalonFXConfiguration talonConfig, MechSim model) {
+    super(name, canBus, deviceId, talonConfig);
 
     mModel = model;
 
