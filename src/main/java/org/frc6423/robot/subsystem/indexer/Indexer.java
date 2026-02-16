@@ -12,6 +12,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
+import edu.wpi.first.wpilibj.Timer;
+
+
+
 
 /**
  * {@link SubsystemBase} extension representing the indexer subsystem
@@ -34,7 +38,7 @@ public class Indexer extends SubsystemBase {
   @Logged private final ServoIO mServo;
 
   private State mState = State.STOPPED;
-
+  private final Timer motorPulseTimer = new Timer();
   /**
    * Create new {@link Indexer}
    *
@@ -48,12 +52,26 @@ public class Indexer extends SubsystemBase {
   public void periodic() {
     mServo.periodic();
 
-    switch (mState) {
+    switch (mState) {    
       case PULSING:
+        
+        double time = motorPulseTimer.get();
+        if (time < 0.5) {
+          mServo.setVoltageSetpoint(Volts.of(12.0));
+        }
+        else if (time < 1.0) {
+          mServo.setVoltageSetpoint(Volts.of(0.0));
+        }
+        else {
+          motorPulseTimer.restart();
+        }
         break;
+        
       case RUNNING:
+        mServo.setVoltageSetpoint(Volts.of(12.0)); 
         break;
       case STOPPED:
+        mServo.setVoltageSetpoint(Volts.of(0.0)); 
         break;
     }
   }
@@ -65,31 +83,22 @@ public class Indexer extends SubsystemBase {
   public State getState() {
     return mState;
   }
-
-  /**
-   * Attempt to stop roller
-   *
-   * @return {@link Command}
-   */
   public Command stop() {
-    return Commands.none();
+    return Commands.runOnce(() -> {
+      mState = State.STOPPED;
+    });
   }
 
-  /**
-   * Attempt to run roller
-   *
-   * @return {@link Command}
-   */
   public Command run() {
-    return Commands.none();
+    return Commands.runOnce(() -> {
+      mState = State.RUNNING;
+    });
   }
 
-  /**
-   * Attempt to start pulsing roller
-   *
-   * @return {@link Command}
-   */
   public Command pulse() {
-    return Commands.none();
+    return Commands.runOnce(() -> {
+      mState = State.PULSING;
+      motorPulseTimer.restart();
+    });
   }
 }
