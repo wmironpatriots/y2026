@@ -6,13 +6,27 @@
 
 package org.frc6423.robot.subsystem.indexer;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Volts;
+
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.AudioConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
+import org.frc6423.lib.io.ServoIOTalonFx;
+import org.frc6423.robot.Constants.Matrix;
 
 /**
  * {@link SubsystemBase} extension representing the indexer subsystem
@@ -22,53 +36,98 @@ import org.frc6423.lib.io.ServoIO;
  * <p>The roller will only spin towards the shooter/feeder
  */
 public class Indexer extends SubsystemBase {
-  /** Represents a mode of being the {@link Indexer} subsystem can be in */
-  public static enum State {
-    /** {@link State} where the {@link Indexer} is not running */
-    STOPPED,
-    /** {@link State} where the {@link Indexer} is running */
-    RUNNING,
-    /** {@link State} where the {@link Indexer} is periodically pulsing */
-    PULSING
+  /** {@link Indexer} subsystem constants */
+  public class Constants {
+    /** {@link CANbus} representing the bus devices are connected to */
+    private static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+
+    /** {@link Integer} representing the servo's CAN ID on CANBUS */
+    private static final int kServoCanDeviceId = Matrix.kIndexerId;
+
+    /** {@link TalonFXConfiguration} representing the hardware config of the servo */
+    private static final TalonFXConfiguration kServoTalonConfig =
+        new TalonFXConfiguration()
+            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withInverted(InvertedValue.CounterClockwise_Positive)
+                    .withNeutralMode(NeutralModeValue.Brake))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withStatorCurrentLimit(Amps.of(20.0))
+                    .withStatorCurrentLimitEnable(true));
+
+    /** {@link Voltage} representing the indexing speed */
+    private static final Voltage kIndexingSpeed = Volts.of(9);
+
+    /** {@link Time} representing the period between pulses when indexer is in pulse mode */
+    private static final double kPulsePeriodSeconds = 0.2;
   }
 
   @Logged private final ServoIO mServo;
 
   private State mState = State.STOPPED;
-  private final Timer motorPulseTimer = new Timer();
+
+  /**
+   * Create new {@link Indexer}
+   *
+   * @return {@link Indexer}
+   */
+  public static Indexer create() {
+    // TODO sim
+    return new Indexer(
+        new ServoIOTalonFx(
+            "IndexerServo",
+            Constants.kCanBus,
+            Constants.kServoCanDeviceId,
+            Constants.kServoTalonConfig));
+  }
 
   /**
    * Create new {@link Indexer}
    *
    * @param servo {@link ServoIO} representing roller servo
    */
-  public Indexer(ServoIO servo) {
+  protected Indexer(ServoIO servo) {
     mServo = servo;
   }
 
   @Override
   public void periodic() {
+    // Update hardware
     mServo.periodic();
 
+    // Run state logic
     switch (mState) {
-      case PULSING:
-        double time = motorPulseTimer.get();
-        if (time < 0.5) {
-          mServo.setVoltageSetpoint(Volts.of(12.0));
-        } else if (time < 1.0) {
-          mServo.setVoltageSetpoint(Volts.of(0.0));
-        } else {
-          motorPulseTimer.restart();
-        }
+      case STOPPED:
+        mServo.stop();
+
         break;
 
       case RUNNING:
-        mServo.setVoltageSetpoint(Volts.of(12.0));
+        setSpeed(Constants.kIndexingSpeed);
+
         break;
-      case STOPPED:
-        mServo.setVoltageSetpoint(Volts.of(0.0));
+
+      case PULSING:
+        boolean run =
+            ((Timer.getFPGATimestamp() % Constants.kPulsePeriodSeconds)
+                    / Constants.kPulsePeriodSeconds)
+                > 0.5;
+        if (run) setSpeed(Constants.kIndexingSpeed);
+        else mServo.stop();
+
         break;
     }
+  }
+
+  /**
+   * Set servo speed
+   *
+   * @param speed {@link Voltage} representing desired indexer speed
+   */
+  private void setSpeed(Voltage speed) {
+    mServo.setVoltageSetpoint(speed, true);
   }
 
   /**
@@ -79,6 +138,11 @@ public class Indexer extends SubsystemBase {
     return mState;
   }
 
+  /**
+   * Request indexer to stop
+   *
+   * @return {@link Command}
+   */
   public Command stop() {
     return Commands.runOnce(
         () -> {
@@ -86,6 +150,11 @@ public class Indexer extends SubsystemBase {
         });
   }
 
+  /**
+   * Request indexer to run
+   *
+   * @return {@link Command}
+   */
   public Command run() {
     return Commands.runOnce(
         () -> {
@@ -93,11 +162,25 @@ public class Indexer extends SubsystemBase {
         });
   }
 
+  /**
+   * Request indexer to pulse
+   *
+   * @return {@link Command}
+   */
   public Command pulse() {
     return Commands.runOnce(
         () -> {
           mState = State.PULSING;
-          motorPulseTimer.restart();
         });
+  }
+
+  /** Represents a mode of being the {@link Indexer} subsystem can be in */
+  public static enum State {
+    /** {@link State} where the {@link Indexer} is not running */
+    STOPPED,
+    /** {@link State} where the {@link Indexer} is running */
+    RUNNING,
+    /** {@link State} where the {@link Indexer} is periodically pulsing */
+    PULSING
   }
 }
