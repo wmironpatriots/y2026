@@ -25,7 +25,7 @@ import org.frc6423.lib.driver.CommandRobot;
 public class Robot extends CommandRobot {
   private final CommandPS5Controller mController;
 
-  private final RobotState mRobotState = RobotState.getInstance();
+  private final RobotState mRobotState = new RobotState();
 
   public Robot() {
     // Initialize Devices
