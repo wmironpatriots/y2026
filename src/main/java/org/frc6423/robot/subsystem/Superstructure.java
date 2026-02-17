@@ -15,7 +15,7 @@ import org.frc6423.robot.subsystem.flywheel.Flywheel;
 import org.frc6423.robot.subsystem.hood.Hood;
 import org.frc6423.robot.subsystem.indexer.Indexer;
 import org.frc6423.robot.subsystem.intake.Intake;
-import org.frc6423.robot.subsystem.led.Led;
+import org.frc6423.robot.subsystem.led.LED;
 
 /** {@link SubsystemBase} extension for control all subsystems */
 public class Superstructure extends SubsystemBase {
@@ -36,7 +36,7 @@ public class Superstructure extends SubsystemBase {
   private final Flywheel mFlywheel;
   private final Hood mHood;
 
-  private final Led mLed;
+  private final LED mLed;
 
   private State mState;
   private State mPreviousState;
@@ -52,7 +52,7 @@ public class Superstructure extends SubsystemBase {
    * @param led {@link Led} representing LED subsystem
    */
   public Superstructure(
-      Drive drive, Intake intake, Indexer indexer, Flywheel flywheel, Hood hood, Led led) {
+      Drive drive, Intake intake, Indexer indexer, Flywheel flywheel, Hood hood, LED led) {
     mDrive = drive;
     mIntake = intake;
     mIndexer = indexer;

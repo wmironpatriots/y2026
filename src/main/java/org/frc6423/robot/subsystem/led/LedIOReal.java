@@ -9,7 +9,6 @@ package org.frc6423.robot.subsystem.led;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.AddressableLEDBufferView;
-import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.util.Color;
 
 public class LedIOReal extends LedIO {
@@ -55,11 +54,5 @@ public class LedIOReal extends LedIO {
   @Override
   public void updateInputs() {
     mAddressableLED.setData(mBuffer);
-  }
-
-  public void robotPeriodic(LEDPattern pattern) {
-    // Update the buffer with the rainbow animation
-    pattern.applyTo(mLeftLedStrip);
-    updateInputs();
   }
 }
