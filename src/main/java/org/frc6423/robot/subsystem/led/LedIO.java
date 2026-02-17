@@ -32,4 +32,6 @@ public abstract class LedIO {
    * @param color {@link Color} representing the color you want the pixel to display
    */
   public abstract void setPixelColor(int pixel, Color color);
+
+  public abstract void updateInputs();
 }

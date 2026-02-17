@@ -6,34 +6,37 @@
 
 package org.frc6423.robot.subsystem.led;
 
+import edu.wpi.first.units.Units.*;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** {@link SubsystemBase} extension representing the LED subsystem */
 public class LED extends SubsystemBase {
-  // When looking at the center strip
-  public static final int kLeftStripPort = 67;
-  public static final int kLeftStripLength = 69;
-  public static final int kFrontLeftStripPort = 67;
-  public static final int kFrontLeftStripLength = 69;
-  public static final int kCenterLeftStripPort = 67;
-  public static final int kCenterLeftStripLength = 69;
-  public static final int kCenterStripPort = 67;
-  public static final int kCenterStripLength = 69;
-  public static final int kCenterRightStripPort = 67;
-  public static final int kCenterRightStripLength = 69;
-  public static final int kFrontRightStripPort = 67;
-  public static final int kFrontRightStripLength = 69;
-  public static final int kRightStripPort = 67;
-  public static final int kRightStripLength = 69;
+  public static final int kStripPort = 67;
+  public static final int kStripLength = 100 * 7;
 
-  private final LedIO mLeftLedStrip = new LedIOReal(kLeftStripPort, kLeftStripLength);
-  private final LedIO mFrontLeftStrip = new LedIOReal(kFrontLeftStripPort, kFrontLeftStripLength);
-  private final LedIO mCenterLeftStrip =
-      new LedIOReal(kCenterLeftStripPort, kCenterLeftStripLength);
-  private final LedIO mCenterStrip = new LedIOReal(kCenterStripPort, kCenterStripLength);
-  private final LedIO mCenterRightStrip =
-      new LedIOReal(kCenterRightStripPort, kCenterRightStripLength);
-  private final LedIO mFrontRightStrip =
-      new LedIOReal(kFrontRightStripPort, kFrontRightStripLength);
-  private final LedIO mRightStrip = new LedIOReal(kRightStripPort, kRightStripLength);
+  private final LedIO mLedStrip = new LedIOReal(kStripPort, kStripLength);
+  private double rainbowStart = 0;
+
+  public void setStripSolid(LedIO strip, Color color, int low, int high) {
+    for (int i = low; i < high; i++) {
+      strip.setPixelColor(i, color);
+    }
+    mLedStrip.updateInputs();
+  }
+
+  public void setStripStrobe(
+      LedIO strip, Color color1, Color color2, double period, int low, int high) {
+    boolean useC1 = ((Timer.getTimestamp() % period) / period) > 0.5;
+    setStripSolid(strip, useC1 ? color1 : color2, low, high);
+  }
+
+  public void setRainbow(int low, int high) {
+    for (int i = low; i < high; i++) {
+      mLedStrip.setPixelColor(i, Color.fromHSV((int) rainbowStart % 180 + i, 255, 255));
+      rainbowStart += 6;
+    }
+    mLedStrip.updateInputs();
+  }
 }
