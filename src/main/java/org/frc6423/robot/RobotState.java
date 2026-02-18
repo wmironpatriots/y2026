@@ -29,33 +29,24 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.Optional;
 import org.frc6423.lib.util.Tracer;
-import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
+import org.frc6423.robot.Constants.Flags;
 
 /** A singleton that tracks the robot's estimated position */
 public class RobotState {
-  // * CONSTANTS
-  public static final Matrix<N4, N1> kPoseEstimateStdevs = VecBuilder.fill(0.6, 0.6, 0.07, 0.0);
+  /** {@link RobotState} internal constants */
+  private static class Constants {
+    /** {@link Matrix} representing expected position estimate error */
+    private static final Matrix<N4, N1> kPoseEstimateStdevs = VecBuilder.fill(0.6, 0.6, 0.07, 0.0);
 
-  public static final double kBufferDuration = 1.5;
-
-  @Logged public static RobotState kInstance;
-
-  /**
-   * @return {@link RobotState} singleton instance
-   */
-  public static RobotState getInstance() {
-    if (kInstance == null) {
-      kInstance = new RobotState(Main.Flags.kRobotType.mDriveConstants);
-    }
-
-    return kInstance;
+    /** {@link Double} representing how long odometry estimated position remain in buffer */
+    private static final double kBufferDuration = 1.5;
   }
 
   private Pose3d mPreviousOdoPose = new Pose3d();
   private Pose3d mOdoPose = new Pose3d();
   private Pose3d mEstPose = new Pose3d();
   private final TimeInterpolatableBuffer<Pose3d> mOdoPoseBuffer =
-      TimeInterpolatableBuffer.createBuffer(kBufferDuration);
+      TimeInterpolatableBuffer.createBuffer(Constants.kBufferDuration);
 
   private final Field2d mF2d = new Field2d();
 
@@ -64,18 +55,14 @@ public class RobotState {
   private final SwerveDriveKinematics mKinematics;
   private SwerveModulePosition[] mPreviousSwerveModulePoses;
 
-  /**
-   * Create new RobotState
-   *
-   * @param driveConstants {@link DriveConstants} representing the drivetrain's constraints
-   */
-  private RobotState(DriveConstants driveConstants) {
+  /** Create new {@link RobotState} */
+  public RobotState() {
     mPreviousSwerveModulePoses = new SwerveModulePosition[4];
     for (int i = 0; i < mPreviousSwerveModulePoses.length; i++) {
       mPreviousSwerveModulePoses[i] = new SwerveModulePosition();
     }
 
-    mKinematics = driveConstants.getKinematics();
+    mKinematics = Flags.kRobotType.mDriveConstants.getKinematics();
 
     SmartDashboard.putData(mF2d);
   }
@@ -118,7 +105,7 @@ public class RobotState {
           sample.gyroRotation3d.ifPresent(r -> mOdoPose = new Pose3d(mOdoPose.getTranslation(), r));
 
           // Add odometry sample of specified timestamp to odo buffer
-          mOdoPoseBuffer.addSample(kBufferDuration, mOdoPose);
+          mOdoPoseBuffer.addSample(Constants.kBufferDuration, mOdoPose);
 
           // Calculate change in distance between odometry positions and apply to estimated pose
           Twist3d estPoseTwist = mPreviousOdoPose.log(mOdoPose);
@@ -134,7 +121,7 @@ public class RobotState {
           () -> {
             // exit if sample is too old or there are no recent odometry samples
             if (mOdoPoseBuffer.getInternalBuffer().isEmpty()
-                || mOdoPoseBuffer.getInternalBuffer().lastKey() - kBufferDuration
+                || mOdoPoseBuffer.getInternalBuffer().lastKey() - Constants.kBufferDuration
                     > measurement.timestampSeconds) {
               return;
             }
@@ -156,15 +143,15 @@ public class RobotState {
             // Solve for closed form Kalman gain for continuous Kalman filter with A = 0
             // and C = I. See WPIMath/algorithms.md.
             for (int row = 0; row < 4; ++row) {
-              if (kPoseEstimateStdevs.get(row, 0) == 0.0) {
+              if (Constants.kPoseEstimateStdevs.get(row, 0) == 0.0) {
                 visionK.set(row, row, 0.0);
               } else {
                 visionK.set(
                     row,
                     row,
-                    kPoseEstimateStdevs.get(row, 0)
-                        / (kPoseEstimateStdevs.get(row, 0)
-                            + Math.sqrt(kPoseEstimateStdevs.get(row, 0) * r[row])));
+                    Constants.kPoseEstimateStdevs.get(row, 0)
+                        / (Constants.kPoseEstimateStdevs.get(row, 0)
+                            + Math.sqrt(Constants.kPoseEstimateStdevs.get(row, 0) * r[row])));
               }
             }
             // Fill in the gains for the other components of the rotation vector
