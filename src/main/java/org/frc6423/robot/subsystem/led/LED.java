@@ -13,21 +13,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart0;
 import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart1;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart10;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart11;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart12;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart13;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart14;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart15;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart16;
 import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart2;
 import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart3;
 import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart4;
 import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart5;
 import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart6;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart7;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart8;
-import org.frc6423.robot.subsystem.led.BadAppleData.BadApplePart9;
 
 /** {@link SubsystemBase} extension representing the LED subsystem */
 public class LED extends SubsystemBase {
@@ -42,10 +32,7 @@ public class LED extends SubsystemBase {
     public static final String[][] ALL_PARTS = {
       BadApplePart0.DATA, BadApplePart1.DATA, BadApplePart2.DATA,
       BadApplePart3.DATA, BadApplePart4.DATA, BadApplePart5.DATA,
-      BadApplePart6.DATA, BadApplePart7.DATA, BadApplePart8.DATA,
-      BadApplePart9.DATA, BadApplePart10.DATA, BadApplePart11.DATA,
-      BadApplePart12.DATA, BadApplePart13.DATA, BadApplePart14.DATA,
-      BadApplePart15.DATA, BadApplePart16.DATA
+      BadApplePart6.DATA
     };
 
     public static String[] getPart(int index) {
@@ -97,7 +84,14 @@ public class LED extends SubsystemBase {
   }
 
   // 14 * 50 --- 2/50 blocks for 1 strip
-
+  /**
+   * Gets data from Bad Apple docs, data is formatted in 7 files, across 7 String[] arrays and in
+   * 700 chunks. This works, as it is assumed the combined length of all ledstrips is 700.
+   *
+   * @param dataBlock {@link Integer} which document/String[] should be called for
+   * @param chunk {@link Integer} which chunk of String[] should be called for
+   * @return data of chunk of String[]
+   */
   private String getBadAppleData(int dataBlock, int chunk) {
     String data = BadAppleRegistry.getPart(dataBlock)[chunk];
     return (data);
@@ -118,11 +112,16 @@ public class LED extends SubsystemBase {
     }
   }
 
+  /**
+   * Play Bad Apple on LEDs!
+   *
+   * @param fps {@link Integer} fps of bad apple data (10 fps)
+   */
   public Command playBadApple(int fps) {
     return this.run(
         () -> {
           for (int i = 0; i < BadAppleRegistry.ALL_PARTS.length; i++) {
-            for (int n = 0; i < BadAppleRegistry.ALL_PARTS.length; i++) {
+            for (int n = 0; i < BadAppleRegistry.ALL_PARTS[i].length; i++) {
               convertIntArraytoPixels(convertStringtoIntArray(getBadAppleData(i, n)));
               mLedStrip.updateInputs();
               try {
