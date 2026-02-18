@@ -35,7 +35,6 @@ import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
@@ -320,22 +319,14 @@ public class Intake extends SubsystemBase {
         mSetpoint.in(Rotations), getAngle().in(Rotations), Constants.kEpsilon.in(Rotations));
   }
 
-  /**
-   * Request intake to deploy
-   *
-   * @return {@link Command}
-   */
-  public Command deploy() {
-    return this.runOnce(() -> mRequest = Request.DEPLOY);
+  /** Request intake to deploy */
+  public void deploy() {
+    mRequest = Request.DEPLOY;
   }
 
-  /**
-   * Request intake to stow
-   *
-   * @return {@link Command}
-   */
-  public Command stow() {
-    return this.runOnce(() -> mRequest = Request.STOW);
+  /** Request intake to stow */
+  public void stow() {
+    mRequest = Request.STOW;
   }
 
   /** Represents a requested mode of being for the {@link Intake} */
