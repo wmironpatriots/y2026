@@ -79,7 +79,6 @@ public class Feeder extends SubsystemBase {
      * @return {@link Feeder}
      */
     public static Feeder create() {
-        // TODO sim
         return new Feeder(
                 new ServoIOTalonFx(
                         "FeederServo",
@@ -96,10 +95,6 @@ public class Feeder extends SubsystemBase {
     protected Feeder(ServoIO servo) {
         mServo = servo;
     }
-
-    @Override
-    public void periodic() {
-        mServo.periodic();
 
     @Override
     public void periodic() {
@@ -145,30 +140,40 @@ public class Feeder extends SubsystemBase {
     }
 
     /**
-     * Attempt to stop feeder
+     * /**
+     * Request feeder to stop
      *
      * @return {@link Command}
      */
     public Command stop() {
-        return Commands.none();
+        return Commands.runOnce(
+                () -> {
+                    mState = State.STOPPED;
+                });
     }
 
     /**
-     * Attempt to run feeder
+     * Request feeder to run
      *
      * @return {@link Command}
      */
     public Command run() {
-        return Commands.none();
+        return Commands.runOnce(
+                () -> {
+                    mState = State.RUNNING;
+                });
     }
 
     /**
-     * Attempt to start pulsing feeder
+     * Request feeder to pulse
      *
      * @return {@link Command}
      */
     public Command pulse() {
-        return Commands.none();
+        return Commands.runOnce(
+                () -> {
+                    mState = State.PULSING;
+                });
     }
 
     /** Represents a mode of being the {@link Feeder} subsystem can be in */
