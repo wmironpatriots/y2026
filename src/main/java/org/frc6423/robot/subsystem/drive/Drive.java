@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
 import org.frc6423.robot.RobotState;
 import org.frc6423.robot.RobotState.OdometryMeasurement;
@@ -62,24 +63,24 @@ public class Drive extends SubsystemBase {
    *
    * @param constants {@link DriveConstants} representing subsystem configuration
    */
-  public Drive(DriveConstants constants) {
-    mConstants = constants;
+  public Drive(RobotState robotState) {
+    mConstants = Flags.kRobotType.mDriveConstants;
 
-    mRobotState = RobotState.getInstance();
-    mKinematics = constants.getKinematics();
+    mRobotState = robotState;
+    mKinematics = mConstants.getKinematics();
 
     mGyro = new GyroIOPigeon2(mConstants.getGyroConfig());
 
     if (Robot.isReal()) {
-      mFrModule = new SwerveModuleIOTalonFx(mConstants.getFrontRightModuleConfig(), constants);
-      mFlModule = new SwerveModuleIOTalonFx(mConstants.getFrontLeftModuleConfig(), constants);
-      mBlModule = new SwerveModuleIOTalonFx(mConstants.getBackLeftModuleConfig(), constants);
-      mBrModule = new SwerveModuleIOTalonFx(mConstants.getBackRightModuleConfig(), constants);
+      mFrModule = new SwerveModuleIOTalonFx(mConstants.getFrontRightModuleConfig(), mConstants);
+      mFlModule = new SwerveModuleIOTalonFx(mConstants.getFrontLeftModuleConfig(), mConstants);
+      mBlModule = new SwerveModuleIOTalonFx(mConstants.getBackLeftModuleConfig(), mConstants);
+      mBrModule = new SwerveModuleIOTalonFx(mConstants.getBackRightModuleConfig(), mConstants);
     } else {
-      mFrModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontRightModuleConfig(), constants);
-      mFlModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontLeftModuleConfig(), constants);
-      mBlModule = new SwerveModuleIOTalonFxSim(mConstants.getBackLeftModuleConfig(), constants);
-      mBrModule = new SwerveModuleIOTalonFxSim(mConstants.getBackRightModuleConfig(), constants);
+      mFrModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontRightModuleConfig(), mConstants);
+      mFlModule = new SwerveModuleIOTalonFxSim(mConstants.getFrontLeftModuleConfig(), mConstants);
+      mBlModule = new SwerveModuleIOTalonFxSim(mConstants.getBackLeftModuleConfig(), mConstants);
+      mBrModule = new SwerveModuleIOTalonFxSim(mConstants.getBackRightModuleConfig(), mConstants);
     }
 
     mModules = new SwerveModuleIO[] {mFrModule, mFlModule, mBlModule, mBrModule};
