@@ -18,11 +18,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
@@ -33,7 +29,9 @@ import org.frc6423.robot.Constants.Matrix;
  *
  * <p>This subsystem's only component is a roller
  *
- * <p>The roller will only spin towards the shooter/feeder
+ * <p>when indexing, belt is rolling towards shooter
+ *
+ * <p>when outdexing, belt is rolling to intake
  */
 public class Indexer extends SubsystemBase {
   /** {@link Indexer} subsystem constants */
@@ -60,8 +58,8 @@ public class Indexer extends SubsystemBase {
     /** {@link Voltage} representing the indexing speed */
     private static final Voltage kIndexingSpeed = Volts.of(9);
 
-    /** {@link Time} representing the period between pulses when indexer is in pulse mode */
-    private static final double kPulsePeriodSeconds = 0.2;
+    /** {@link Voltage} representing the outdexing speed */
+    private static final Voltage kOutdexingSpeed = kIndexingSpeed.times(-1);
   }
 
   @Logged private final ServoIO mServo;
@@ -101,22 +99,14 @@ public class Indexer extends SubsystemBase {
     switch (mState) {
       case STOPPED:
         mServo.stop();
-
         break;
 
-      case RUNNING:
+      case RUNNING_IN:
         setSpeed(Constants.kIndexingSpeed);
-
         break;
 
-      case PULSING:
-        boolean run =
-            ((Timer.getFPGATimestamp() % Constants.kPulsePeriodSeconds)
-                    / Constants.kPulsePeriodSeconds)
-                > 0.5;
-        if (run) setSpeed(Constants.kIndexingSpeed);
-        else mServo.stop();
-
+      case RUNNING_OUT:
+        setSpeed(Constants.kOutdexingSpeed);
         break;
     }
   }
@@ -138,40 +128,19 @@ public class Indexer extends SubsystemBase {
     return mState;
   }
 
-  /**
-   * Request indexer to stop
-   *
-   * @return {@link Command}
-   */
-  public Command stop() {
-    return Commands.runOnce(
-        () -> {
-          mState = State.STOPPED;
-        });
+  /** Request subsystem to stop */
+  public void stop() {
+    mState = State.STOPPED;
   }
 
-  /**
-   * Request indexer to run
-   *
-   * @return {@link Command}
-   */
-  public Command run() {
-    return Commands.runOnce(
-        () -> {
-          mState = State.RUNNING;
-        });
+  /** Request subsystem to start indexing */
+  public void index() {
+    mState = State.RUNNING_IN;
   }
 
-  /**
-   * Request indexer to pulse
-   *
-   * @return {@link Command}
-   */
-  public Command pulse() {
-    return Commands.runOnce(
-        () -> {
-          mState = State.PULSING;
-        });
+  /** Request subsystem to start outdexing */
+  public void outdex() {
+    mState = State.RUNNING_OUT;
   }
 
   /** Represents a mode of being the {@link Indexer} subsystem can be in */
@@ -179,8 +148,8 @@ public class Indexer extends SubsystemBase {
     /** {@link State} where the {@link Indexer} is not running */
     STOPPED,
     /** {@link State} where the {@link Indexer} is running */
-    RUNNING,
-    /** {@link State} where the {@link Indexer} is periodically pulsing */
-    PULSING
+    RUNNING_IN,
+    /** {@link State} where the {@link Indexer} is running inverse */
+    RUNNING_OUT
   }
 }
