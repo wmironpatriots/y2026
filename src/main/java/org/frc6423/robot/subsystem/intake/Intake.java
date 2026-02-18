@@ -13,6 +13,7 @@ import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
@@ -33,9 +34,11 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
@@ -156,6 +159,8 @@ public class Intake extends SubsystemBase {
 
   private Angle mSetpoint = Degrees.of(0);
 
+  private final SysIdRoutine mPivotCharacterization;
+
   /**
    * Create new {@link Intake}
    *
@@ -189,6 +194,24 @@ public class Intake extends SubsystemBase {
     mPivot = pivot;
     mEncoder = encoder;
     mRoller = roller;
+
+    mPivotCharacterization =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                Volts.of(6),
+                null,
+                (state) -> SignalLogger.writeString("state", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (voltage) -> mPivot.setTorqueCurrentSetpoint(Amps.of(voltage.in(Volts))),
+                null,
+                this,
+                "PivotCharacterization"));
+
+    SmartDashboard.putData(mPivotCharacterization.quasistatic(Direction.kForward));
+    SmartDashboard.putData(mPivotCharacterization.quasistatic(Direction.kReverse));
+    SmartDashboard.putData(mPivotCharacterization.dynamic(Direction.kForward));
+    SmartDashboard.putData(mPivotCharacterization.dynamic(Direction.kReverse));
   }
 
   @Override
@@ -198,68 +221,68 @@ public class Intake extends SubsystemBase {
     mEncoder.periodic();
     mRoller.periodic();
 
-    // Apply request if edge exists
-    switch (mRequest) {
-      case DEPLOY:
-        if (mState == State.STOWED) mState = State.DEPLOYING;
-        break;
-      case STOW:
-        if (mState == State.DEPLOYING || mState == State.DEPLOYED) mState = State.STOWING;
-        break;
-    }
+    // // Apply request if edge exists
+    // switch (mRequest) {
+    //   case DEPLOY:
+    //     if (mState == State.STOWED) mState = State.DEPLOYING;
+    //     break;
+    //   case STOW:
+    //     if (mState == State.DEPLOYING || mState == State.DEPLOYED) mState = State.STOWING;
+    //     break;
+    // }
 
-    // Run state logic
-    switch (mState) {
-      case FULLY_STOWED:
+    // // Run state logic
+    // switch (mState) {
+    //   case FULLY_STOWED:
 
-        // Only start kicker deploy routine when robot enables
-        if (DriverStation.isEnabled()) mState = State.DEPLOYING_KICKER;
+    //     // Only start kicker deploy routine when robot enables
+    //     if (DriverStation.isEnabled()) mState = State.DEPLOYING_KICKER;
 
-        break;
+    //     break;
 
-      case DEPLOYING_KICKER:
-        if (!mStateTimer.isRunning()) mStateTimer.start();
-        mPivot.setVoltageSetpoint(Constants.kKickVoltage, true);
+    //   case DEPLOYING_KICKER:
+    //     if (!mStateTimer.isRunning()) mStateTimer.start();
+    //     mPivot.setVoltageSetpoint(Constants.kKickVoltage, true);
 
-        if (mStateTimer.hasElapsed(Constants.kKickTime)) {
-          mStateTimer.reset();
-          mState = State.STOWED;
-        }
+    //     if (mStateTimer.hasElapsed(Constants.kKickTime)) {
+    //       mStateTimer.reset();
+    //       mState = State.STOWED;
+    //     }
 
-        break;
+    //     break;
 
-      case STOWING:
-        setPivotSetpoint(Constants.kMinAngle);
-        setRollerSetpoint(Constants.kIntakingSpeed);
+    //   case STOWING:
+    //     setPivotSetpoint(Constants.kMinAngle);
+    //     setRollerSetpoint(Constants.kIntakingSpeed);
 
-        if (isNearSetpoint()) {
-          mState = State.STOWED;
-        }
+    //     if (isNearSetpoint()) {
+    //       mState = State.STOWED;
+    //     }
 
-        break;
+    //     break;
 
-      case STOWED:
-        mPivot.stop();
-        mRoller.stop();
+    //   case STOWED:
+    //     mPivot.stop();
+    //     mRoller.stop();
 
-        break;
+    //     break;
 
-      case DEPLOYED:
-        mPivot.stop();
-        setRollerSetpoint(Constants.kIntakingSpeed);
+    //   case DEPLOYED:
+    //     mPivot.stop();
+    //     setRollerSetpoint(Constants.kIntakingSpeed);
 
-        break;
+    //     break;
 
-      case DEPLOYING:
-        setPivotSetpoint(Constants.kMaxAngle);
-        setRollerSetpoint(Constants.kIntakingSpeed);
+    //   case DEPLOYING:
+    //     setPivotSetpoint(Constants.kMaxAngle);
+    //     setRollerSetpoint(Constants.kIntakingSpeed);
 
-        if (isNearSetpoint()) {
-          mState = State.DEPLOYED;
-        }
+    //     if (isNearSetpoint()) {
+    //       mState = State.DEPLOYED;
+    //     }
 
-        break;
-    }
+    //     break;
+    // }
   }
 
   /**
