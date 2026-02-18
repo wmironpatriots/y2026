@@ -16,7 +16,6 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
@@ -70,13 +69,13 @@ public class Intake extends SubsystemBase {
     private static final int kRollerCanDeviceId = Matrix.kIntakeRollerId;
 
     /** {@link Double} representing the gear ratio between the motor rotor to encoder */
-    private static final double kPivotRotorToSensor = 1.0 / 1.0;
+    private static final double kPivotRotorToSensor = (3.0 / 1.0) * (3.0 / 1.0);
 
     /** {@link Double} representing the gear ratio between the sensor to mechanism */
-    private static final double kPivotSensorToMechRatio = 1.0 / 1.0;
+    private static final double kPivotSensorToMechRatio = (36.0 / 16.0);
 
     /** {@link Angle} representing the magnetic angular offset of encoder */
-    private static final Angle kEncoderAngularOffset = Degrees.of(0.0);
+    private static final Angle kEncoderAngularOffset = Rotations.of(-0.046);
 
     /** {@link TalonFXConfiguration} representing the hardware config of the pivot servo */
     private static final TalonFXConfiguration kPivotTalonConfig =
@@ -84,7 +83,7 @@ public class Intake extends SubsystemBase {
             .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
             .withMotorOutput(
                 new MotorOutputConfigs()
-                    .withInverted(InvertedValue.CounterClockwise_Positive)
+                    .withInverted(InvertedValue.Clockwise_Positive)
                     .withNeutralMode(NeutralModeValue.Brake))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
@@ -96,11 +95,10 @@ public class Intake extends SubsystemBase {
                     .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
                     .withRotorToSensorRatio(kPivotRotorToSensor)
                     .withSensorToMechanismRatio(kPivotSensorToMechRatio))
-            .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(true))
             .withMotionMagic(
                 new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity((5800 / 60) / kPivotSensorToMechRatio)
-                    .withMotionMagicAcceleration((5800 / 60) / kPivotSensorToMechRatio * 0.005))
+                    .withMotionMagicCruiseVelocity(5)
+                    .withMotionMagicAcceleration(8))
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0.0)
