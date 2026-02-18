@@ -83,6 +83,7 @@ public class ServoIOTalonFx extends ServoIO {
 
     mServo = new TalonFX(deviceId, canBus);
     mTalonConfig = talonConfig;
+    mServo.getConfigurator().apply(mTalonConfig);
 
     mVoltSignal = mServo.getMotorVoltage();
 
