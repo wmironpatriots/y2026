@@ -56,7 +56,7 @@ public class Indexer extends SubsystemBase {
                     .withStatorCurrentLimitEnable(true));
 
     /** {@link Voltage} representing the indexing speed */
-    private static final Voltage kIndexingSpeed = Volts.of(9);
+    private static final Voltage kIndexingSpeed = Volts.of(5);
 
     /** {@link Voltage} representing the outdexing speed */
     private static final Voltage kOutdexingSpeed = kIndexingSpeed.times(-1);
