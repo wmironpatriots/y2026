@@ -17,12 +17,16 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
+import org.frc6423.lib.io.ServoIOTalonFxSim;
+import org.frc6423.lib.sim.FlywheelSim;
 import org.frc6423.robot.Constants.Matrix;
+import org.frc6423.robot.Robot;
 
 /**
  * {@link SubsystemBase} extension representing the indexer subsystem
@@ -52,7 +56,7 @@ public class Indexer extends SubsystemBase {
                     .withNeutralMode(NeutralModeValue.Brake))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(20.0))
+                    .withStatorCurrentLimit(Amps.of(40.0))
                     .withStatorCurrentLimitEnable(true));
 
     /** {@link Voltage} representing the indexing speed */
@@ -62,24 +66,33 @@ public class Indexer extends SubsystemBase {
     private static final Voltage kOutdexingSpeed = kIndexingSpeed.times(-1);
   }
 
-  @Logged private final ServoIO mServo;
-
-  private State mState = State.STOPPED;
-
   /**
    * Create new {@link Indexer}
    *
    * @return {@link Indexer}
    */
   public static Indexer create() {
-    // TODO sim
-    return new Indexer(
-        new ServoIOTalonFx(
-            "IndexerServo",
-            Constants.kCanBus,
-            Constants.kServoCanDeviceId,
-            Constants.kServoTalonConfig));
+    if (Robot.isReal()) {
+      return new Indexer(
+          new ServoIOTalonFx(
+              "IndexerServo",
+              Constants.kCanBus,
+              Constants.kServoCanDeviceId,
+              Constants.kServoTalonConfig));
+    } else {
+      return new Indexer(
+          new ServoIOTalonFxSim(
+              "IndexerServo",
+              Constants.kCanBus,
+              Constants.kServoCanDeviceId,
+              Constants.kServoTalonConfig,
+              new FlywheelSim(
+                  new FlywheelSim.Config(
+                      DCMotor.getKrakenX60Foc(1), 1, FlywheelSim.kGenericRollerMoi))));
+    }
   }
+
+  @Logged private final ServoIO mServo;
 
   /**
    * Create new {@link Indexer}
@@ -94,21 +107,33 @@ public class Indexer extends SubsystemBase {
   public void periodic() {
     // Update hardware
     mServo.periodic();
+  }
 
-    // Run state logic
-    switch (mState) {
-      case STOPPED:
-        mServo.stop();
-        break;
+  /**
+   * Attempt to stop indexer
+   *
+   * @return {@link Command}
+   */
+  public Command stop() {
+    return this.run(() -> mServo.stop());
+  }
 
-      case RUNNING_IN:
-        setSpeed(Constants.kIndexingSpeed);
-        break;
+  /**
+   * Attempt to index
+   *
+   * @return {@link Command}
+   */
+  public Command index() {
+    return this.run(() -> setSpeed(Constants.kIndexingSpeed));
+  }
 
-      case RUNNING_OUT:
-        setSpeed(Constants.kOutdexingSpeed);
-        break;
-    }
+  /**
+   * Attempt to outdex
+   *
+   * @return {@link Command}
+   */
+  public Command outdex() {
+    return this.run(() -> setSpeed(Constants.kOutdexingSpeed));
   }
 
   /**
@@ -118,38 +143,5 @@ public class Indexer extends SubsystemBase {
    */
   private void setSpeed(Voltage speed) {
     mServo.setVoltageSetpoint(speed, true);
-  }
-
-  /**
-   * @return {@link State} representing the current mode of being subsystem is in
-   */
-  @Logged(name = "State", importance = Importance.INFO)
-  public State getState() {
-    return mState;
-  }
-
-  /** Request subsystem to stop */
-  public void stop() {
-    mState = State.STOPPED;
-  }
-
-  /** Request subsystem to start indexing */
-  public void index() {
-    mState = State.RUNNING_IN;
-  }
-
-  /** Request subsystem to start outdexing */
-  public void outdex() {
-    mState = State.RUNNING_OUT;
-  }
-
-  /** Represents a mode of being the {@link Indexer} subsystem can be in */
-  public static enum State {
-    /** {@link State} where the {@link Indexer} is not running */
-    STOPPED,
-    /** {@link State} where the {@link Indexer} is running */
-    RUNNING_IN,
-    /** {@link State} where the {@link Indexer} is running inverse */
-    RUNNING_OUT
   }
 }
