@@ -8,10 +8,10 @@ package org.frc6423.robot.subsystem.intake;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
@@ -30,6 +30,7 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
@@ -60,7 +61,6 @@ import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.lib.io.ServoIOTalonFxSim;
 import org.frc6423.lib.sim.FlywheelSim;
 import org.frc6423.lib.sim.PivotMechSim;
-import org.frc6423.lib.util.NetworkTableUtil;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
@@ -190,7 +190,7 @@ public class Intake extends SubsystemBase {
      * characterization
      */
     public static final AngularVelocity kPivotCharacterizationVelocityThreshold =
-        RadiansPerSecond.of(6);
+        DegreesPerSecond.of(6);
 
     // * ROLLER HARDWARE CONSTANTS
     /** {@link Integer} representing the CAN ID of pivot servo */
@@ -275,6 +275,7 @@ public class Intake extends SubsystemBase {
   @Logged private final DIO mBeambreak;
 
   private final BooleanSupplier mCoastOverride;
+  private boolean mIsCharacterizing = false;
 
   /** {@link Angle} representing the anglular position pivot wants to go to */
   private Angle mTargetAngle = Degrees.of(0.0);
@@ -316,7 +317,8 @@ public class Intake extends SubsystemBase {
     mEncoder.periodic();
     mRoller.periodic();
 
-    boolean shouldRun = DriverStation.isEnabled() && !mCoastOverride.getAsBoolean();
+    boolean shouldRun =
+        DriverStation.isEnabled() && !mCoastOverride.getAsBoolean() && !mIsCharacterizing;
 
     // Calculate & apply next setpoint
     if (shouldRun) {
@@ -449,15 +451,22 @@ public class Intake extends SubsystemBase {
    */
   public Command runStaticCharacterizationRoutine() {
     Timer timer = new Timer();
-    var entry = NetworkTableUtil.createEntry("Characterization/Intake/PivotStaticAmps", 0.0);
+    final CharacterizationState state = new CharacterizationState();
+    var logger = Epilogue.getConfig().backend;
 
     return this.startRun(
-            () -> timer.reset(),
             () -> {
-              var output = Constants.kPivotStaticCharacterizationRampRate.times(timer.get());
+              mIsCharacterizing = true;
+              state.staticOutput = Amps.zero();
+              timer.restart();
+            },
+            () -> {
+              state.staticOutput =
+                  state.staticOutput.plus(
+                      Constants.kPivotStaticCharacterizationRampRate.times(timer.get()));
 
-              mPivot.setTorqueCurrentSetpoint(output);
-              entry.accept(output.in(Amps));
+              mPivot.setTorqueCurrentSetpoint(state.staticOutput);
+              logger.log("Characterization/Intake/StaticAmps", state.staticOutput);
             })
         .until(
             () -> mPivot.getAngularVelocity().gt(Constants.kPivotCharacterizationVelocityThreshold))
@@ -465,8 +474,13 @@ public class Intake extends SubsystemBase {
         .andThen(this.idle())
         .finallyDo(
             () -> {
+              mIsCharacterizing = false;
               timer.stop();
             });
+  }
+
+  private class CharacterizationState {
+    public Current staticOutput = Amps.zero();
   }
 
   // TODO
