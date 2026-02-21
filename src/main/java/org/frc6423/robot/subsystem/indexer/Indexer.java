@@ -28,15 +28,7 @@ import org.frc6423.lib.sim.FlywheelSim;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
-/**
- * {@link SubsystemBase} extension representing the indexer subsystem
- *
- * <p>This subsystem's only component is a roller
- *
- * <p>when indexing, belt is rolling towards shooter
- *
- * <p>when outdexing, belt is rolling to intake
- */
+/** {@link SubsystemBase} extension representing the indexer subsystem */
 public class Indexer extends SubsystemBase {
   /** {@link Indexer} subsystem constants */
   public class Constants {
