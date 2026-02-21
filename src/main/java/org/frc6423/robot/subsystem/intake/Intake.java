@@ -392,25 +392,19 @@ public class Intake extends SubsystemBase {
 
   // * SETTERS
   /**
-   * Set Angular Position Setpoint for Pivot
+   * Set new intake setpoint
    *
-   * @param setpoint {@link Angle} representing desired angle
+   * @param setpoint {@link Angle} representing target angular postiion
+   * @param speed {@link Voltage} representing desired speed
    */
-  private void setAngleSetpoint(Angle setpoint) {
+  private void setSetpoint(Angle setpoint, Voltage speed) {
     mTargetAngle =
         Rotations.of(
             MathUtil.clamp(
                 setpoint.in(Rotations),
                 Constants.kMinAngle.in(Rotations),
                 Constants.kMaxAngle.in(Rotations)));
-  }
 
-  /**
-   * Set Voltage Speed Setpoint for Roller
-   *
-   * @param speed {@link Voltage} representing desired speed
-   */
-  private void setSpeedSetpoint(Voltage speed) {
     mRoller.setVoltageSetpoint(speed, true);
   }
 
@@ -421,13 +415,9 @@ public class Intake extends SubsystemBase {
    * @return {@link Command}
    */
   public Command stow() {
-    return this.run(
-            () -> {
-              setAngleSetpoint(Constants.kMinAngle);
-              setSpeedSetpoint(Constants.kIntakingSpeed);
-            })
+    return this.run(() -> setSetpoint(Constants.kStowedAngle, Constants.kIntakingSpeed))
         .until(this::isNearTarget)
-        .andThen(() -> setSpeedSetpoint(Volts.zero()));
+        .andThen(() -> setSetpoint(Constants.kStowedAngle, Constants.kStowedSpeed));
   }
 
   /**
@@ -436,24 +426,16 @@ public class Intake extends SubsystemBase {
    * @return {@link Command}
    */
   public Command intake() {
-    return this.run(
-        () -> {
-          setAngleSetpoint(Constants.kMaxAngle);
-          setSpeedSetpoint(Constants.kIntakingSpeed);
-        });
+    return this.run(() -> setSetpoint(Constants.kMaxAngle, Constants.kIntakingSpeed));
   }
 
   /**
    * Attempt to deploy and start outaking
    *
-   * @return
+   * @return {@link Command}
    */
   public Command outake() {
-    return this.run(
-        () -> {
-          setAngleSetpoint(Constants.kMaxAngle);
-          setSpeedSetpoint(Constants.kOutakingSpeed);
-        });
+    return this.run(() -> setSetpoint(Constants.kDeployedAngle, Constants.kOutakingSpeed));
   }
 
   /**
@@ -487,19 +469,7 @@ public class Intake extends SubsystemBase {
             });
   }
 
-  /**
-   * Run a characterization routine for determining the acceleration gain (kA)
-   *
-   * <p>TODO
-   *
-   * <p>
-   *
-   * <p>Characterization outputs will be located in the 'Characterization/Intake' NT folder
-   *
-   * @param staticGain {@link Current} representing the current gain countering static friction
-   *     (derive using runStaticCharacterizationRoutine)
-   * @return {@link Command}
-   */
+  // TODO
   public Command runAccelerationCharacterization(Current staticGain) {
     return Commands.none();
   }
