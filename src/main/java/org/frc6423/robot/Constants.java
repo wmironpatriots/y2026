@@ -23,13 +23,16 @@ public final class Constants {
   /** Runtime flags determining the robots initialization */
   public static final class Flags {
     /** {@link RobotType} representing the robot chassis being used */
-    public static RobotType kRobotType = RobotType.Y2026_L2;
+    public static final RobotType kRobotType = RobotType.Y2026_L2;
 
     /** When true, subsystems will not be initialized */
-    public static boolean kSubsystemDisabled = false;
+    public static final boolean kSubsystemDisabled = false;
 
     /** When true, drive will not be initialized */
-    public static boolean kDriveDisabled = false;
+    public static final boolean kDriveDisabled = false;
+
+    /** When true, tunables/characterization commands will appear on dashboard */
+    public static final boolean kTuningModeEnabled = true;
   }
 
   /** The matrix contains the CAN identification information for all devices */
