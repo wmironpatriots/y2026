@@ -13,7 +13,6 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
@@ -153,10 +152,10 @@ public class Intake extends SubsystemBase {
     public static final Current kA = Amps.zero();
 
     /** {@link Double} representing the gain driving the error to zero */
-    public static final double kP = 0.0;
+    public static final double kP = 320.0;
 
     /** {@link Double} representing the gain driving the deriviate of the error to zero */
-    public static final double kD = 0.0;
+    public static final double kD = 20.0;
 
     /** {@link TalonFXConfiguration} representing the hardware configuration of the pivot servo */
     public static final TalonFXConfiguration kPivotTalonConfig =
@@ -276,8 +275,9 @@ public class Intake extends SubsystemBase {
   private final BooleanSupplier mCoastOverride;
   private boolean mIsCharacterizing = false;
 
-  /** {@link Angle} representing the anglular position pivot wants to go to */
-  private Angle mTargetAngle = Degrees.of(0.0);
+  private Angle mTargetAngle = Degrees.zero();
+
+  private Voltage mTargetSpeed = Volts.zero();
 
   /** {@link State} representing the pivot setpoint */
   private State mSetpointProfileState = new State(0.0, 0.0);
@@ -319,30 +319,31 @@ public class Intake extends SubsystemBase {
     boolean shouldRun =
         DriverStation.isEnabled() && !mCoastOverride.getAsBoolean() && !mIsCharacterizing;
 
-    // Calculate & apply next setpoint
     if (shouldRun) {
       var targetState = new State(mTargetAngle.in(Rotations), 0.0);
+      double previousVel = mSetpointProfileState.velocity;
       mSetpointProfileState =
-          Constants.kPivotMotionProfiled.calculate(0, getProfileState(), targetState);
+          Constants.kPivotMotionProfiled.calculate(0.02, getProfileState(), targetState);
 
       var feedforward =
           Constants.kS
-              .times(Math.signum(mPivot.getAngularVelocity().baseUnitMagnitude()))
+              .times(Math.signum(mSetpointProfileState.velocity))
               .plus(
                   Constants.kG.times(
                       getRotation2d().plus(Constants.kGravityArmPositionOffset).getCos()))
-              .plus(
-                  Constants.kA.times(
-                      mPivot.getAngularAcceleration().in(RotationsPerSecondPerSecond)));
+              .plus(Constants.kA.times((mSetpointProfileState.velocity - previousVel) / 0.02));
 
       if (MathUtil.isNear(
           mSetpointProfileState.position,
           getRotation2d().getRotations(),
           Constants.kEpsilon.in(Rotations))) {
+
         mPivot.setTorquePositionSetpoint(Rotations.of(mSetpointProfileState.position), feedforward);
-      } else {
-        mPivot.stop();
-      }
+
+      } else mPivot.stop();
+
+      // Apply Roller setpoint
+      mRoller.setVoltageSetpoint(mTargetSpeed, true);
     }
   }
 
@@ -406,7 +407,7 @@ public class Intake extends SubsystemBase {
                 Constants.kMinAngle.in(Rotations),
                 Constants.kMaxAngle.in(Rotations)));
 
-    mRoller.setVoltageSetpoint(speed, true);
+    mTargetSpeed = speed;
   }
 
   // * COMMANDS
