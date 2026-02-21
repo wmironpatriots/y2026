@@ -11,7 +11,6 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
@@ -82,13 +81,13 @@ public class Intake extends SubsystemBase {
 
     // * CONTROL CONSTANTS
     /** {@link Angle} representing the lower limit on intake angular position */
-    public static final Angle kMinAngle = Radians.of(0.0);
+    public static final Angle kMinAngle = Rotations.of(0.0);
 
     /** {@link Angle} representing the deploy intake angular position */
-    public static final Angle kDeployedAngle = Radians.of(0.02);
+    public static final Angle kDeployedAngle = Rotations.of(0.02);
 
     /** {@link Angle} representing the stowed intake angular position */
-    public static final Angle kStowedAngle = Radians.of(0.32373);
+    public static final Angle kStowedAngle = Rotations.of(0.32373);
 
     /** {@link Angle} representing the higher limit on intake angular position */
     public static final Angle kMaxAngle = Rotations.of(0.353516);
