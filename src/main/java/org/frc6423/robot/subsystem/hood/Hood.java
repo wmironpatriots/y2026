@@ -38,9 +38,11 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.ArrayList;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import org.frc6423.lib.io.EncoderIO;
@@ -204,6 +206,8 @@ public class Hood extends SubsystemBase {
     mEncoder = encoder;
 
     mCoastOverride = coastOverride;
+
+    SmartDashboard.putData("Characterization/Hood/runStatic", runQuasistaticCharacterization(5));
   }
 
   @Override
@@ -393,14 +397,13 @@ public class Hood extends SubsystemBase {
    * Attempt to increase servo output current at a constant rate to find the current gain acting
    * against static fricition
    *
-   * <p>Result can be found in `Characterization/Hood/StaticAmps`
-   *
    * @return {@link Command}
    */
-  public Command runQuasistaticCharacterization(int samples) {
+  public Command runQuasistaticCharacterization(int trials) {
     Timer timer = new Timer();
     final QuasistaticState state = new QuasistaticState();
     var logger = Epilogue.getConfig().backend;
+    final ArrayList<Current> samples = new ArrayList<>();
 
     return this.startEnd(
             () -> {
@@ -421,8 +424,20 @@ public class Hood extends SubsystemBase {
         .andThen(() -> mServo.stop())
         .finallyDo(
             () -> {
-              mIsCharacterizing = false;
               timer.stop();
+              samples.add(state.staticAmps);
+            })
+        .repeatedly()
+        .until(() -> samples.toArray().length == trials)
+        .finallyDo(
+            () -> {
+              Current avg = Amps.zero();
+              for (var sample : samples) {
+                System.out.println("Sample 1 ~ " + sample.in(Amps) + " Amps");
+                avg.plus(sample);
+              }
+
+              System.out.println("Avg ~ " + avg.div(trials) + " Amps");
             });
   }
 
@@ -440,7 +455,9 @@ public class Hood extends SubsystemBase {
   public Command runDynamicCharacterizatoin() {
     Timer timer = new Timer();
     var logger = Epilogue.getConfig().backend;
+    AngularVelocity velocity = RotationsPerSecond.zero();
 
+    // TODO
     return Commands.none();
   }
 }
