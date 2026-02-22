@@ -10,12 +10,16 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
@@ -26,6 +30,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -57,7 +62,7 @@ public class Hood extends SubsystemBase {
     public static final Angle kMaxAngle = Degrees.of(45.812);
 
     /** {@link Angle} representing the maximum allowed error in angular position */
-    public static final Angle kEpsilon = Degrees.of(0.01); // TODO
+    public static final Angle kEpsilon = Degrees.of(0.01);
 
     // * ENCODER HARDWARE CONSTANTS
     /** {@link Integer} representing the CAN ID of the hood encoder */
@@ -71,12 +76,8 @@ public class Hood extends SubsystemBase {
         new CANcoderConfiguration()
             .withMagnetSensor(
                 new MagnetSensorConfigs()
-                    .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
-                    .withMagnetOffset(kEncoderAngularOffset)
-                    .withAbsoluteSensorDiscontinuityPoint(
-                        MathUtil.inputModulus(
-                                kMaxAngle.plus(kMinAngle).in(Rotations), kMinAngle.in(Rotations), 1)
-                            / 2.0));
+                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
+                    .withMagnetOffset(kEncoderAngularOffset));
 
     // * SERVO HARDWARE CONSTANTS
     /** {@link Integer} representing the CAN ID of servo */
@@ -89,13 +90,23 @@ public class Hood extends SubsystemBase {
     public static final double kRotorToSensorRatio = 2.57142857143;
 
     /** {@link Double} representing the gear ratio between the encoder shaft and the hood */
-    public static final double kSensorToMechRatio = 0.722222222;
+    public static final double kSensorToMechRatio = 10.83;
 
     /** {@link TrapezoidProfile} representing the motion profile use to calculate hood setpoints */
     public static final TrapezoidProfile kServoMotionProfile =
-        new TrapezoidProfile(new Constraints(3, 5)); // TODO
+        new TrapezoidProfile(new Constraints(3, 5));
 
-    public static final TalonFXConfiguration kServoConfig = new TalonFXConfiguration();
+    public static final TalonFXConfiguration kServoConfig =
+        new TalonFXConfiguration()
+            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withInverted(InvertedValue.Clockwise_Positive)
+                    .withNeutralMode(NeutralModeValue.Brake))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withStatorCurrentLimit(kServoStatorCurrentLimit)
+                    .withStatorCurrentLimitEnable(true));
 
     /** {@link Current} representing the Current gain acting against static friciton */
     public static Current kS = Amps.zero();
@@ -132,6 +143,7 @@ public class Hood extends SubsystemBase {
         coastOverride);
   }
 
+  // * MEMBERS
   public final DoubleEntry kSTunable =
       NetworkTableUtil.createEntry("Characterization/Hood/KsAmps", 0.0);
   public final DoubleEntry kGTunable =
@@ -169,6 +181,7 @@ public class Hood extends SubsystemBase {
   @Override
   public void periodic() {
     mServo.periodic();
+    mEncoder.periodic();
 
     // Accept values from tunables if tuning mode
     if (Flags.kTuningModeEnabled) {
@@ -189,7 +202,8 @@ public class Hood extends SubsystemBase {
     }
 
     // Check if setpoint should be applied
-    boolean runProfile = DriverStation.isEnabled() && !mCoastOverride.getAsBoolean();
+    boolean runProfile =
+        DriverStation.isEnabled() && !mIsCharacterizing && !mCoastOverride.getAsBoolean();
 
     if (runProfile) {
       double previousVel = mSetpointProfileState.velocity;
@@ -206,13 +220,15 @@ public class Hood extends SubsystemBase {
               .plus(Constants.kG.times(getRotation2d().getCos()))
               .plus(Constants.kA.times(setpointAcceleration));
 
-      // TODO kD
       var feedback =
           Amps.zero()
               .plus(
                   Constants.kP.times(
-                      setpointAcceleration
-                          - mServo.getAngularAcceleration().in(RotationsPerSecondPerSecond)));
+                      mSetpointProfileState.position - getRotation2d().getRotations()))
+              .plus(
+                  Constants.kD.times(
+                      mSetpointProfileState.velocity
+                          - getAngularVelocity().in(RotationsPerSecond)));
 
       mServo.setTorqueCurrentSetpoint(feedforward.plus(feedback));
     }
@@ -261,8 +277,8 @@ public class Hood extends SubsystemBase {
    */
   @Logged(name = "Rotation2d", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
-    return new Rotation2d(mEncoder.getAngle())
-        .plus(new Rotation2d(Constants.kEncoderAngularOffset));
+    return new Rotation2d(mEncoder.getAngle().div(Constants.kSensorToMechRatio))
+        .plus(new Rotation2d(Constants.kMinAngle));
   }
 
   /**
@@ -275,12 +291,20 @@ public class Hood extends SubsystemBase {
   }
 
   /**
+   * @return {@link AngularVelocity} representing the angular velocity of subsystem
+   */
+  public AngularVelocity getAngularVelocity() {
+    return mServo
+        .getAngularVelocity()
+        .div(Constants.kRotorToSensorRatio * Constants.kSensorToMechRatio);
+  }
+
+  /**
    * @return {@link State} representing the angular position and velocity of subsystem in revs
    */
   @Logged(name = "MotionProfileState", importance = Importance.INFO)
   public State getMotionProfileState() {
-    return new State(
-        getRotation2d().getRotations(), mServo.getAngularVelocity().in(RotationsPerSecond));
+    return new State(getRotation2d().getRotations(), getAngularVelocity().in(RotationsPerSecond));
   }
 
   /**
