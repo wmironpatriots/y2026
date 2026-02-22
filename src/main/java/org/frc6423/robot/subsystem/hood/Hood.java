@@ -8,8 +8,10 @@ package org.frc6423.robot.subsystem.hood;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
@@ -21,6 +23,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
@@ -32,8 +35,11 @@ import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -120,8 +126,30 @@ public class Hood extends SubsystemBase {
     /** {@link Current} representing the Current gain driving the acceleration to zero */
     public static Current kP = Amps.zero();
 
-    /** {@link Current} representing th eCurrent gain driving the jerk to zero */
+    /** {@link Current} representing the Current gain driving the jerk to zero */
     public static Current kD = Amps.zero();
+
+    /**
+     * {@link Current} representing the rate to increase the current output of servo during
+     * quasistatic characterization
+     */
+    public static final Current kQuasistaticCharacterizationRampRate = Amps.of(0.2);
+
+    /**
+     * {@link AngularVelocity} representing the maximum allowed velocity before ending quasistatic
+     * characterization
+     */
+    public static final AngularVelocity kQuasistaticCharacterizationVelocityThreshold =
+        DegreesPerSecond.of(0.2);
+
+    /**
+     * {@link Current} representing the constant current output of servo during dynamic
+     * characterization
+     */
+    public static final Current kDynamicCharacterizationCurrent = Amps.of(2);
+
+    /** {@link Time} representing the length of the dynamic characterization test */
+    public static final Time kDynamicCharacterizationDuration = Seconds.of(2);
 
     /** {@link CANBus} representing bus CAN devices are on */
     public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
@@ -359,5 +387,60 @@ public class Hood extends SubsystemBase {
    */
   public Command adjustToAngle(Supplier<Rotation2d> angle) {
     return this.run(() -> setTargetAngle(angle.get()));
+  }
+
+  /**
+   * Attempt to increase servo output current at a constant rate to find the current gain acting
+   * against static fricition
+   *
+   * <p>Result can be found in `Characterization/Hood/StaticAmps`
+   *
+   * @return {@link Command}
+   */
+  public Command runQuasistaticCharacterization(int samples) {
+    Timer timer = new Timer();
+    final QuasistaticState state = new QuasistaticState();
+    var logger = Epilogue.getConfig().backend;
+
+    return this.startEnd(
+            () -> {
+              mIsCharacterizing = true;
+              state.staticAmps = Amps.zero();
+              timer.restart();
+            },
+            () -> {
+              state.staticAmps =
+                  state.staticAmps.plus(
+                      Constants.kQuasistaticCharacterizationRampRate.times(timer.get()));
+
+              mServo.setTorqueCurrentSetpoint(state.staticAmps);
+              logger.log("Characterization/Hood/StaticAmps", state.staticAmps);
+            })
+        .until(
+            () -> getAngularVelocity().gt(Constants.kQuasistaticCharacterizationVelocityThreshold))
+        .andThen(() -> mServo.stop())
+        .finallyDo(
+            () -> {
+              mIsCharacterizing = false;
+              timer.stop();
+            });
+  }
+
+  /** A {@link Current} wrapper class for quasistatic characterization */
+  private class QuasistaticState {
+    public Current staticAmps = Amps.zero();
+  }
+
+  /**
+   * Attempt to apply a constant servo output current to find the current gain acting against
+   * current gain inducing acceleration
+   *
+   * @return {@link Command}
+   */
+  public Command runDynamicCharacterizatoin() {
+    Timer timer = new Timer();
+    var logger = Epilogue.getConfig().backend;
+
+    return Commands.none();
   }
 }
