@@ -160,6 +160,11 @@ public class ServoIOTalonFx extends ServoIO {
 
   @Override
   public void setBrakeStatus(boolean active) {
+    if ((active && mTalonConfig.MotorOutput.NeutralMode == NeutralModeValue.Brake)
+        || (!active && mTalonConfig.MotorOutput.NeutralMode == NeutralModeValue.Coast)) {
+      return;
+    }
+
     new Thread(
             () -> {
               mTalonConfig.MotorOutput.NeutralMode =
