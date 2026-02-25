@@ -89,7 +89,13 @@ public class Flywheel extends SubsystemBase {
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(kServoSupplyCurrentLimit)
                     .withSupplyCurrentLimitEnable(true))
-            .withSlot0(new Slot0Configs().withKS(0.0).withKA(0.0).withKP(0.0).withKD(0.0));
+            .withSlot0(
+                new Slot0Configs()
+                    .withKS(5.5227)
+                    .withKV(0.0177)
+                    .withKA(0.56687)
+                    .withKP(0.41696)
+                    .withKD(0.0));
 
     /** {@link CANBus} representing bus CAN devices are on */
     public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
@@ -151,8 +157,8 @@ public class Flywheel extends SubsystemBase {
     mCharacterization =
         new SysIdRoutine(
             new SysIdRoutine.Config(
-                Volts.of(5).per(Second),
-                Volts.of(10),
+                Volts.of(35).per(Second),
+                Volts.of(15),
                 null,
                 (state) ->
                     Epilogue.getConfig()
@@ -219,7 +225,6 @@ public class Flywheel extends SubsystemBase {
    */
   public Command characterize() {
     return Commands.sequence(
-        coast(),
         mCharacterization.quasistatic(Direction.kForward),
         Commands.waitUntil(() -> isNearSetpoint()),
         mCharacterization.quasistatic(Direction.kReverse),
@@ -248,7 +253,7 @@ public class Flywheel extends SubsystemBase {
    * @param velocity {@link AngularVelocity} representing the velocity to accelerate to
    * @return {@link Command}
    */
-  public Command accelerateTo(AngularVelocity velocity) {
+  public Command accelerateToVelocity(AngularVelocity velocity) {
     return accelerateToVelocity(() -> velocity);
   }
 
