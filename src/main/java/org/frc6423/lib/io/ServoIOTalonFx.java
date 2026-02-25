@@ -241,23 +241,25 @@ public class ServoIOTalonFx extends ServoIO {
 
   @Override
   public void setVoltageMotionProfiledVelocitySetpoint(AngularVelocity velocity, boolean withFoc) {
-    mVoltProfiledVelRequest.withVelocity(velocity).withEnableFOC(withFoc);
+    mServo.setControl(mVoltProfiledVelRequest.withVelocity(velocity).withEnableFOC(withFoc));
   }
 
   @Override
   public void setTorqueMotionProfiledVelocitySetpoint(AngularVelocity velocity) {
-    mTorqueProfiledVelRequest.withVelocity(velocity);
+    mServo.setControl(mTorqueProfiledVelRequest.withVelocity(velocity));
   }
 
   @Override
   public void setTorqueMotionProfiledVelocitySetpoint(
       AngularVelocity velocity, Current feedforward) {
-    mTorqueProfiledVelRequest.withVelocity(velocity).withFeedForward(feedforward);
+    mServo.setControl(
+        mTorqueProfiledVelRequest.withVelocity(velocity).withFeedForward(feedforward));
   }
 
   @Override
   public void setTorqueMotionProfiledVelocitySetpoint(
       AngularVelocity velocity, AngularAcceleration acceleration) {
-    mTorqueProfiledVelRequest.withVelocity(velocity).withAcceleration(acceleration);
+    mServo.setControl(
+        mTorqueProfiledVelRequest.withVelocity(velocity).withAcceleration(acceleration));
   }
 }

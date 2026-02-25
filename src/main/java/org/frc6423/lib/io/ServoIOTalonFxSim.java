@@ -28,7 +28,7 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
   private final DCMotorSim mPhysicsModel;
 
   private double previousTimestamp;
-  private final Notifier mUpdater;
+  private final Notifier mNotifier;
 
   /**
    * Create new {@link ServoIOTalonFxSim}
@@ -57,7 +57,7 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
     mPhysicsModel =
         new DCMotorSim(
             LinearSystemId.createDCMotorSystem(
-                gearbox, rotationalInertia.in(KilogramSquareMeters), 0.0),
+                gearbox, rotationalInertia.in(KilogramSquareMeters), sensorToMechanismRatio),
             gearbox);
 
     mServo.getSimState().setMotorType(motorType);
@@ -66,7 +66,7 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
             ? ChassisReference.CounterClockwise_Positive
             : ChassisReference.Clockwise_Positive;
 
-    mUpdater =
+    mNotifier =
         new Notifier(
             () -> {
               final double timestamp = Timer.getFPGATimestamp();
@@ -89,6 +89,6 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
                           * sensorToMechanismRatio);
             });
 
-    mUpdater.startPeriodic(0.005);
+    mNotifier.startPeriodic(0.005);
   }
 }
