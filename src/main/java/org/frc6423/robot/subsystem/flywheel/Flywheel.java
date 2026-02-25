@@ -31,6 +31,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.MomentOfInertia;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -154,20 +155,16 @@ public class Flywheel extends SubsystemBase {
                 Volts.of(10),
                 null,
                 (state) ->
-                    Epilogue.getConfig().backend.log("Telemetry/Flywheel/SysID State", state)),
+                    Epilogue.getConfig()
+                        .backend
+                        .log("Telemetry/Flywheel/SysID State", state.toString())),
             new SysIdRoutine.Mechanism(
                 (voltage) -> mLeft.setTorqueCurrentSetpoint(Amps.of(voltage.in(Volts))),
                 null,
                 this));
 
     if (Flags.kTuningModeEnabled) {
-      SmartDashboard.putData(
-          "Quasistatic Forward", mCharacterization.quasistatic(Direction.kForward));
-      SmartDashboard.putData(
-          "Quasistatic Reverse", mCharacterization.quasistatic(Direction.kReverse));
-
-      SmartDashboard.putData("Dynamic Forward", mCharacterization.dynamic(Direction.kForward));
-      SmartDashboard.putData("Dynamic Reverse", mCharacterization.dynamic(Direction.kReverse));
+      SmartDashboard.putData("runCharacterization", characterize());
     }
   }
 
@@ -211,16 +208,38 @@ public class Flywheel extends SubsystemBase {
    */
   private void setTargetVelocity(AngularVelocity velocity) {
     mTargetVelocity = velocity;
+    mLeft.setTorqueMotionProfiledVelocitySetpoint(velocity);
   }
 
   // * COMMANDS
+  /**
+   * Request subsystem to run System Identification routines for characterization
+   *
+   * @return {@link Command}
+   */
+  public Command characterize() {
+    return Commands.sequence(
+        coast(),
+        mCharacterization.quasistatic(Direction.kForward),
+        Commands.waitUntil(() -> isNearSetpoint()),
+        mCharacterization.quasistatic(Direction.kReverse),
+        Commands.waitUntil(() -> isNearSetpoint()),
+        mCharacterization.dynamic(Direction.kForward),
+        Commands.waitUntil(() -> isNearSetpoint()),
+        mCharacterization.dynamic(Direction.kReverse));
+  }
+
   /**
    * Request subsystem to stop applying output and coast
    *
    * @return {@link Command}
    */
   public Command coast() {
-    return this.run(() -> mLeft.stop());
+    return this.run(
+        () -> {
+          setTargetVelocity(RevolutionsPerSecond.zero());
+          mLeft.stop();
+        });
   }
 
   /**
@@ -241,6 +260,6 @@ public class Flywheel extends SubsystemBase {
    * @return {@link Command}
    */
   public Command accelerateToVelocity(Supplier<AngularVelocity> velocity) {
-    return this.run(() -> mTargetVelocity = velocity.get());
+    return this.run(() -> setTargetVelocity(velocity.get()));
   }
 }
