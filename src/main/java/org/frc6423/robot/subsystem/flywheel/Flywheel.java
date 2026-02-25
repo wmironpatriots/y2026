@@ -16,6 +16,7 @@ import static edu.wpi.first.units.Units.Volts;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -53,7 +54,8 @@ public class Flywheel extends SubsystemBase {
   public class Constants {
     // * PHYSICAL CONSTANTS
     /** {@link MomentOfInertia} representing the rotational inertia of flywheel system */
-    public static final MomentOfInertia kRotationalInertia = KilogramSquareMeters.of(0.00117055861);
+    public static final MomentOfInertia kRotationalInertia =
+        KilogramSquareMeters.of(10.491008 * 0.0002926397);
 
     // * CONTROL CONSTANTS
     /** {@link Double} representing the maximum allowed percent error in angular velocity */
@@ -89,12 +91,13 @@ public class Flywheel extends SubsystemBase {
                     .withStatorCurrentLimitEnable(true)
                     .withSupplyCurrentLimit(kServoSupplyCurrentLimit)
                     .withSupplyCurrentLimitEnable(true))
+            .withMotionMagic(new MotionMagicConfigs().withMotionMagicAcceleration(9999.0))
             .withSlot0(
                 new Slot0Configs()
-                    .withKS(5.5227)
-                    .withKV(0.0177)
-                    .withKA(0.56687)
-                    .withKP(0.41696)
+                    .withKS(4.7248)
+                    .withKV(0.10759)
+                    .withKA(3.6145)
+                    .withKP(0.23165)
                     .withKD(0.0));
 
     /** {@link CANBus} representing bus CAN devices are on */
@@ -206,17 +209,6 @@ public class Flywheel extends SubsystemBase {
         > Constants.kEpsilon;
   }
 
-  // * SETTERS
-  /**
-   * Set Angular Velocity Target
-   *
-   * @param velocity {@link AngularVelocity} representing desired velocity
-   */
-  private void setTargetVelocity(AngularVelocity velocity) {
-    mTargetVelocity = velocity;
-    mLeft.setTorqueMotionProfiledVelocitySetpoint(velocity);
-  }
-
   // * COMMANDS
   /**
    * Request subsystem to run System Identification routines for characterization
@@ -242,7 +234,7 @@ public class Flywheel extends SubsystemBase {
   public Command coast() {
     return this.run(
         () -> {
-          setTargetVelocity(RevolutionsPerSecond.zero());
+          mTargetVelocity = RevolutionsPerSecond.zero();
           mLeft.stop();
         });
   }
@@ -265,6 +257,10 @@ public class Flywheel extends SubsystemBase {
    * @return {@link Command}
    */
   public Command accelerateToVelocity(Supplier<AngularVelocity> velocity) {
-    return this.run(() -> setTargetVelocity(velocity.get()));
+    return this.run(
+        () -> {
+          mTargetVelocity = velocity.get();
+          mLeft.setTorqueMotionProfiledVelocitySetpoint(mTargetVelocity);
+        });
   }
 }
