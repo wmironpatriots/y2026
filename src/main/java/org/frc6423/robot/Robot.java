@@ -9,7 +9,6 @@ package org.frc6423.robot;
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.EpilogueConfiguration;
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
@@ -18,18 +17,19 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
+import org.frc6423.robot.Constants.Flags;
 
 @Logged
 public class Robot extends CommandRobot {
-  private final CommandPS5Controller mController;
+  private final CommandXboxController mController;
 
   private final RobotState mRobotState = new RobotState();
 
   public Robot() {
     // Initialize Devices
-    mController = new CommandPS5Controller(0);
+    mController = new CommandXboxController(0);
 
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);
@@ -57,7 +57,7 @@ public class Robot extends CommandRobot {
           }
 
           // Set lowest importance level to be logged
-          config.minimumImportance = Importance.DEBUG;
+          config.minimumImportance = Flags.kLoggingLevel;
         });
 
     // Bind Epilogue to robot periodic

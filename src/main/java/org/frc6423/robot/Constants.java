@@ -7,6 +7,7 @@
 package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
+import edu.wpi.first.epilogue.Logged.Importance;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL1;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
@@ -33,6 +34,9 @@ public final class Constants {
 
     /** When true, tunables/characterization commands will appear on dashboard */
     public static final boolean kTuningModeEnabled = true;
+
+    /** {@link Importance} Minimum Epilogue importance to be logged */
+    public static final Importance kLoggingLevel = Importance.DEBUG;
   }
 
   /** The matrix contains the CAN identification information for all devices */
