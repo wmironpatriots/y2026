@@ -33,7 +33,6 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
@@ -56,12 +55,8 @@ import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
-import org.frc6423.lib.io.ServoIOTalonFxSim;
-import org.frc6423.lib.sim.FlywheelSim;
-import org.frc6423.lib.sim.PivotMechSim;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
-import org.frc6423.robot.Robot;
 
 /**
  * {@link SubsystemBase} extension representing the intake subsystem
@@ -73,10 +68,10 @@ public class Intake extends SubsystemBase {
   /** {@link Intake} subsystem constants */
   public class Constants {
     // * PHYSICAL CONSTANTS
-    public static final Distance kIntakeArmLength = Inches.of(1); // TODO check
+    public static final Distance kIntakeArmLength = Inches.of(1);
 
     public static final MomentOfInertia kIntakeArmRotationalInertia =
-        KilogramSquareMeters.of(0.0004); // TODO check
+        KilogramSquareMeters.of(0.0004);
 
     // * CONTROL CONSTANTS
     /** {@link Angle} representing the lower limit on intake angular position */
@@ -221,51 +216,22 @@ public class Intake extends SubsystemBase {
    * @return {@link Intake}
    */
   public static Intake create(BooleanSupplier coastOverride) {
-    if (Robot.isReal()) {
-      return new Intake(
-          new ServoIOTalonFx(
-              "IntakePivot",
-              Constants.kCanBus,
-              Constants.kPivotCanDeviceId,
-              Constants.kPivotTalonConfig),
-          new EncoderIOCanCoder(
-              Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig),
-          new ServoIOTalonFx(
-              "IntakeRoller",
-              Constants.kCanBus,
-              Constants.kRollerCanDeviceId,
-              Constants.kRollerTalonConfig),
-          new DIORio(1), // TODO replace placeholder
-          coastOverride);
-    } else {
-      return new Intake(
-          new ServoIOTalonFxSim(
-              "IntakePivot",
-              Constants.kCanBus,
-              Constants.kPivotCanDeviceId,
-              Constants.kPivotTalonConfig,
-              new PivotMechSim(
-                  new PivotMechSim.Config(
-                      DCMotor.getKrakenX60Foc(1),
-                      Constants.kPivotSensorToMechRatio,
-                      Constants.kIntakeArmLength,
-                      Constants.kIntakeArmRotationalInertia,
-                      true,
-                      Constants.kMinAngle,
-                      Constants.kMaxAngle,
-                      Constants.kMinAngle))),
-          new EncoderIOCanCoder(0, Constants.kCanBus, Constants.kEncoderConfig),
-          new ServoIOTalonFxSim(
-              "IntakeRoller",
-              Constants.kCanBus,
-              Constants.kRollerCanDeviceId,
-              Constants.kRollerTalonConfig,
-              new FlywheelSim(
-                  new FlywheelSim.Config(
-                      DCMotor.getKrakenX60Foc(1), 1.0, KilogramSquareMeters.of(1)))),
-          new DIORio(1), // TODO replace placeholder
-          coastOverride);
-    }
+    // TODO sim
+    return new Intake(
+        new ServoIOTalonFx(
+            "IntakePivot",
+            Constants.kCanBus,
+            Constants.kPivotCanDeviceId,
+            Constants.kPivotTalonConfig),
+        new EncoderIOCanCoder(
+            Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig),
+        new ServoIOTalonFx(
+            "IntakeRoller",
+            Constants.kCanBus,
+            Constants.kRollerCanDeviceId,
+            Constants.kRollerTalonConfig),
+        new DIORio(1), // TODO replace placeholder
+        coastOverride);
   }
 
   @Logged private final EncoderIO mEncoder;

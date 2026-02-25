@@ -6,21 +6,28 @@
 
 package org.frc6423.lib.io;
 
-import static edu.wpi.first.units.Units.Volts;
+import static edu.wpi.first.units.Units.KilogramSquareMeters;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.ChassisReference;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
+import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.MomentOfInertia;
 import edu.wpi.first.wpilibj.Notifier;
-import org.frc6423.lib.sim.MechSim;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /** {@link ServoIOTalon} extension for simulation */
 public class ServoIOTalonFxSim extends ServoIOTalonFx {
-  private final MechSim mModel;
+  private final DCMotorSim mPhysicsModel;
+
+  private double previousTimestamp;
   private final Notifier mUpdater;
 
   /**
@@ -30,57 +37,58 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
    * @param canBus {@link CANBus} representing CAN bus loop device is in
    * @param canDeviceId {@link Integer} representing the id of CAN device
    * @param talonConfig {@link TalonFXConfiguration} representing the servo config
-   * @param motorKt {@link Double} representing the servo's kT rating
-   * @param model {@link MechSim} representing the physics simulation to use for modeling system
+   * @param rotationalInertia {@link MomentOfInertia} representing the rotational inertia of system
+   * @param motorType {@link MotorType} representing the type of motors used for gearbox input
+   * @param gearbox {@link DCMotor} representing the gearbox input
+   * @param sensorToMechanismRatio {@link Double} representing the gear ratio between the encoder
+   *     and mechanism output
    */
   public ServoIOTalonFxSim(
-      String name, CANBus canBus, int deviceId, TalonFXConfiguration talonConfig, MechSim model) {
+      String name,
+      CANBus canBus,
+      int deviceId,
+      TalonFXConfiguration talonConfig,
+      MomentOfInertia rotationalInertia,
+      MotorType motorType,
+      DCMotor gearbox,
+      double sensorToMechanismRatio) {
     super(name, canBus, deviceId, talonConfig);
 
-    mModel = model;
+    mPhysicsModel =
+        new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(
+                gearbox, rotationalInertia.in(KilogramSquareMeters), 0.0),
+            gearbox);
 
+    mServo.getSimState().setMotorType(motorType);
     mServo.getSimState().Orientation =
         mTalonConfig.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive
             ? ChassisReference.CounterClockwise_Positive
             : ChassisReference.Clockwise_Positive;
 
-    mUpdater = new Notifier(() -> updateSimulation());
+    mUpdater =
+        new Notifier(
+            () -> {
+              final double timestamp = Timer.getFPGATimestamp();
+              final double deltaTime = timestamp - previousTimestamp;
+              previousTimestamp = timestamp;
+
+              mServo.getSimState().setSupplyVoltage(RobotController.getBatteryVoltage());
+
+              mPhysicsModel.setInputVoltage(mServo.getSimState().getMotorVoltage());
+              mPhysicsModel.update(deltaTime);
+
+              mServo
+                  .getSimState()
+                  .setRawRotorPosition(
+                      mPhysicsModel.getAngularPosition().in(Rotations) * sensorToMechanismRatio);
+              mServo
+                  .getSimState()
+                  .setRotorVelocity(
+                      mPhysicsModel.getAngularVelocity().in(RotationsPerSecond)
+                          * sensorToMechanismRatio);
+            });
+
     mUpdater.startPeriodic(0.005);
-  }
-
-  /** Update high fidelity sim */
-  protected void updateSimulation() {
-    mServo.getSimState().setSupplyVoltage(12.0);
-
-    // Set system model input voltage using simulation input
-    mModel.setInputVoltage(
-        MechSim.addFriction(mServo.getSimState().getMotorVoltageMeasure(), Volts.of(0.25)));
-
-    // Update system model
-    mModel.update();
-
-    // Update simulation using system model
-    mServo
-        .getSimState()
-        .setRawRotorPosition(mModel.getAngle().times(mTalonConfig.Feedback.SensorToMechanismRatio));
-    mServo
-        .getSimState()
-        .setRotorVelocity(
-            mModel.getAngularVelocity().times(mTalonConfig.Feedback.SensorToMechanismRatio));
-  }
-
-  @Override
-  public Angle getAngle() {
-    return mModel.getAngle();
-  }
-
-  @Override
-  public AngularVelocity getAngularVelocity() {
-    return mModel.getAngularVelocity();
-  }
-
-  @Override
-  public Current getStatorCurrent() {
-    return mModel.getStatorCurrent();
   }
 }

@@ -26,6 +26,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 
 /** {@link MechSim} implementation for a pivot system */
+@Deprecated
 public class PivotMechSim extends MechSim {
   /**
    * {@link MomentOfInertia} representing the Rotational Inertia of a generic pivoting arm system

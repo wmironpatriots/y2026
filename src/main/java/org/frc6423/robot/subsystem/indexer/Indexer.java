@@ -17,16 +17,12 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
-import org.frc6423.lib.io.ServoIOTalonFxSim;
-import org.frc6423.lib.sim.FlywheelSim;
 import org.frc6423.robot.Constants.Matrix;
-import org.frc6423.robot.Robot;
 
 /** {@link SubsystemBase} extension representing the indexer subsystem */
 public class Indexer extends SubsystemBase {
@@ -64,24 +60,13 @@ public class Indexer extends SubsystemBase {
    * @return {@link Indexer}
    */
   public static Indexer create() {
-    if (Robot.isReal()) {
-      return new Indexer(
-          new ServoIOTalonFx(
-              "IndexerServo",
-              Constants.kCanBus,
-              Constants.kServoCanDeviceId,
-              Constants.kServoTalonConfig));
-    } else {
-      return new Indexer(
-          new ServoIOTalonFxSim(
-              "IndexerServo",
-              Constants.kCanBus,
-              Constants.kServoCanDeviceId,
-              Constants.kServoTalonConfig,
-              new FlywheelSim(
-                  new FlywheelSim.Config(
-                      DCMotor.getKrakenX60Foc(1), 1, FlywheelSim.kGenericRollerMoi))));
-    }
+    // TODO sim
+    return new Indexer(
+        new ServoIOTalonFx(
+            "IndexerServo",
+            Constants.kCanBus,
+            Constants.kServoCanDeviceId,
+            Constants.kServoTalonConfig));
   }
 
   @Logged private final ServoIO mServo;

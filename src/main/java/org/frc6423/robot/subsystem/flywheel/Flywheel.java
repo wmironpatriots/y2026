@@ -7,8 +7,10 @@
 package org.frc6423.robot.subsystem.flywheel;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RevolutionsPerSecond;
+import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
@@ -19,11 +21,14 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.MomentOfInertia;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -32,8 +37,10 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.Supplier;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
+import org.frc6423.lib.io.ServoIOTalonFxSim;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
+import org.frc6423.robot.Robot;
 
 /**
  * {@link SubsystemBase} extension representing the flywheel subsystem
@@ -43,6 +50,10 @@ import org.frc6423.robot.Constants.Matrix;
 public class Flywheel extends SubsystemBase {
   /** {@Flywheel} subsystem constants */
   public class Constants {
+    // * PHYSICAL CONSTANTS
+    /** {@link MomentOfInertia} representing the rotational inertia of flywheel system */
+    public static final MomentOfInertia kRotationalInertia = KilogramSquareMeters.of(0.00117055861);
+
     // * CONTROL CONSTANTS
     /** {@link Double} representing the maximum allowed percent error in angular velocity */
     public static final double kEpsilon = 0.01;
@@ -61,7 +72,7 @@ public class Flywheel extends SubsystemBase {
     public static final Current kServoSupplyCurrentLimit = Amps.of(40.0);
 
     /** {@link Double} representing the gear ratio between the servo rotor and the flywheel shaft */
-    public static double kRotorToSensorRatio = (28.0 / 16.0);
+    public static double kSensorToMechanismRatio = (28.0 / 16.0);
 
     /** {@link TalonFXConfiguration} representing the hardware config of the flywheel servos */
     private static final TalonFXConfiguration kServoTalonConfig =
@@ -89,12 +100,30 @@ public class Flywheel extends SubsystemBase {
    * @return {@link Flywheel}
    */
   public static Flywheel create() {
-    // TODO sim
-    return new Flywheel(
-        new ServoIOTalonFx(
-            "Left", Constants.kCanBus, Constants.kLeftCanDeviceId, Constants.kServoTalonConfig),
-        new ServoIOTalonFx(
-            "Right", Constants.kCanBus, Constants.kRightCanDeviceId, Constants.kServoTalonConfig));
+    return (Robot.isReal())
+        ? new Flywheel(
+            new ServoIOTalonFx(
+                "Left", Constants.kCanBus, Constants.kLeftCanDeviceId, Constants.kServoTalonConfig),
+            new ServoIOTalonFx(
+                "Right",
+                Constants.kCanBus,
+                Constants.kRightCanDeviceId,
+                Constants.kServoTalonConfig))
+        : new Flywheel(
+            new ServoIOTalonFxSim(
+                "Left",
+                Constants.kCanBus,
+                Constants.kLeftCanDeviceId,
+                Constants.kServoTalonConfig,
+                Constants.kRotationalInertia,
+                MotorType.KrakenX60,
+                DCMotor.getKrakenX60Foc(2),
+                Constants.kSensorToMechanismRatio),
+            new ServoIOTalonFx(
+                "Right",
+                Constants.kCanBus,
+                Constants.kRightCanDeviceId,
+                Constants.kServoTalonConfig));
   }
 
   @Logged private final ServoIO mLeft, mRight;
@@ -117,13 +146,12 @@ public class Flywheel extends SubsystemBase {
 
     mRight.setLeader(mLeft, true);
 
-    // Init characterization routines
-    // TODO idk how well these will work for torque current control
+    // Init Characterization Routines
     mCharacterization =
         new SysIdRoutine(
             new SysIdRoutine.Config(
-                null,
-                null,
+                Volts.of(5).per(Second),
+                Volts.of(10),
                 null,
                 (state) ->
                     Epilogue.getConfig().backend.log("Telemetry/Flywheel/SysID State", state)),
@@ -147,8 +175,6 @@ public class Flywheel extends SubsystemBase {
   public void periodic() {
     mLeft.periodic();
     mRight.periodic();
-
-    mLeft.setTorqueMotionProfiledVelocitySetpoint(mTargetVelocity);
   }
 
   // * GETTERS
@@ -175,6 +201,16 @@ public class Flywheel extends SubsystemBase {
   public boolean isNearSetpoint() {
     return getAngularVelocity().in(RadiansPerSecond) / mTargetVelocity.in(RadiansPerSecond)
         > Constants.kEpsilon;
+  }
+
+  // * SETTERS
+  /**
+   * Set Angular Velocity Target
+   *
+   * @param velocity {@link AngularVelocity} representing desired velocity
+   */
+  private void setTargetVelocity(AngularVelocity velocity) {
+    mTargetVelocity = velocity;
   }
 
   // * COMMANDS

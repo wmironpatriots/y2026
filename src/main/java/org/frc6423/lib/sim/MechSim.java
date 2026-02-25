@@ -17,6 +17,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Timer;
 
 /** Base class for mechanism simulations */
+@Deprecated
 public abstract class MechSim {
   private double mPreviousUpdateTimestamp = 0.0;
 

@@ -22,6 +22,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 /** {@link MechSim} implementation for a Flywheel system */
+@Deprecated
 public class FlywheelSim extends MechSim {
   /** {@link MomentOfInertia} representing the Rotational Inertia of a generic flywheel system */
   public static final MomentOfInertia kGenericFlywheelMoi = KilogramSquareMeters.of(0.004);

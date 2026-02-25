@@ -74,7 +74,6 @@ public class ServoIOTalonFx extends ServoIO {
    * @param canBus {@link CANBus} representing CAN bus loop device is in
    * @param canDeviceId {@link Integer} representing the id of CAN device
    * @param talonConfig {@link TalonFXConfiguration} representing the servo config
-   * @param motorKt {@link Double} representing the servo's kT rating
    */
   public ServoIOTalonFx(
       String name, CANBus canBus, int deviceId, TalonFXConfiguration talonConfig) {
