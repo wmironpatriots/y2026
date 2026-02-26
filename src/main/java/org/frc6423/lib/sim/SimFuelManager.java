@@ -74,9 +74,9 @@ public class SimFuelManager {
           // Override displacements
           fuel.overrideDisplacement(
               new Translation3d(
-                  pose.getX() - nx * seperation,
-                  pose.getY() - ny * seperation,
-                  pose.getZ() - nz * seperation));
+                  pose.getX() + nx * seperation,
+                  pose.getY() + ny * seperation,
+                  pose.getZ() + nz * seperation));
 
           otherFuel.overrideDisplacement(
               new Translation3d(
