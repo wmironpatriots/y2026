@@ -84,10 +84,10 @@ public class Flywheel extends SubsystemBase {
     public static final int kGainSlotAccel = 0;
 
     /** {@link Integer} Gains slot used for maintaing flywheel velocity */
-    public static final int kGainSlotMaintain = 0;
+    public static final int kGainSlotMaintain = 1;
 
     /** {@link Integer} Gains slot used for deaccelerating flywheel */
-    public static final int kGainSlotDeaccel = 0;
+    public static final int kGainSlotDeaccel = 2;
 
     /** {@link TalonFXConfiguration} Hardware config of the flywheel servos */
     private static final TalonFXConfiguration kServoTalonConfig =
