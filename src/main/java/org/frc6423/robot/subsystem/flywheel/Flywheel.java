@@ -28,6 +28,7 @@ import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -164,9 +165,11 @@ public class Flywheel extends SubsystemBase {
 
   @Logged private final ServoIO mLeft, mRight;
 
-  private AngularVelocity mTargetVelocity = RevolutionsPerSecond.zero();
-
   private final SysIdRoutine mSysIdRoutines;
+
+  private final LinearFilter mCurrentFilter;
+
+  private AngularVelocity mTargetVelocity = RevolutionsPerSecond.zero();
 
   /**
    * Create new {@link Flywheel}
@@ -203,14 +206,23 @@ public class Flywheel extends SubsystemBase {
       SmartDashboard.putData("Run SysId Characterization", runCharacterizationSequence());
     }
 
+    // TODO idk if high pass is the correct filter to use here tbh, should test with moving avg as
+    // well
+    // Init current filter
+    mCurrentFilter = LinearFilter.highPass(0.1, 0.02);
+
     // Set default command
     setDefaultCommand(coast());
   }
 
   @Override
   public void periodic() {
+    // Update all Hardware
     mLeft.periodic();
     mRight.periodic();
+
+    // Update Current Filter
+    mCurrentFilter.calculate(mLeft.getSupplyCurrent().in(Amps));
 
     // Switch between gain slots
     if (mTargetVelocity.gt(getAngularVelocity())) {
@@ -223,6 +235,18 @@ public class Flywheel extends SubsystemBase {
   }
 
   // * GETTERS
+  /**
+   * Get the supply current of left flywheel servo with linear filter applied (High Pass)
+   *
+   * <p>TODO docs if filter type changes
+   *
+   * @return {@link Current}
+   */
+  @Logged(name = "Filtered Supply Current (amps)", importance = Importance.INFO)
+  public Current getFilteredCurrent() {
+    return Amps.of(mCurrentFilter.calculate(mLeft.getSupplyCurrent().in(Amps)));
+  }
+
   /**
    * Get Angular Position of subsystem
    *
@@ -299,16 +323,20 @@ public class Flywheel extends SubsystemBase {
   }
 
   /**
-   * TODO storage command
+   * TODO wip storage command
    *
-   * <p>This command should store surplus supply voltage
+   * <p>This command should store surplus supply current
    *
    * <p>Make command public once finished
    *
    * @return {@link Command}
    */
   protected Command store() {
-    return Commands.none().withName("FlywheelStore");
+    return this.startRun(
+        () -> mLeft.stop(),
+        () -> {
+          if (getFilteredCurrent().gt(Amps.zero())) {}
+        });
   }
 
   /**
