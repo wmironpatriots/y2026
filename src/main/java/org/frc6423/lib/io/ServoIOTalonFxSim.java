@@ -89,6 +89,6 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
                           * sensorToMechanismRatio);
             });
 
-    mNotifier.startPeriodic(0.005);
+    mNotifier.startPeriodic(0.002);
   }
 }

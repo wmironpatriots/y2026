@@ -171,6 +171,13 @@ public abstract class ServoIO {
   public abstract void setLeader(ServoIO leader, boolean flipped);
 
   /**
+   * Set the gains slot subsystem should use for position/velocity control
+   *
+   * @param slot {@link Integer} slot to use
+   */
+  public abstract void setGainsSlot(int slot);
+
+  /**
    * Set neutral mode brake status
    *
    * <p><strong>IMPORTANT</strong>: Disabling the neutral mode brake means that the servo will not
