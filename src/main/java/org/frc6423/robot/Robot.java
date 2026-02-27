@@ -18,21 +18,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.subsystem.Superstructure;
 
 @Logged
 public class Robot extends CommandRobot {
   private final CommandXboxController mController;
-
-  private final Superstructure mSoup =
-      new Superstructure(
-          new Trigger(() -> false),
-          new Trigger(() -> false),
-          new Trigger(() -> false),
-          new Trigger(() -> false));
 
   public Robot() {
     // Initialize Devices

@@ -6,26 +6,25 @@
 
 package org.frc6423.robot.subsystem;
 
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
 import org.frc6423.robot.RobotState;
-import org.frc6423.robot.subsystem.drive.Drive;
 import org.frc6423.robot.subsystem.feeder.Feeder;
 import org.frc6423.robot.subsystem.flywheel.Flywheel;
 import org.frc6423.robot.subsystem.hood.Hood;
 import org.frc6423.robot.subsystem.indexer.Indexer;
 import org.frc6423.robot.subsystem.intake.Intake;
 
-/** {@link SubsystemBase} Manager Subsystem for controlling all other subsystem in sequence */
+/**
+ * TODO WIP {@link SubsystemBase} Manager Subsystem for controlling all other subsystem in sequence
+ */
 public class Superstructure extends SubsystemBase {
-  private final RobotState mRobotState = new RobotState();
+  private final RobotState mRobotState = RobotState.getInstance();
 
   // * SUBSYSTEM MEMBERS
-  private final Drive mDrive = new Drive(mRobotState);
   private final Intake mIntake = Intake.create();
   private final Indexer mIndexer = Indexer.create();
   private final Feeder mFeeder = Feeder.create();
@@ -84,26 +83,12 @@ public class Superstructure extends SubsystemBase {
     defineStateBehavior();
   }
 
+  // TODO
   /** Define behavior during different states */
+  private void defineStateBehavior() {}
+
   // TODO
-  private void defineStateBehavior() {
-    // * IDLE NEUTRAL ZONE
-    mStateMap
-        .get(State.IDLE_NEUTRAL_ZONE)
-        .whileTrue(
-            Commands.parallel(
-                mIntake.stow(), mIndexer.stop(), mFeeder.stop(), mHood.stow(), mFlywheel.coast()));
-
-    // * IDLE ALLIANCE ZONE
-    mStateMap
-        .get(State.IDLE_NEUTRAL_ZONE)
-        .whileTrue(
-            Commands.parallel(
-                mIntake.stow(), mIndexer.stop(), mFeeder.stop(), mHood.stow(), mFlywheel.coast()));
-  }
-
   /** A state of being a {@link Superstructure} can be in */
-  // TODO
   public static enum State {
     IDLE_NEUTRAL_ZONE,
     IDLE_ALLIANC_ZONE,
