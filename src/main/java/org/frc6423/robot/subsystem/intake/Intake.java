@@ -172,6 +172,7 @@ public class Intake extends SubsystemBase {
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0.0)
+                    .withKG(0.0)
                     .withKV(0.0)
                     .withKA(0.0)
                     .withKP(0.0)
@@ -255,6 +256,14 @@ public class Intake extends SubsystemBase {
 
   private Angle mTargetAngle = Degrees.zero();
 
+  /**
+   * Create new {@link Intake}
+   *
+   * @param pivot {@link ServoIO} Pivot servo rotating subsystem
+   * @param encoder {@link EncoderIO} ABS Encoder measuring subsystem rotation
+   * @param roller {@link ServoIO} Roller servo running subsystem speed
+   * @param beambreak {@link DIO} Beambreak
+   */
   protected Intake(ServoIO pivot, EncoderIO encoder, ServoIO roller, DIO beambreak) {
     mPivot = pivot;
     mEncoder = encoder;
