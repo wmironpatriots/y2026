@@ -85,6 +85,8 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
 
+    SimFuelManager.spawnNeutralZone(mFuelManger);
+
     configureBindings();
     configureGameBehavior();
   }
@@ -96,7 +98,7 @@ public class Robot extends CommandRobot {
         .onTrue(
             mFlywheel.runOnce(
                 () -> {
-                  mFuelManger.spawnFuel(Translation3d.kZero, VecBuilder.fill(5.0, 3.0, 15.0));
+                  mFuelManger.spawnFuel(Translation3d.kZero, VecBuilder.fill(5.0, 2.0, 4.5));
                 }));
   }
 

@@ -11,13 +11,17 @@ import static edu.wpi.first.units.Units.Seconds;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Notifier;
 import java.util.ArrayList;
+import org.frc6423.lib.game.Rebuilt;
 
 /** A class for spawning & keeping track of {@link SimFuel} objects */
 public class SimFuelManager {
@@ -50,22 +54,18 @@ public class SimFuelManager {
       for (int j = 0; j < mFuel.size(); j++) {
         var otherFuel = mFuel.get(j);
 
+        // Calculate translation between fuel pose and other fuel pose
         var pose = fuel.getPose3d();
         var otherPose = otherFuel.getPose3d();
-        // Calculate translation between fuel pose and other fuel pose
-        var translation = pose.minus(otherPose).getTranslation();
 
-        // Calculate distance
-        double xDist = translation.getX();
-        double yDist = translation.getY();
-        double zDist = translation.getZ();
-        double dist = Math.sqrt((xDist * xDist) + (yDist * yDist) + (zDist * zDist));
+        var translation = pose.minus(otherPose).getTranslation();
+        var dist = translation.getNorm();
 
         if (dist < SimFuel.kRadius.times(2).in(Meters) && dist > 0.001) {
           // Normalize dist vector
-          double nx = xDist / dist;
-          double ny = yDist / dist;
-          double nz = zDist / dist;
+          double nx = translation.getX() / dist;
+          double ny = translation.getY() / dist;
+          double nz = translation.getZ() / dist;
 
           // Calculate seperation scaler
           double overlap = SimFuel.kRadius.times(2).in(Meters) - dist;
@@ -83,6 +83,33 @@ public class SimFuelManager {
                   otherPose.getX() - nx * seperation,
                   otherPose.getY() - ny * seperation,
                   otherPose.getZ() - nz * seperation));
+
+          // Get velocities
+          var vel = fuel.getVelocityVector();
+          var otherVel = fuel.getVelocityVector();
+
+          // Calculate relative velocities
+          var relVel = vel.minus(otherVel);
+
+          // If balls are moving towards eachother
+          if (relVel.norm() > 0.0) {
+            // Derive impluse using friction k as restitution
+            double impulse = relVel.norm() * (1 + SimFuel.kFloorFriction) / 2.0;
+
+            // Override fuel vel
+            fuel.overrideVelocity(
+                VecBuilder.fill(
+                    vel.get(0) - impulse * nx,
+                    vel.get(1) - impulse * ny,
+                    vel.get(2) - impulse * nz));
+
+            // Override other fuel vel
+            otherFuel.overrideVelocity(
+                VecBuilder.fill(
+                    otherVel.get(0) - impulse * nx,
+                    otherVel.get(1) - impulse * ny,
+                    otherVel.get(2) - impulse * nz));
+          }
         }
       }
 
@@ -129,5 +156,30 @@ public class SimFuelManager {
     mFuel.add(
         new SimFuel(initialDisplacementMeters, initialVelocityMps, lifespanLength.in(Seconds)));
     return mFuel.size() - 1;
+  }
+
+  public static void spawnNeutralZone(SimFuelManager manager) {
+    int r = (int) Rebuilt.kNeutralMassLength.div(SimFuel.kRadius.times(2)).baseUnitMagnitude();
+    int c = (int) Rebuilt.kNeutralMassWidth.div(SimFuel.kRadius.times(2)).baseUnitMagnitude();
+
+    Distance rLength = Rebuilt.kNeutralMassLength.div(r);
+    Distance cLength = Rebuilt.kNeutralMassWidth.div(c);
+
+    var start =
+        new Translation2d(
+            Rebuilt.kNeutralMassPose2d.getX() - Rebuilt.kNeutralMassLength.div(2).in(Meters),
+            Rebuilt.kNeutralMassPose2d.getY() - Rebuilt.kNeutralMassWidth.div(2).in(Meters));
+
+    for (int i = 0; i < r; i++) {
+      for (int j = 0; j < c; j++) {
+        manager.spawnFuel(
+            new Translation3d(
+                start.getX() + rLength.times(i).in(Meters),
+                start.getY() + cLength.times(j).in(Meters),
+                0.0),
+            VecBuilder.fill(0.0, 0.0, 0.0),
+            Seconds.of(0.0));
+      }
+    }
   }
 }

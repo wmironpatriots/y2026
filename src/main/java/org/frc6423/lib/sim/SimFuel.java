@@ -45,7 +45,7 @@ public class SimFuel {
   public static final LinearVelocity kFricitionVelocityThreshold = MetersPerSecond.of(0.03);
 
   /** {@link Distance} Radius of fuel */
-  public static final Distance kRadius = Inches.of(3);
+  public static final Distance kRadius = Inches.of(5.91 / 2);
 
   /** {@link Time} Default length of lifespan */
   public static final Time kDefaultLifespanLength = Seconds.of(12.0);
@@ -169,10 +169,20 @@ public class SimFuel {
   /**
    * Override object displacement
    *
-   * @param displacement {@link Translation3d} Displacement to replace current with
+   * @param displacement {@link Translation3d} Displacement to replace current displacement with
    */
   public void overrideDisplacement(Translation3d displacement) {
     mDisplacementMeters = displacement;
+  }
+
+  /**
+   * Override object velocity
+   *
+   * @param velocityMps {@link Vector} of length {@link N3} Velocity to replace current velocity
+   *     with
+   */
+  public void overrideVelocity(Vector<N3> velocityMps) {
+    mVelocityMps = velocityMps;
   }
 
   /** Kill simulated object before its lifespan limit */
