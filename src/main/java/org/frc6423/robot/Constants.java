@@ -76,6 +76,9 @@ public final class Constants {
 
     public static final int kFlywheelLeftId = 21;
     public static final int kFlywheelRightId = 22;
+
+    public static final int kIntakeBeamBreakDio = 0;
+    public static final int kFeederBeamBreakDio = 1;
   }
 
   /** Represents the type of robot codebase is running on */

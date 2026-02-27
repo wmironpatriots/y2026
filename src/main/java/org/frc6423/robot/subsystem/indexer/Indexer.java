@@ -7,7 +7,7 @@
 package org.frc6423.robot.subsystem.indexer;
 
 import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
@@ -18,6 +18,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -28,9 +29,9 @@ import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
-/** {@link SubsystemBase} extension representing the indexer subsystem */
+/** {@link SubsystemBase} extension representing the belt indexer subsystem */
 public class Indexer extends SubsystemBase {
-  /** {@link Indexer} subsystem constants */
+  /** Constants for the {@link Indexer} */
   public class Constants {
     // * CONTROL CONSTANTS
     /** {@link Voltage} Voltage speed for indexing */
@@ -81,6 +82,8 @@ public class Indexer extends SubsystemBase {
 
   @Logged private final ServoIO mServo;
 
+  private boolean mIsRunning = false;
+
   /**
    * Create new {@link Indexer}
    *
@@ -98,41 +101,65 @@ public class Indexer extends SubsystemBase {
 
   // * GETTERS
   /**
-   * Check if roller subsystem is stuck
+   * Check if roller subsystem is running
    *
-   * <p>This will return true if subsystem isn't running
+   * @return
+   */
+  @Logged(name = "Is Running (bool)", importance = Importance.INFO)
+  public boolean isRunning() {
+    return mIsRunning;
+  }
+
+  /**
+   * Check if roller subsystem is stuck
    *
    * @return {@link Boolean}
    */
+  @Logged(name = "Is Stuck (bool)", importance = Importance.INFO)
   public boolean isStuck() {
-    return mServo.getAngularVelocity().gt(DegreesPerSecond.zero());
+    return !mIsRunning && !(Math.abs(mServo.getAngularVelocity().in(RadiansPerSecond)) > 0.0);
   }
 
   // * COMMANDS
   /**
-   * Request indexer to stop
+   * Request subsystem to stop
    *
    * @return {@link Command}
    */
   public Command stop() {
-    return this.run(() -> mServo.stop());
+    return this.run(
+            () -> {
+              mIsRunning = false;
+              mServo.stop();
+            })
+        .withName("Indexer Stop");
   }
 
   /**
-   * Request indexer to run inwards and 'index'
+   * Request subsystem to run inwards and 'index'
    *
    * @return {@link Command}
    */
   public Command index() {
-    return this.run(() -> mServo.setVoltageSetpoint(Constants.kIndexingSpeed, true));
+    return this.run(
+            () -> {
+              mIsRunning = true;
+              mServo.setVoltageSetpoint(Constants.kIndexingSpeed, true);
+            })
+        .withName("Indexer Index");
   }
 
   /**
-   * Request indexer to run outwards and 'outdex' (aka eject)
+   * Request subsystem to run outwards and 'outdex' (aka eject)
    *
    * @return {@link Command}
    */
   public Command outdex() {
-    return this.run(() -> mServo.setVoltageSetpoint(Constants.kOutdexingSpeed, true));
+    return this.run(
+            () -> {
+              mIsRunning = true;
+              mServo.setVoltageSetpoint(Constants.kOutdexingSpeed, true);
+            })
+        .withName("Indexer Outdex");
   }
 }
