@@ -7,6 +7,7 @@
 package org.frc6423.robot.subsystem.indexer;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
@@ -17,25 +18,36 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
+import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.robot.Constants.Matrix;
+import org.frc6423.robot.Robot;
 
 /** {@link SubsystemBase} extension representing the indexer subsystem */
 public class Indexer extends SubsystemBase {
   /** {@link Indexer} subsystem constants */
   public class Constants {
-    /** {@link CANbus} representing the bus devices are connected to */
-    private static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+    // * CONTROL CONSTANTS
+    /** {@link Voltage} Voltage speed for indexing */
+    public static final Voltage kIndexingSpeed = Volts.of(5.0);
 
-    /** {@link Integer} representing the servo's CAN ID on CANBUS */
-    private static final int kServoCanDeviceId = Matrix.kIndexerId;
+    /** {@link Voltage} Voltage speed for outdexing */
+    public static final Voltage kOutdexingSpeed = kIndexingSpeed.times(-1);
 
-    /** {@link TalonFXConfiguration} representing the hardware config of the servo */
-    private static final TalonFXConfiguration kServoTalonConfig =
+    // * HARDWARE CONSTANTS
+    /** {@link Integer} CAN ID of servo */
+    public static final int kServoCanDeviceId = Matrix.kIndexerId;
+
+    /** {@link Current} Stator current limit of servo */
+    public static final Current kServoStatorCurrentLimit = Amps.of(40.0);
+
+    /** {@link TalonFXConfiguration} Hardware config of servo */
+    public static final TalonFXConfiguration kServoTalonConfig =
         new TalonFXConfiguration()
             .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
             .withMotorOutput(
@@ -44,14 +56,11 @@ public class Indexer extends SubsystemBase {
                     .withNeutralMode(NeutralModeValue.Brake))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(Amps.of(40.0))
+                    .withStatorCurrentLimit(kServoStatorCurrentLimit)
                     .withStatorCurrentLimitEnable(true));
 
-    /** {@link Voltage} representing the indexing speed */
-    private static final Voltage kIndexingSpeed = Volts.of(5);
-
-    /** {@link Voltage} representing the outdexing speed */
-    private static final Voltage kOutdexingSpeed = kIndexingSpeed.times(-1);
+    /** {@link CANBus} CAN bus devices are on */
+    public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
   }
 
   /**
@@ -60,13 +69,14 @@ public class Indexer extends SubsystemBase {
    * @return {@link Indexer}
    */
   public static Indexer create() {
-    // TODO sim
-    return new Indexer(
-        new ServoIOTalonFx(
-            "IndexerServo",
-            Constants.kCanBus,
-            Constants.kServoCanDeviceId,
-            Constants.kServoTalonConfig));
+    return (Robot.isReal())
+        ? new Indexer(
+            new ServoIOTalonFx(
+                "Servo",
+                Constants.kCanBus,
+                Constants.kServoCanDeviceId,
+                Constants.kServoTalonConfig))
+        : new Indexer(new ServoIONone("Servo"));
   }
 
   @Logged private final ServoIO mServo;
@@ -74,7 +84,7 @@ public class Indexer extends SubsystemBase {
   /**
    * Create new {@link Indexer}
    *
-   * @param servo {@link ServoIO} representing roller servo
+   * @param servo {@link ServoIO} Servo powering subsystem
    */
   protected Indexer(ServoIO servo) {
     mServo = servo;
@@ -82,12 +92,25 @@ public class Indexer extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Update hardware
+    // Update Hardware
     mServo.periodic();
   }
 
+  // * GETTERS
   /**
-   * Attempt to stop indexer
+   * Check if roller subsystem is stuck
+   *
+   * <p>This will return true if subsystem isn't running
+   *
+   * @return {@link Boolean}
+   */
+  public boolean isStuck() {
+    return mServo.getAngularVelocity().gt(DegreesPerSecond.zero());
+  }
+
+  // * COMMANDS
+  /**
+   * Request indexer to stop
    *
    * @return {@link Command}
    */
@@ -96,29 +119,20 @@ public class Indexer extends SubsystemBase {
   }
 
   /**
-   * Attempt to index
+   * Request indexer to run inwards and 'index'
    *
    * @return {@link Command}
    */
   public Command index() {
-    return this.run(() -> setSpeed(Constants.kIndexingSpeed));
+    return this.run(() -> mServo.setVoltageSetpoint(Constants.kIndexingSpeed, true));
   }
 
   /**
-   * Attempt to outdex
+   * Request indexer to run outwards and 'outdex' (aka eject)
    *
    * @return {@link Command}
    */
   public Command outdex() {
-    return this.run(() -> setSpeed(Constants.kOutdexingSpeed));
-  }
-
-  /**
-   * Set servo speed
-   *
-   * @param speed {@link Voltage} representing desired indexer speed
-   */
-  private void setSpeed(Voltage speed) {
-    mServo.setVoltageSetpoint(speed, true);
+    return this.run(() -> mServo.setVoltageSetpoint(Constants.kOutdexingSpeed, true));
   }
 }
