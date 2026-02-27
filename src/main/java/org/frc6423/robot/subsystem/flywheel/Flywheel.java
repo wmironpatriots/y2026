@@ -30,10 +30,12 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.CurrentUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.MomentOfInertia;
+import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -129,6 +131,13 @@ public class Flywheel extends SubsystemBase {
 
     /** {@link CANBus} CAN bus devices are on */
     public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+
+    // * CHARACTERIZATON
+    /** {@link Velocity} of {@link CurrentUnit} Rate at which current output ramps up at in Quasi */
+    public static final Velocity<CurrentUnit> kCharacterizationRampRate = Amps.of(35.0).per(Second);
+
+    /** {@link Current} Current step size for Dyna */
+    public static final Current kCharacterizationStepSize = Amps.of(15.0);
   }
 
   /**
@@ -188,8 +197,8 @@ public class Flywheel extends SubsystemBase {
     mSysIdRoutine =
         new SysIdRoutine(
             new SysIdRoutine.Config(
-                Volts.of(35).per(Second),
-                Volts.of(15),
+                Volts.of(Constants.kCharacterizationRampRate.in(Amps.per(Second))).per(Second),
+                Volts.of(Constants.kCharacterizationStepSize.in(Amps)),
                 null,
                 (state) ->
                     Epilogue.getConfig()
@@ -279,7 +288,7 @@ public class Flywheel extends SubsystemBase {
   /**
    * Check if subsystem is nearly at setpoint angular velocity
    *
-   * @return {@link AngularVelocity}
+   * @return {@link Boolean}
    */
   @Logged(name = "is Near Setpoint (bool)", importance = Importance.INFO)
   public boolean isNearSetpoint() {
@@ -293,7 +302,7 @@ public class Flywheel extends SubsystemBase {
    *
    * <p>Tests will run as follows: +Quasi, -Quasi, +Dyna, -Dyna
    *
-   * <p>Tests will not start utnil flywheel has stopped running
+   * <p>Tests will not start until flywheel has stopped running
    *
    * @return {@link Command}
    */
@@ -346,7 +355,7 @@ public class Flywheel extends SubsystemBase {
    * @return {@link Command}
    */
   public Command accelerateToVelocity(AngularVelocity velocity) {
-    return accelerateToVelocity(() -> velocity).withName("FlywheelAccelerateTo");
+    return accelerateToVelocity(() -> velocity).withName("Flywheel Accelerate to");
   }
 
   /**
@@ -361,6 +370,6 @@ public class Flywheel extends SubsystemBase {
               mTargetVelocity = velocity.get();
               mLeft.setTorqueMotionProfiledVelocitySetpoint(mTargetVelocity);
             })
-        .withName("FlywheelAccelerateToContinously");
+        .withName("Flywheel Accelerate to Continously");
   }
 }
