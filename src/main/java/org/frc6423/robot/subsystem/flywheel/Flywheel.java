@@ -67,10 +67,10 @@ public class Flywheel extends SubsystemBase {
 
     // * HARDWARE CONSTANTS
     /** {@link Integer} CAN ID of the left flywheel servo */
-    private static final int kLeftCanDeviceId = Matrix.kFlywheelLeftId;
+    public static final int kLeftCanDeviceId = Matrix.kFlywheelLeftId;
 
     /** {@link Integer} CAN ID of the right flywheel servo */
-    private static final int kRightCanDeviceId = Matrix.kFlywheelLeftId;
+    public static final int kRightCanDeviceId = Matrix.kFlywheelLeftId;
 
     /** {@link Current} Stator current limit of servos */
     public static final Current kServoStatorCurrentLimit = Amps.of(120);
@@ -165,7 +165,7 @@ public class Flywheel extends SubsystemBase {
 
   @Logged private final ServoIO mLeft, mRight;
 
-  private final SysIdRoutine mSysIdRoutines;
+  private final SysIdRoutine mSysIdRoutine;
 
   private final LinearFilter mCurrentFilter;
 
@@ -174,19 +174,18 @@ public class Flywheel extends SubsystemBase {
   /**
    * Create new {@link Flywheel}
    *
-   * @param left {@link ServoIO} representing the left servo spinning flywheel
-   * @param right {@link ServoIO} representing the right servo spinning flywheel
-   * @param coastOverride {@link Boolean}
+   * @param left {@link ServoIO} Left flywheel servo
+   * @param right {@link ServoIO} Right flywheel servo
    */
   public Flywheel(ServoIO left, ServoIO right) {
-    // Init hardware
+    // Init Hardware
     mLeft = left;
     mRight = right;
 
     mRight.setLeader(mLeft, true);
 
     // Init SysId
-    mSysIdRoutines =
+    mSysIdRoutine =
         new SysIdRoutine(
             new SysIdRoutine.Config(
                 Volts.of(35).per(Second),
@@ -300,13 +299,13 @@ public class Flywheel extends SubsystemBase {
    */
   public Command runCharacterizationSequence() {
     return Commands.sequence(
-            mSysIdRoutines.quasistatic(Direction.kForward),
+            mSysIdRoutine.quasistatic(Direction.kForward),
             Commands.waitUntil(() -> isNearSetpoint()),
-            mSysIdRoutines.quasistatic(Direction.kReverse),
+            mSysIdRoutine.quasistatic(Direction.kReverse),
             Commands.waitUntil(() -> isNearSetpoint()),
-            mSysIdRoutines.dynamic(Direction.kForward),
+            mSysIdRoutine.dynamic(Direction.kForward),
             Commands.waitUntil(() -> isNearSetpoint()),
-            mSysIdRoutines.dynamic(Direction.kReverse))
+            mSysIdRoutine.dynamic(Direction.kReverse))
         .beforeStarting(() -> mTargetVelocity = RevolutionsPerSecond.zero(), this)
         .withName("Flywheel Characterization");
   }
