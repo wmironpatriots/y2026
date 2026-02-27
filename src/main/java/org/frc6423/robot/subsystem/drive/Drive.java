@@ -9,23 +9,75 @@ package org.frc6423.robot.subsystem.drive;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Volts;
 
+import choreo.trajectory.SwerveSample;
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.wpilibj.RobotState;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import java.util.Optional;
+import java.util.function.Consumer;
+import org.frc6423.lib.io.EncoderIOCanCoder;
+import org.frc6423.lib.io.ServoIONone;
+import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
+import org.frc6423.robot.RobotState;
+import org.frc6423.robot.RobotState.OdometryMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
+import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
+import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOServo;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 
-// TODO
+/** TODO WIP */
 public class Drive extends SubsystemBase {
-  public final DriveConstants mConstants = Flags.kRobotType.mDriveConstants;
+  public static Drive create() {
+    return new Drive(
+        new GyroIOPigeon2(0, CANBus.roboRIO(), new Pigeon2Configuration()),
+        new SwerveModuleIOServo(
+            "placeholder1",
+            new EncoderIOCanCoder(0, CANBus.roboRIO(), new CANcoderConfiguration()),
+            new ServoIONone("placeholder1p"),
+            new ServoIONone("placeholder1d"),
+            Flags.kRobotType.mDriveConstants.getBackLeftModuleConfig(),
+            Flags.kRobotType.mDriveConstants),
+        new SwerveModuleIOServo(
+            "placeholder2",
+            new EncoderIOCanCoder(0, CANBus.roboRIO(), new CANcoderConfiguration()),
+            new ServoIONone("placeholder2p"),
+            new ServoIONone("placeholder2d"),
+            Flags.kRobotType.mDriveConstants.getBackLeftModuleConfig(),
+            Flags.kRobotType.mDriveConstants),
+        new SwerveModuleIOServo(
+            "placeholder3",
+            new EncoderIOCanCoder(0, CANBus.roboRIO(), new CANcoderConfiguration()),
+            new ServoIONone("placeholder3p"),
+            new ServoIONone("placeholder3d"),
+            Flags.kRobotType.mDriveConstants.getBackLeftModuleConfig(),
+            Flags.kRobotType.mDriveConstants),
+        new SwerveModuleIOServo(
+            "placeholder4",
+            new EncoderIOCanCoder(0, CANBus.roboRIO(), new CANcoderConfiguration()),
+            new ServoIONone("placeholder4p"),
+            new ServoIONone("placeholder4d"),
+            Flags.kRobotType.mDriveConstants.getBackLeftModuleConfig(),
+            Flags.kRobotType.mDriveConstants));
+  }
+
+  private final DriveConstants mConstants = Flags.kRobotType.mDriveConstants;
+  private final RobotState mRobotState = RobotState.getInstance();
 
   // * HARDWARE MEMBERS
   @Logged private final SwerveModuleIO mFrModule;
@@ -44,7 +96,6 @@ public class Drive extends SubsystemBase {
   /**
    * Create new {@link Drive}
    *
-   * @param robotState {@link RobotState} RobotState instance
    * @param gyro {@link GyroIO} Gyro for odometry
    * @param frontRightModule {@link SwerveModuleIO} Front Right Swerve Module
    * @param frontLeftModule {@link SwerveModuleIO} Front Left Swerve Module
@@ -52,7 +103,6 @@ public class Drive extends SubsystemBase {
    * @param backRightModule {@link SwerveModuleIO} Back Right Swerve Module
    */
   public Drive(
-      RobotState robotState,
       GyroIO gyro,
       SwerveModuleIO frontRightModule,
       SwerveModuleIO frontLeftModule,
@@ -124,18 +174,64 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Update Hardware
-    for (var module : mModules) {
-      module.periodic();
-      ;
-    }
+    Tracer.traceFunc(
+        "Swerve Periodic",
+        () -> {
+          // Update Hardware
+          for (var module : mModules) {
+            module.periodic();
+          }
 
-    // Send odometry measurements
-    updateRobotState();
+          // Send odometry measurements to robot state
+          mRobotState.addOdometryMeasurement(
+              new OdometryMeasurement(
+                  Timer.getFPGATimestamp(),
+                  getSwerveModulePositions(),
+                  Optional.of(mGyro.getRotation3d())));
+        });
   }
 
-  /** Update {@link RobotState} with odometry measurement */
-  private void updateRobotState() {}
+  // * GETTERS
+  public Rotation3d getRotation3d() {
+    return mRobotState.getRotation3d();
+  }
+
+  public Pose3d getPose3d() {
+    return mRobotState.getPose3d();
+  }
+
+  public ChassisSpeeds getChassisSpeedsWrtField() {
+    return ChassisSpeeds.fromRobotRelativeSpeeds(
+        getChassisSpeeds(), getRotation3d().toRotation2d());
+  }
+
+  public ChassisSpeeds getChassisSpeeds() {
+    return mConstants.getKinematics().toChassisSpeeds(getSwerveModuleStates());
+  }
+
+  public SwerveModulePosition[] getSwerveModulePositions() {
+    SwerveModulePosition[] poses = new SwerveModulePosition[mModules.length];
+    for (int i = 0; i < mModules.length; i++) {
+      poses[i] = mModules[i].getSwerveModulePosition();
+    }
+
+    return poses;
+  }
+
+  public SwerveModuleState[] getSwerveModuleStates() {
+    SwerveModuleState[] states = new SwerveModuleState[mModules.length];
+    for (int i = 0; i < mModules.length; i++) {
+      states[i] = mModules[i].getSwerveModuleState();
+    }
+
+    return states;
+  }
+
+  public Consumer<SwerveSample> getSwerveSampleConsumer() {
+    return (sample) -> {};
+  }
+
+  // * SETTERS
 
   // * COMMANDS
   public Command runPivotCharacterizationSequence() {
