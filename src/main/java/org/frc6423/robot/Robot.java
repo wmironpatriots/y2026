@@ -12,28 +12,27 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import org.frc6423.lib.driver.CommandRobot;
-import org.frc6423.lib.sim.SimFuelManager;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.subsystem.flywheel.Flywheel;
+import org.frc6423.robot.subsystem.Superstructure;
 
 @Logged
 public class Robot extends CommandRobot {
   private final CommandXboxController mController;
 
-  private final RobotState mRobotState = new RobotState();
-
-  private final Flywheel mFlywheel = Flywheel.create();
-
-  private final SimFuelManager mFuelManger = new SimFuelManager(0.02);
+  private final Superstructure mSoup =
+      new Superstructure(
+          new Trigger(() -> false),
+          new Trigger(() -> false),
+          new Trigger(() -> false),
+          new Trigger(() -> false));
 
   public Robot() {
     // Initialize Devices
@@ -85,27 +84,15 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
 
-    SimFuelManager.spawnNeutralZone(mFuelManger);
-
     configureBindings();
     configureGameBehavior();
   }
 
   /** Define Driver & Operator controller bindings */
-  public void configureBindings() {
-    mController
-        .a()
-        .onTrue(
-            mFlywheel.runOnce(
-                () -> {
-                  mFuelManger.spawnFuel(Translation3d.kZero, VecBuilder.fill(5.0, 2.0, 4.5));
-                }));
-  }
+  public void configureBindings() {}
 
   /** Define behavior during different oppmodes */
-  public void configureGameBehavior() {
-    mFlywheel.setDefaultCommand(mFlywheel.coast());
-  }
+  public void configureGameBehavior() {}
 
   @Override
   protected Command getAutonCommand() {
