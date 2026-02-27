@@ -11,7 +11,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.DoubleSupplier;
 import org.frc6423.robot.RobotState;
+import org.frc6423.robot.subsystem.drive.Drive;
 import org.frc6423.robot.subsystem.feeder.Feeder;
 import org.frc6423.robot.subsystem.flywheel.Flywheel;
 import org.frc6423.robot.subsystem.hood.Hood;
@@ -23,6 +25,7 @@ public class Superstructure extends SubsystemBase {
   private final RobotState mRobotState = new RobotState();
 
   // * SUBSYSTEM MEMBERS
+  private final Drive mDrive = new Drive(mRobotState);
   private final Intake mIntake = Intake.create();
   private final Indexer mIndexer = Indexer.create();
   private final Feeder mFeeder = Feeder.create();
@@ -39,6 +42,10 @@ public class Superstructure extends SubsystemBase {
   private final Trigger mSpinupTrigger;
   private final Trigger mFireTrigger;
 
+  private final DoubleSupplier mXVelSupplier;
+  private final DoubleSupplier mYVelSupplier;
+  private final DoubleSupplier mOmegaSupplier;
+
   // * STATE MAP
   private final Map<State, Trigger> mStateMap = new HashMap<>();
 
@@ -49,13 +56,26 @@ public class Superstructure extends SubsystemBase {
    * @param actionTrigger {@link Trigger} Trigger for turning on intake align
    * @param spinupTrigger {@link Trigger} Trigger for spinning up flywheel
    * @param fireTrigger {@link Trigger} Trigger for firing fuel
+   * @param xVelSupplier {@link DoubleSupplier} Stream of requested drive x velocity magnitudes
+   * @param yVelSupplier {@link DoubleSupplier} Stream of requested drive y velocity magnitudes
+   * @param omegaSupplier {@link DoubleSupplier} Stream of request drive omega magnitudes
    */
   public Superstructure(
-      Trigger intakeTrigger, Trigger alignTrigger, Trigger spinupTrigger, Trigger fireTrigger) {
+      Trigger intakeTrigger,
+      Trigger alignTrigger,
+      Trigger spinupTrigger,
+      Trigger fireTrigger,
+      DoubleSupplier xVelSupplier,
+      DoubleSupplier yVelSupplier,
+      DoubleSupplier omegaSupplier) {
     mIntakeTrigger = intakeTrigger;
     mAlignTrigger = alignTrigger;
     mSpinupTrigger = spinupTrigger;
     mFireTrigger = fireTrigger;
+
+    mXVelSupplier = xVelSupplier;
+    mYVelSupplier = yVelSupplier;
+    mOmegaSupplier = omegaSupplier;
 
     for (var state : State.values()) {
       mStateMap.put(state, new Trigger(() -> mState == state));
