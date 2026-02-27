@@ -6,8 +6,6 @@
 
 package org.frc6423.robot;
 
-import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
@@ -31,6 +29,7 @@ import java.util.Optional;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
 
+// TODO rethink logging
 /** A singleton that tracks the robot's estimated position */
 public class RobotState {
   /** {@link RobotState} internal constants */
@@ -40,6 +39,21 @@ public class RobotState {
 
     /** {@link Double} representing how long odometry estimated position remain in buffer */
     private static final double kBufferDuration = 1.5;
+  }
+
+  private static RobotState kInstance;
+
+  /**
+   * Get singleton {@link RoboState} instance
+   *
+   * @return {@link RobotState}
+   */
+  public static RobotState getInstance() {
+    if (kInstance == null) {
+      kInstance = new RobotState();
+    }
+
+    return kInstance;
   }
 
   private Pose3d mPreviousOdoPose = new Pose3d();
@@ -56,7 +70,7 @@ public class RobotState {
   private SwerveModulePosition[] mPreviousSwerveModulePoses;
 
   /** Create new {@link RobotState} */
-  public RobotState() {
+  protected RobotState() {
     mPreviousSwerveModulePoses = new SwerveModulePosition[4];
     for (int i = 0; i < mPreviousSwerveModulePoses.length; i++) {
       mPreviousSwerveModulePoses[i] = new SwerveModulePosition();
@@ -70,7 +84,6 @@ public class RobotState {
   /**
    * @return {@link Rotation3d} representing the estimated robot rotation in 3d space
    */
-  @Logged(name = "Rotation3d", importance = Importance.INFO)
   public Rotation3d getRotation3d() {
     return getPose3d().getRotation();
   }
@@ -78,7 +91,6 @@ public class RobotState {
   /**
    * @return {@link Pose3d} representing the estimated robot position in 3d space
    */
-  @Logged(name = "Pose3d", importance = Importance.INFO)
   public Pose3d getPose3d() {
     return mEstPose;
   }
