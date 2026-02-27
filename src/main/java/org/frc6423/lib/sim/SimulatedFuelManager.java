@@ -23,19 +23,19 @@ import edu.wpi.first.wpilibj.Notifier;
 import java.util.ArrayList;
 import org.frc6423.lib.game.Rebuilt;
 
-/** A class for spawning & keeping track of {@link SimFuel} objects */
-public class SimFuelManager {
-  private final ArrayList<SimFuel> mFuel = new ArrayList<>();
+/** A class for spawning & keeping track of {@link SimulatedFuel} objects */
+public class SimulatedFuelManager {
+  private final ArrayList<SimulatedFuel> mFuel = new ArrayList<>();
 
   private final Notifier mNotifier;
   private final double mPeriodSec;
 
   /**
-   * Create new {@link SimFuelManager}
+   * Create new {@link SimulatedFuelManager}
    *
    * @param periodSec {@link Double} Update period in seconds
    */
-  public SimFuelManager(double periodSec) {
+  public SimulatedFuelManager(double periodSec) {
     mNotifier = new Notifier(() -> update());
 
     mNotifier.startPeriodic(periodSec);
@@ -61,14 +61,14 @@ public class SimFuelManager {
         var translation = pose.minus(otherPose).getTranslation();
         var dist = translation.getNorm();
 
-        if (dist < SimFuel.kRadius.times(2).in(Meters) && dist > 0.001) {
+        if (dist < SimulatedFuel.kRadius.times(2).in(Meters) && dist > 0.001) {
           // Normalize dist vector
           double nx = translation.getX() / dist;
           double ny = translation.getY() / dist;
           double nz = translation.getZ() / dist;
 
           // Calculate seperation scaler
-          double overlap = SimFuel.kRadius.times(2).in(Meters) - dist;
+          double overlap = SimulatedFuel.kRadius.times(2).in(Meters) - dist;
           double seperation = overlap / 2.0 + 0.001;
 
           // Override displacements
@@ -94,7 +94,7 @@ public class SimFuelManager {
           // If balls are moving towards eachother
           if (relVel.norm() > 0.0) {
             // Derive impluse using friction k as restitution
-            double impulse = relVel.norm() * (1 + SimFuel.kFloorFriction) / 2.0;
+            double impulse = relVel.norm() * (1 + SimulatedFuel.kFloorFriction) / 2.0;
 
             // Override fuel vel
             fuel.overrideVelocity(
@@ -125,7 +125,7 @@ public class SimFuelManager {
    */
   @Logged(name = "Sim Fuel Poses", importance = Importance.INFO)
   public Pose3d[] getFuelPose3d() {
-    return mFuel.stream().map(SimFuel::getPose3d).toArray(Pose3d[]::new);
+    return mFuel.stream().map(SimulatedFuel::getPose3d).toArray(Pose3d[]::new);
   }
 
   /**
@@ -138,7 +138,8 @@ public class SimFuelManager {
    * @return {@link Integer}
    */
   public int spawnFuel(Translation3d initialDisplacementMeters, Vector<N3> initialVelocityMps) {
-    return spawnFuel(initialDisplacementMeters, initialVelocityMps, SimFuel.kDefaultLifespanLength);
+    return spawnFuel(
+        initialDisplacementMeters, initialVelocityMps, SimulatedFuel.kDefaultLifespanLength);
   }
 
   /**
@@ -154,13 +155,15 @@ public class SimFuelManager {
   public int spawnFuel(
       Translation3d initialDisplacementMeters, Vector<N3> initialVelocityMps, Time lifespanLength) {
     mFuel.add(
-        new SimFuel(initialDisplacementMeters, initialVelocityMps, lifespanLength.in(Seconds)));
+        new SimulatedFuel(
+            initialDisplacementMeters, initialVelocityMps, lifespanLength.in(Seconds)));
     return mFuel.size() - 1;
   }
 
-  public static void spawnNeutralZone(SimFuelManager manager) {
-    int r = (int) Rebuilt.kNeutralMassLength.div(SimFuel.kRadius.times(2)).baseUnitMagnitude();
-    int c = (int) Rebuilt.kNeutralMassWidth.div(SimFuel.kRadius.times(2)).baseUnitMagnitude();
+  public static void spawnNeutralZone(SimulatedFuelManager manager) {
+    int r =
+        (int) Rebuilt.kNeutralMassLength.div(SimulatedFuel.kRadius.times(2)).baseUnitMagnitude();
+    int c = (int) Rebuilt.kNeutralMassWidth.div(SimulatedFuel.kRadius.times(2)).baseUnitMagnitude();
 
     Distance rLength = Rebuilt.kNeutralMassLength.div(r);
     Distance cLength = Rebuilt.kNeutralMassWidth.div(c);

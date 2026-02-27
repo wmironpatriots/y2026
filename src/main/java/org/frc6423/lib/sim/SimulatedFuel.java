@@ -29,10 +29,10 @@ import edu.wpi.first.wpilibj.Timer;
  *
  * <p>To update an object, run {@link #update()}
  *
- * <p><strong>DO NOT</strong> directly use this class. Spawn objects using {@link SimFuelManager}
- * instead
+ * <p><strong>DO NOT</strong> directly use this class. Spawn objects using {@link
+ * SimulatedFuelManager} instead
  */
-public class SimFuel {
+public class SimulatedFuel {
   // * CONSTANTS
   /** {@link LinearAcceleration} Constant acceleration induced by gravity */
   public static final LinearAcceleration kGravitationalAcceleration =
@@ -62,7 +62,7 @@ public class SimFuel {
   private boolean mGrounded = false;
 
   /**
-   * Create new {@link SimFuel}
+   * Create new {@link SimulatedFuel}
    *
    * @param startingDisplacementMeters {@link Translation3d} Starting displacement in meters WRT
    *     origin
@@ -70,7 +70,7 @@ public class SimFuel {
    *     second
    * @param lifespanLengthSec {@link Double} Length of Lifespan in seconds
    */
-  public SimFuel(
+  public SimulatedFuel(
       Translation3d startingDisplacementMeters,
       Vector<N3> startingVelocityMps,
       double lifespanLengthSec) {
