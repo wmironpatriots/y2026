@@ -21,11 +21,13 @@ import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
@@ -93,6 +95,28 @@ public class Hood extends SubsystemBase {
     public static final AngularAcceleration kMaxAcceleration = DegreesPerSecondPerSecond.of(15.0);
 
     // * HARDWARE CONSTANTS
+    /** {@link Integer} CAN ID of abs encoder */
+    public static final int kEncoderCanDeviceId = Matrix.kHoodEncoderId;
+
+    /** {@link Angle} Angular Offset to the stowed angle of abs encoder */
+    public static final Angle kEncoderAngularOffset = Revolutions.of(0.0).plus(kMinAngle); // TODO
+
+    /** {@link Angle} Angular Position in the middle of the 'unreachable' area of pivot */
+    public static final Angle kEncoderSensorDiscontinuityPoint =
+        Degrees.of(360).minus(kMaxAngle.minus(kMinAngle)).div(2).plus(kMaxAngle);
+
+    /** {@link CANcoderConfiguration} Hardware config of abs encoder */
+    public static final CANcoderConfiguration kEncoderConfig =
+        new CANcoderConfiguration()
+            .withMagnetSensor(
+                new MagnetSensorConfigs()
+                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
+                    .withMagnetOffset(kEncoderAngularOffset)
+                    .withAbsoluteSensorDiscontinuityPoint(kEncoderSensorDiscontinuityPoint));
+
+    /** {@link CANBus} CAN bus devices are on */
+    public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+
     /** {@link Integer} CAN ID of servo */
     public static final int kServoCanDeviceId = Matrix.kHoodId;
 
@@ -117,6 +141,12 @@ public class Hood extends SubsystemBase {
                 new CurrentLimitsConfigs()
                     .withStatorCurrentLimit(kServoStatorCurrentLimit)
                     .withStatorCurrentLimitEnable(true))
+            .withFeedback(
+                new FeedbackConfigs()
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                    .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
+                    .withRotorToSensorRatio(kRotorToSensorRatio)
+                    .withSensorToMechanismRatio(kSensorToMechRatio))
             .withMotionMagic(
                 new MotionMagicConfigs()
                     .withMotionMagicCruiseVelocity(kMaxVelocity)
@@ -128,28 +158,6 @@ public class Hood extends SubsystemBase {
                     .withKA(0.0)
                     .withKP(0.0)
                     .withKD(0.0)); // TODO Torque Current Control Gains (accelerating)
-
-    /** {@link Integer} CAN ID of abs encoder */
-    public static final int kEncoderCanDeviceId = Matrix.kHoodEncoderId;
-
-    /** {@link Angle} Angular Offset to the stowed angle of abs encoder */
-    public static final Angle kEncoderAngularOffset = Revolutions.of(0.0).plus(kMinAngle); // TODO
-
-    /** {@link Angle} Angular Position in the middle of the 'unreachable' area of pivot */
-    public static final Angle kEncoderSensorDiscontinuityPoint =
-        Degrees.of(360).minus(kMaxAngle.minus(kMinAngle)).div(2).plus(kMaxAngle);
-
-    /** {@link CANcoderConfiguration} Hardware config of abs encoder */
-    public static final CANcoderConfiguration kEncoderConfig =
-        new CANcoderConfiguration()
-            .withMagnetSensor(
-                new MagnetSensorConfigs()
-                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
-                    .withMagnetOffset(kEncoderAngularOffset)
-                    .withAbsoluteSensorDiscontinuityPoint(kEncoderSensorDiscontinuityPoint));
-
-    /** {@link CANBus} CAN bus devices are on */
-    public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
 
     // * CHARACTERIZATON
     /**
@@ -202,7 +210,7 @@ public class Hood extends SubsystemBase {
    * @param servo {@link ServoIO} Servo powering subsystem
    * @param encoder {@link EncoderIO} Encoder measuring angular motion
    */
-  public Hood(ServoIO servo, EncoderIO encoder) {
+  protected Hood(ServoIO servo, EncoderIO encoder) {
     // Init Hardware
     mServo = servo;
     mEncoder = encoder;
@@ -225,7 +233,7 @@ public class Hood extends SubsystemBase {
 
     // Publish characterization command in tuning mode
     if (Flags.kTuningModeEnabled) {
-      SmartDashboard.putData("Run SysId Characterization", runCharacterizationSequence());
+      SmartDashboard.putData("Run Hood SysId Characterization", runCharacterizationSequence());
     }
   }
 
@@ -234,6 +242,17 @@ public class Hood extends SubsystemBase {
     // Update all Hardware
     mServo.periodic();
     mEncoder.periodic();
+  }
+
+  // * GETTERS
+  /**
+   * Get Target Angular Position of subsystem
+   *
+   * @return {@link}
+   */
+  @Logged(name = "Target Angular Position (rads)", importance = Importance.INFO)
+  public Angle getTargetAngle() {
+    return mTargetAngle;
   }
 
   /**

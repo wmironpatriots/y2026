@@ -34,7 +34,7 @@ import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
-/** {@link SubsystemBase} extension representing the feeder subsystem */
+/** {@link SubsystemBase} Feeder Subsystem */
 public class Feeder extends SubsystemBase {
   /** Constants for the {@link Feeder} */
   public class Constants {

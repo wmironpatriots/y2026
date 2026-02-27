@@ -211,7 +211,7 @@ public class Flywheel extends SubsystemBase {
 
     // Publish characterization command in tuning mode
     if (Flags.kTuningModeEnabled) {
-      SmartDashboard.putData("Run SysId Characterization", runCharacterizationSequence());
+      SmartDashboard.putData("Run Flywheel SysId Characterization", runCharacterizationSequence());
     }
 
     // TODO idk if high pass is the correct filter to use here tbh, should test with moving avg as

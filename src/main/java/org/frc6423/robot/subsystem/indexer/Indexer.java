@@ -29,7 +29,7 @@ import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
-/** {@link SubsystemBase} extension representing the belt indexer subsystem */
+/** {@link SubsystemBase} Indexer (Belt) Subsystem */
 public class Indexer extends SubsystemBase {
   /** Constants for the {@link Indexer} */
   public class Constants {
