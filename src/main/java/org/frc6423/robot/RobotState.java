@@ -114,14 +114,17 @@ public class RobotState {
           mOdoPose = mOdoPose.exp(odoPoseTwist);
 
           // Utilize gyro measurements if present
-          sample.gyroRotation3d.ifPresent(r -> mOdoPose = new Pose3d(mOdoPose.getTranslation(), r));
+          sample.gyroRotation3d.ifPresent(
+              r ->
+                  mOdoPose =
+                      new Pose3d(mOdoPose.getTranslation(), r.plus(new Rotation3d(mOffset))));
 
           // Add odometry sample of specified timestamp to odo buffer
           mOdoPoseBuffer.addSample(Constants.kBufferDuration, mOdoPose);
 
           // Calculate change in distance between odometry positions and apply to estimated pose
           Twist3d estPoseTwist = mPreviousOdoPose.log(mOdoPose);
-          mEstPose.exp(estPoseTwist);
+          mEstPose = mEstPose.exp(estPoseTwist);
           mF2d.setRobotPose(mEstPose.toPose2d());
         });
   }
