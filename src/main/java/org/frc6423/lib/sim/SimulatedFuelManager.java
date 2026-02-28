@@ -14,14 +14,11 @@ import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Notifier;
 import java.util.ArrayList;
-import org.frc6423.lib.game.Rebuilt;
 
 /** A class for spawning & keeping track of {@link SimulatedFuel} objects */
 public class SimulatedFuelManager {
@@ -158,31 +155,5 @@ public class SimulatedFuelManager {
         new SimulatedFuel(
             initialDisplacementMeters, initialVelocityMps, lifespanLength.in(Seconds)));
     return mFuel.size() - 1;
-  }
-
-  public static void spawnNeutralZone(SimulatedFuelManager manager) {
-    int r =
-        (int) Rebuilt.kNeutralMassLength.div(SimulatedFuel.kRadius.times(2)).baseUnitMagnitude();
-    int c = (int) Rebuilt.kNeutralMassWidth.div(SimulatedFuel.kRadius.times(2)).baseUnitMagnitude();
-
-    Distance rLength = Rebuilt.kNeutralMassLength.div(r);
-    Distance cLength = Rebuilt.kNeutralMassWidth.div(c);
-
-    var start =
-        new Translation2d(
-            Rebuilt.kNeutralMassPose2d.getX() - Rebuilt.kNeutralMassLength.div(2).in(Meters),
-            Rebuilt.kNeutralMassPose2d.getY() - Rebuilt.kNeutralMassWidth.div(2).in(Meters));
-
-    for (int i = 0; i < r; i++) {
-      for (int j = 0; j < c; j++) {
-        manager.spawnFuel(
-            new Translation3d(
-                start.getX() + rLength.times(i).in(Meters),
-                start.getY() + cLength.times(j).in(Meters),
-                0.0),
-            VecBuilder.fill(0.0, 0.0, 0.0),
-            Seconds.of(0.0));
-      }
-    }
   }
 }
