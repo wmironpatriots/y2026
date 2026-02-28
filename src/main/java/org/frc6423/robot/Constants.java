@@ -7,6 +7,7 @@
 package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
+import edu.wpi.first.epilogue.Logged.Importance;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL1;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
@@ -23,13 +24,19 @@ public final class Constants {
   /** Runtime flags determining the robots initialization */
   public static final class Flags {
     /** {@link RobotType} representing the robot chassis being used */
-    public static RobotType kRobotType = RobotType.Y2026_L2;
+    public static final RobotType kRobotType = RobotType.Y2026_L2;
 
     /** When true, subsystems will not be initialized */
-    public static boolean kSubsystemDisabled = false;
+    public static final boolean kSubsystemDisabled = false;
 
     /** When true, drive will not be initialized */
-    public static boolean kDriveDisabled = false;
+    public static final boolean kDriveDisabled = false;
+
+    /** When true, tunables/characterization commands will appear on dashboard */
+    public static final boolean kTuningModeEnabled = true;
+
+    /** {@link Importance} Minimum Epilogue importance to be logged */
+    public static final Importance kLoggingLevel = Importance.DEBUG;
   }
 
   /** The matrix contains the CAN identification information for all devices */
@@ -69,6 +76,9 @@ public final class Constants {
 
     public static final int kFlywheelLeftId = 21;
     public static final int kFlywheelRightId = 22;
+
+    public static final int kIntakeBeamBreakDio = 0;
+    public static final int kFeederBeamBreakDio = 1;
   }
 
   /** Represents the type of robot codebase is running on */

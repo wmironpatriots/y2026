@@ -6,131 +6,366 @@
 
 package org.frc6423.robot.subsystem.hood;
 
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
+import static edu.wpi.first.units.Units.KilogramSquareMeters;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Revolutions;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.Second;
+import static edu.wpi.first.units.Units.Volts;
 
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.AudioConfigs;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
+import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.CurrentUnit;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularAcceleration;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.MomentOfInertia;
+import edu.wpi.first.units.measure.Velocity;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.Supplier;
+import org.frc6423.lib.io.EncoderIO;
+import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
+import org.frc6423.lib.io.ServoIOTalonFx;
+import org.frc6423.robot.Constants.Flags;
+import org.frc6423.robot.Constants.Matrix;
+import org.frc6423.robot.Robot;
 
 /**
- * {@link SubsystemBase} extension representing the hood subsystem
+ * {@link SubsystemBase} Hood Subsystem
  *
- * <p>The {@link Hood} has a single pivoting component that folds and unfolds the hood to launch
- * fuel at different angles
+ * <p>Subsystem for unfolding and folding the back of the shooter
  *
- * <p>The {@link Hood} moving to a setpoint angle is referred as "adjusting"
+ * <p>Subsystem is powered by one Kraken x44
+ *
+ * <p>Subsystem is measured by one Throughbore CANcoder
  */
 public class Hood extends SubsystemBase {
-  /** Represents a mode of being the {@link Hood} subsystem can be in */
-  public static enum State {
-    /** {@link State} where the {@link Hood} is completely folded */
-    STOWED,
-    /** {@link State} where the {@link Hood} is unfolding to a specified setpoint */
-    ADJUSTING,
-    /** {@link State} where the {@link Hood} is unfolded at a specified setpoint */
-    ANGLED,
-    /** {@link State} where the {@link Hood} is folding into a STOWED state */
-    STOWING
+  /** Constants for the {@link Hood} */
+  public class Constants {
+    // * PHYSICAL CONSTANTS
+    /** {@link Distance} 'Length' of Pivot System */
+    public static final Distance kLength = Meters.of(1); // TODO
+
+    /** {@link MomentOfInertia} Rotational Inertia of Pivot System */
+    public static final MomentOfInertia kRotationalInertia =
+        KilogramSquareMeters.of(1 * 0.0002926397); // TODO
+
+    // * CONTROL CONSTANTS
+    /** {@link Angle} Max allowed angular position error in subsystem */
+    public static final Angle kEpsilon = Degrees.of(0.5);
+
+    /** {@link Angle} Lower limit on angular position */
+    public static final Angle kMinAngle = Degrees.of(14.703759);
+
+    /** {@link Angle} upper limit on angular position */
+    public static final Angle kMaxAngle = Degrees.of(45.812);
+
+    /** {@link AngularVelocity} The maximum allowed angular velocity of subsystem */
+    public static final AngularVelocity kMaxVelocity = DegreesPerSecond.of(35.0);
+
+    /** {@link AngularAcceleration} The maximum allowed angular acceleration of subsystem */
+    public static final AngularAcceleration kMaxAcceleration = DegreesPerSecondPerSecond.of(15.0);
+
+    // * HARDWARE CONSTANTS
+    /** {@link Integer} CAN ID of abs encoder */
+    public static final int kEncoderCanDeviceId = Matrix.kHoodEncoderId;
+
+    /** {@link Angle} Angular Offset to the stowed angle of abs encoder */
+    public static final Angle kEncoderAngularOffset = Revolutions.of(0.0).plus(kMinAngle); // TODO
+
+    /** {@link Angle} Angular Position in the middle of the 'unreachable' area of pivot */
+    public static final Angle kEncoderSensorDiscontinuityPoint =
+        Degrees.of(360).minus(kMaxAngle.minus(kMinAngle)).div(2).plus(kMaxAngle);
+
+    /** {@link CANcoderConfiguration} Hardware config of abs encoder */
+    public static final CANcoderConfiguration kEncoderConfig =
+        new CANcoderConfiguration()
+            .withMagnetSensor(
+                new MagnetSensorConfigs()
+                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
+                    .withMagnetOffset(kEncoderAngularOffset)
+                    .withAbsoluteSensorDiscontinuityPoint(kEncoderSensorDiscontinuityPoint));
+
+    /** {@link CANBus} CAN bus devices are on */
+    public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+
+    /** {@link Integer} CAN ID of servo */
+    public static final int kServoCanDeviceId = Matrix.kHoodId;
+
+    /** {@link Current} Stator current limit of servo */
+    public static final Current kServoStatorCurrentLimit = Amps.of(40.0);
+
+    /** {@link Double} Gear ratio between the servo rotor and the encoder shaft */
+    public static final double kRotorToSensorRatio = 2.57142857143;
+
+    /** {@link Double} Gear ratio between the encoder shaft and the mechanism pivot */
+    public static final double kSensorToMechRatio = 10.83;
+
+    /** {@link TalonFXConfiguration} Hardware config of servo */
+    public static final TalonFXConfiguration kServoTalonConfig =
+        new TalonFXConfiguration()
+            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+            .withMotorOutput(
+                new MotorOutputConfigs()
+                    .withInverted(InvertedValue.Clockwise_Positive)
+                    .withNeutralMode(NeutralModeValue.Brake))
+            .withCurrentLimits(
+                new CurrentLimitsConfigs()
+                    .withStatorCurrentLimit(kServoStatorCurrentLimit)
+                    .withStatorCurrentLimitEnable(true))
+            .withFeedback(
+                new FeedbackConfigs()
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                    .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
+                    .withRotorToSensorRatio(kRotorToSensorRatio)
+                    .withSensorToMechanismRatio(kSensorToMechRatio))
+            .withMotionMagic(
+                new MotionMagicConfigs()
+                    .withMotionMagicCruiseVelocity(kMaxVelocity)
+                    .withMotionMagicAcceleration(kMaxAcceleration))
+            .withSlot0(
+                new Slot0Configs()
+                    .withKS(0.0)
+                    .withKV(0.0)
+                    .withKA(0.0)
+                    .withKP(0.0)
+                    .withKD(0.0)); // TODO Torque Current Control Gains (accelerating)
+
+    // * CHARACTERIZATON
+    /**
+     * {@link Velocity} of {@link CurrentUnit} Rate at which current output ramps up at in
+     * Quasistatic Characterization
+     */
+    public static final Velocity<CurrentUnit> kCharacterizationRampRate = Amps.of(15.0).per(Second);
+
+    /** {@link Current} Current step size for Dynamic Characterization */
+    public static final Current kCharacterizationStepSize = Amps.of(6.0);
   }
-
-  private final ServoIO mServo;
-
-  private State mState = State.STOWED;
-
-  private Angle mSetpointAngle = Revolutions.zero();
-  private final Angle mEpsilon;
 
   /**
    * Create new {@link Hood}
    *
-   * @param servo {@link ServoIO} representing the servo pivoting hood
-   * @param epsilon {@link Angle} representing the largest acceptable amount of angular position
-   *     error
+   * @return {@link Hood}
    */
-  public Hood(ServoIO servo, Angle epsilon) {
+  public static Hood create() {
+    return (Robot.isReal())
+        ? new Hood(
+            new ServoIOTalonFx(
+                "Servo",
+                Constants.kCanBus,
+                Constants.kServoCanDeviceId,
+                Constants.kServoTalonConfig),
+            new EncoderIOCanCoder(
+                Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig))
+        : new Hood(
+            new ServoIOTalonFx(
+                "Servo",
+                Constants.kCanBus,
+                Constants.kServoCanDeviceId,
+                Constants.kServoTalonConfig),
+            new EncoderIOCanCoder(
+                Constants.kEncoderCanDeviceId,
+                Constants.kCanBus,
+                Constants.kEncoderConfig)); // TODO replace with sim
+  }
+
+  @Logged private final ServoIO mServo;
+  @Logged private final EncoderIO mEncoder;
+
+  private final SysIdRoutine mSysIdRoutine;
+
+  private Angle mTargetAngle = Revolutions.zero();
+
+  /**
+   * Create new {@link Hood}
+   *
+   * @param servo {@link ServoIO} Servo powering subsystem
+   * @param encoder {@link EncoderIO} Encoder measuring angular motion
+   */
+  protected Hood(ServoIO servo, EncoderIO encoder) {
+    // Init Hardware
     mServo = servo;
-    mEpsilon = epsilon;
+    mEncoder = encoder;
+
+    // Init SysId
+    mSysIdRoutine =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                Volts.of(Constants.kCharacterizationRampRate.in(Amps.per(Second))).per(Second),
+                Volts.of(Constants.kCharacterizationStepSize.in(Amps)),
+                null,
+                (state) ->
+                    Epilogue.getConfig()
+                        .backend
+                        .log("Telemetry/mHood/SysID State", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (voltage) -> mServo.setTorqueCurrentSetpoint(Amps.of(voltage.in(Volts))),
+                null,
+                this));
+
+    // Publish characterization command in tuning mode
+    if (Flags.kTuningModeEnabled) {
+      SmartDashboard.putData("Run Hood SysId Characterization", runCharacterizationSequence());
+    }
   }
 
   @Override
   public void periodic() {
+    // Update all Hardware
     mServo.periodic();
+    mEncoder.periodic();
+  }
 
-    switch (mState) {
-      case ADJUSTING:
-        break;
-      case ANGLED:
-        break;
-      case STOWED:
-        break;
-      case STOWING:
-        break;
-    }
+  // * GETTERS
+  /**
+   * Get Target Angular Position of subsystem
+   *
+   * @return {@link}
+   */
+  @Logged(name = "Target Angular Position (rads)", importance = Importance.INFO)
+  public Angle getTargetAngle() {
+    return mTargetAngle;
   }
 
   /**
-   * @return {@link State} representing the current mode of being subsystem is in
+   * Get Angular Position of subsystem
+   *
+   * @return {@link Angle}
    */
-  @Logged(name = "State", importance = Importance.INFO)
-  public State getState() {
-    return mState;
-  }
-
-  /**
-   * @return {@link Angle} representing the angular position of hood
-   */
-  @Logged(name = "Angle", importance = Importance.INFO)
+  @Logged(name = "Angular Position (rads)", importance = Importance.INFO)
   public Angle getAngle() {
-    return null;
+    return mEncoder.getAngle();
   }
 
   /**
-   * @return {@link Angle} representing the setpoint angular position
+   * Get Angular Velocity of subsystem
+   *
+   * @return {@link AngularVelocity}
    */
-  @Logged(name = "Setpoint", importance = Importance.INFO)
-  public Angle getSetpointAngle() {
-    return mSetpointAngle;
+  @Logged(name = "Angular Velocity (rads per second)", importance = Importance.INFO)
+  public AngularVelocity getAngularVelocity() {
+    return mServo.getAngularVelocity();
   }
 
   /**
-   * @return true when the angular position error of hood is less than epsilon
+   * Get Angular Acceleration of subsystem
+   *
+   * @return {@link AngularAcceleration}
    */
-  @Logged(name = "is Near Setpoint", importance = Importance.INFO)
+  @Logged(name = "Angular Acceleration (rads per second per second)", importance = Importance.INFO)
+  public AngularAcceleration getAngularAcceleration() {
+    return mServo.getAngularAcceleration();
+  }
+
+  /**
+   * Check if subsystem is nearly at setpoint angular position
+   *
+   * @return {@link Boolean}
+   */
+  @Logged(name = "Is Near Setpoint (bool)", importance = Importance.INFO)
   public boolean isNearSetpoint() {
-    return false;
+    return MathUtil.isNear(
+        mTargetAngle.in(Revolutions),
+        getAngle().in(Revolutions),
+        Constants.kEpsilon.in(Revolutions));
+  }
+
+  // * COMMANDS
+  /**
+   * Run SysId Characterization Routine for determining gains
+   *
+   * <p>Tests will run as follows: +Quasi, -Quasi, +Dyna, -Dyna
+   *
+   * <p>Each test will stop 5 degrees before the upper/lower angular position limits
+   *
+   * @return {@link Command}
+   */
+  public Command runCharacterizationSequence() {
+    return Commands.sequence(
+            mSysIdRoutine
+                .quasistatic(Direction.kForward)
+                .until(() -> getAngle().gte(Constants.kMaxAngle.minus(Degrees.of(5)))),
+            Commands.waitSeconds(2),
+            mSysIdRoutine
+                .quasistatic(Direction.kReverse)
+                .until(() -> getAngle().gte(Constants.kMinAngle.plus(Degrees.of(5)))),
+            Commands.waitSeconds(2),
+            mSysIdRoutine
+                .dynamic(Direction.kForward)
+                .until(() -> getAngle().gte(Constants.kMaxAngle.minus(Degrees.of(5)))),
+            Commands.waitSeconds(2),
+            mSysIdRoutine
+                .dynamic(Direction.kReverse)
+                .until(() -> getAngle().gte(Constants.kMinAngle.plus(Degrees.of(5)))))
+        .beforeStarting(() -> mTargetAngle = Revolutions.zero(), this)
+        .withName("Hood Characterization");
   }
 
   /**
-   * Attempt to stow hood
+   * Request subsystem to stow (aka fold completely)
    *
    * @return {@link Command}
    */
   public Command stow() {
-    return Commands.none();
+    return adjustToAngle(Constants.kMinAngle).withName("Hood Stow");
   }
 
   /**
-   * Attempt to adjust hood to specified angle
+   * Request subsystem to adjust to a desired angular position
    *
-   * @param angle {@link Angle} representing setpoint angle to adjust to
+   * @param angle {@link Angle} Angular Position Setpoint
    * @return {@link Command}
    */
   public Command adjustToAngle(Angle angle) {
-    return adjustToAngle(() -> angle);
+    return adjustToAngle(() -> angle).withName("Hood Adjust to Angle");
   }
 
   /**
-   * Attempt to adjust hood to specified angle continuously
+   * Request subsystem to continiously adjust to a stream of angular position setpoints
    *
-   * @param angle {@link Supplier} of {@link Angle} representing setpoint angle to adjust to
+   * @param angle {@link Supplier}<{@link Angle}> Angular Position Setpoint
    * @return {@link Command}
    */
   public Command adjustToAngle(Supplier<Angle> angle) {
-    return Commands.none();
+    return this.run(
+            () -> {
+              mTargetAngle =
+                  Rotations.of(
+                      MathUtil.clamp(
+                          angle.get().in(Revolutions),
+                          Constants.kMinAngle.in(Revolutions),
+                          Constants.kMaxAngle.in(Revolutions)));
+
+              mServo.setTorqueMotionProfiledPositionSetpoint(mTargetAngle);
+            })
+        .withName("Hood Adjust to Angle Continiously");
   }
 }

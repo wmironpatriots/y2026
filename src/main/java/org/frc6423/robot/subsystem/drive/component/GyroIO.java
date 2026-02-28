@@ -4,7 +4,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.robot.subsystem.drive.gyro;
+package org.frc6423.robot.subsystem.drive.component;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
@@ -12,28 +12,29 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.units.measure.Angle;
 
-/** A hardware interface for controlling a gyro */
 public abstract class GyroIO {
-  /** Update logged signals */
-  public abstract void periodic();
-
   /**
-   * @return {@link Angle} representing measured yaw
+   * Get yaw rotation of gyro
+   *
+   * @return {@link Angle}
    */
   public Angle getYaw() {
     return getRotation2d().getMeasure();
   }
 
   /**
-   * @return {@link Rotation2d} representing the measured orientation in 2D space
+   * Get yaw rotation of gyro
+   *
+   * @return {@link Rotation2d}
    */
-  @Logged(name = "Rotation2d", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
     return getRotation3d().toRotation2d();
   }
 
   /**
-   * @return {@link Rotation3d} representing the measured orientation in 3D space
+   * Get rotation of gyro in 3-Dimensional Space
+   *
+   * @return {@link Rotation3d}
    */
   @Logged(name = "Rotation3d", importance = Importance.INFO)
   public abstract Rotation3d getRotation3d();

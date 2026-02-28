@@ -28,7 +28,7 @@ public class EncoderIOCanCoder extends EncoderIO {
 
     mEncoder.getConfigurator().apply(config);
 
-    mAngleSig = mEncoder.getAbsolutePosition();
+    mAngleSig = mEncoder.getPosition();
   }
 
   @Override

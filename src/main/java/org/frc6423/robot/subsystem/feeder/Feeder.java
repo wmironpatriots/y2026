@@ -4,10 +4,11 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.robot.subsystem.indexer;
+package org.frc6423.robot.subsystem.feeder;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
@@ -20,25 +21,33 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.frc6423.lib.io.DIO;
+import org.frc6423.lib.io.DIORio;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
-/** {@link SubsystemBase} Indexer (Belt) Subsystem */
-public class Indexer extends SubsystemBase {
-  /** Constants for the {@link Indexer} */
+/** {@link SubsystemBase} Feeder Subsystem */
+public class Feeder extends SubsystemBase {
+  /** Constants for the {@link Feeder} */
   public class Constants {
     // * CONTROL CONSTANTS
-    /** {@link Voltage} Voltage speed for indexing */
-    public static final Voltage kIndexingSpeed = Volts.of(5.0);
+    /** {@link Voltage} Voltage speed for loading */
+    public static final Voltage kLoadingSpeed = Volts.of(3.0);
 
-    /** {@link Voltage} Voltage speed for outdexing */
-    public static final Voltage kOutdexingSpeed = kIndexingSpeed.times(-1);
+    /** {@link Voltage} Voltage speed for feeding */
+    public static final Voltage kFeedingSpeed = Volts.of(9.0);
+
+    // * SIMULATION CONSTANTS
+    /** {@link Time} Time for loading in sim */
+    public static final Time kLoadTime = Seconds.of(1);
 
     // * HARDWARE CONSTANTS
     /** {@link Integer} CAN ID of servo */
@@ -62,41 +71,51 @@ public class Indexer extends SubsystemBase {
 
     /** {@link CANBus} CAN bus devices are on */
     public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+
+    /** {@link Integer} The DIO port beambreak is plugged into */
+    public static final int kBeamBreakDioPort = Matrix.kFeederBeamBreakDio;
   }
 
   /**
-   * Create new {@link Indexer}
+   * Create new {@link Feeder}
    *
-   * @return {@link Indexer}
+   * @return {@link Feeder}
    */
-  public static Indexer create() {
+  public static Feeder create() {
     return (Robot.isReal())
-        ? new Indexer(
+        ? new Feeder(
             new ServoIOTalonFx(
                 "Servo",
                 Constants.kCanBus,
                 Constants.kServoCanDeviceId,
-                Constants.kServoTalonConfig))
-        : new Indexer(new ServoIONone("Servo"));
+                Constants.kServoTalonConfig),
+            new DIORio(Constants.kBeamBreakDioPort))
+        : new Feeder(new ServoIONone("Servo"), new DIORio(Constants.kBeamBreakDioPort));
   }
 
   @Logged private final ServoIO mServo;
+  @Logged private final DIO mDIO;
 
   private boolean mIsRunning = false;
 
+  private Timer mSimTimer = new Timer();
+
   /**
-   * Create new {@link Indexer}
+   * Create new {@link Feeder}
    *
    * @param servo {@link ServoIO} Servo powering subsystem
+   * @param dio {@link DIO} Beambreak digital signal
    */
-  protected Indexer(ServoIO servo) {
+  protected Feeder(ServoIO servo, DIO dio) {
     mServo = servo;
+    mDIO = dio;
   }
 
   @Override
   public void periodic() {
-    // Update Hardware
+    // Update All Hardware
     mServo.periodic();
+    mDIO.periodic();
   }
 
   // * GETTERS
@@ -120,6 +139,18 @@ public class Indexer extends SubsystemBase {
     return !mIsRunning && !(Math.abs(mServo.getAngularVelocity().in(RadiansPerSecond)) > 0.0);
   }
 
+  /**
+   * Check if subsystem is loaded
+   *
+   * <p>If beambreak is broken, returns true
+   *
+   * @return {@link Boolean}
+   */
+  @Logged(name = "Is Loaded (bool)", importance = Importance.INFO)
+  public boolean isLoaded() {
+    return !mDIO.getState();
+  }
+
   // * COMMANDS
   /**
    * Request subsystem to stop
@@ -132,34 +163,36 @@ public class Indexer extends SubsystemBase {
               mIsRunning = false;
               mServo.stop();
             })
-        .withName("Indexer Stop");
+        .withName("Feeder Stop");
   }
 
   /**
-   * Request subsystem to run inwards and 'index'
+   * Request subsystem to load a fuel for shooting
    *
    * @return {@link Command}
    */
-  public Command index() {
+  public Command load() {
     return this.run(
             () -> {
+              mSimTimer.restart();
+              mServo.setVoltageSetpoint(Constants.kLoadingSpeed, true);
               mIsRunning = true;
-              mServo.setVoltageSetpoint(Constants.kIndexingSpeed, true);
             })
-        .withName("Indexer Index");
+        .until(() -> (Robot.isReal()) ? isLoaded() : mSimTimer.hasElapsed(Constants.kLoadTime))
+        .withName("Feeder Load");
   }
 
   /**
-   * Request subsystem to run outwards and 'outdex' (aka eject)
+   * Request subsystem to start feeding fuel to shooter
    *
    * @return {@link Command}
    */
-  public Command outdex() {
+  public Command feed() {
     return this.run(
             () -> {
+              mServo.setVoltageSetpoint(Constants.kFeedingSpeed, true);
               mIsRunning = true;
-              mServo.setVoltageSetpoint(Constants.kOutdexingSpeed, true);
             })
-        .withName("Indexer Outdex");
+        .withName("Feeder Feed");
   }
 }

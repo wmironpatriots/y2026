@@ -7,15 +7,90 @@
 package org.frc6423.robot.subsystem;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.DoubleSupplier;
+import org.frc6423.robot.RobotState;
+import org.frc6423.robot.subsystem.feeder.Feeder;
+import org.frc6423.robot.subsystem.flywheel.Flywheel;
+import org.frc6423.robot.subsystem.hood.Hood;
+import org.frc6423.robot.subsystem.indexer.Indexer;
+import org.frc6423.robot.subsystem.intake.Intake;
 
-/** {@link SubsystemBase} extension for control all subsystems */
+/**
+ * TODO WIP {@link SubsystemBase} Manager Subsystem for controlling all other subsystem in sequence
+ */
 public class Superstructure extends SubsystemBase {
-  /** Represents a state of being robot can be in */
-  public static enum State {}
+  private final RobotState mRobotState = RobotState.getInstance();
 
-  /** Create new {@link Superstucture} */
-  public Superstructure() {}
+  // * SUBSYSTEM MEMBERS
+  private final Intake mIntake = Intake.create();
+  private final Indexer mIndexer = Indexer.create();
+  private final Feeder mFeeder = Feeder.create();
+  private final Hood mHood = Hood.create();
+  private final Flywheel mFlywheel = Flywheel.create();
 
-  @Override
-  public void periodic() {}
+  // * STATE MEMBERS
+  private State mState = State.IDLE_NEUTRAL_ZONE;
+  private State mPreviouState = mState;
+
+  // * DRIVER TRIGGERS
+  private final Trigger mIntakeTrigger;
+  private final Trigger mAlignTrigger;
+  private final Trigger mSpinupTrigger;
+  private final Trigger mFireTrigger;
+
+  private final DoubleSupplier mXVelSupplier;
+  private final DoubleSupplier mYVelSupplier;
+  private final DoubleSupplier mOmegaSupplier;
+
+  // * STATE MAP
+  private final Map<State, Trigger> mStateMap = new HashMap<>();
+
+  /**
+   * Create new {@link Superstructure}
+   *
+   * @param intakeTrigger {@link Trigger} Trigger for intaking
+   * @param actionTrigger {@link Trigger} Trigger for turning on intake align
+   * @param spinupTrigger {@link Trigger} Trigger for spinning up flywheel
+   * @param fireTrigger {@link Trigger} Trigger for firing fuel
+   * @param xVelSupplier {@link DoubleSupplier} Stream of requested drive x velocity magnitudes
+   * @param yVelSupplier {@link DoubleSupplier} Stream of requested drive y velocity magnitudes
+   * @param omegaSupplier {@link DoubleSupplier} Stream of request drive omega magnitudes
+   */
+  public Superstructure(
+      Trigger intakeTrigger,
+      Trigger alignTrigger,
+      Trigger spinupTrigger,
+      Trigger fireTrigger,
+      DoubleSupplier xVelSupplier,
+      DoubleSupplier yVelSupplier,
+      DoubleSupplier omegaSupplier) {
+    mIntakeTrigger = intakeTrigger;
+    mAlignTrigger = alignTrigger;
+    mSpinupTrigger = spinupTrigger;
+    mFireTrigger = fireTrigger;
+
+    mXVelSupplier = xVelSupplier;
+    mYVelSupplier = yVelSupplier;
+    mOmegaSupplier = omegaSupplier;
+
+    for (var state : State.values()) {
+      mStateMap.put(state, new Trigger(() -> mState == state));
+    }
+
+    defineStateBehavior();
+  }
+
+  // TODO
+  /** Define behavior during different states */
+  private void defineStateBehavior() {}
+
+  // TODO
+  /** A state of being a {@link Superstructure} can be in */
+  public static enum State {
+    IDLE_NEUTRAL_ZONE,
+    IDLE_ALLIANC_ZONE,
+  }
 }
