@@ -45,7 +45,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.Supplier;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
-import org.frc6423.lib.io.ServoIOTalonFxSim;
+import org.frc6423.lib.io.ServoIOTalonFxRollerSim;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
@@ -156,7 +156,7 @@ public class Flywheel extends SubsystemBase {
                 Constants.kRightCanDeviceId,
                 Constants.kServoTalonConfig))
         : new Flywheel(
-            new ServoIOTalonFxSim(
+            new ServoIOTalonFxRollerSim(
                 "Left",
                 Constants.kCanBus,
                 Constants.kLeftCanDeviceId,

@@ -6,9 +6,8 @@
 
 package org.frc6423.lib.io;
 
-import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.Rotations;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Radians;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -17,21 +16,23 @@ import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.MomentOfInertia;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 
-/** {@link ServoIOTalon} extension for simulation */
-public class ServoIOTalonFxSim extends ServoIOTalonFx {
-  private final DCMotorSim mPhysicsModel;
+/** {@link ServoIOTalon} extension for pivot simulation */
+public class ServoIOTalonFxPivotSim extends ServoIOTalonFx {
+  private final SingleJointedArmSim mPhysicsModel;
 
   private double previousTimestamp;
   private final Notifier mNotifier;
 
   /**
-   * Create new {@link ServoIOTalonFxSim}
+   * Create new {@link ServoIOTalonFxRollerSim}
    *
    * @param name {@link String} representing servo nickname
    * @param canBus {@link CANBus} representing CAN bus loop device is in
@@ -43,22 +44,32 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
    * @param sensorToMechanismRatio {@link Double} representing the gear ratio between the encoder
    *     and mechanism output
    */
-  public ServoIOTalonFxSim(
+  public ServoIOTalonFxPivotSim(
       String name,
       CANBus canBus,
       int deviceId,
       TalonFXConfiguration talonConfig,
       MomentOfInertia rotationalInertia,
+      Distance armLength,
+      Angle minAngle,
+      Angle maxAngle,
+      Angle startingAngle,
+      boolean simulateGravity,
       MotorType motorType,
       DCMotor gearbox,
       double sensorToMechanismRatio) {
     super(name, canBus, deviceId, talonConfig);
 
     mPhysicsModel =
-        new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(
-                gearbox, rotationalInertia.in(KilogramSquareMeters), sensorToMechanismRatio),
-            gearbox);
+        new SingleJointedArmSim(
+            LinearSystemId.createSingleJointedArmSystem(gearbox, deviceId, sensorToMechanismRatio),
+            gearbox,
+            sensorToMechanismRatio,
+            armLength.in(Meters),
+            minAngle.in(Radians),
+            maxAngle.in(Radians),
+            simulateGravity,
+            sensorToMechanismRatio);
 
     mServo.getSimState().setMotorType(motorType);
     mServo.getSimState().Orientation =
@@ -81,12 +92,10 @@ public class ServoIOTalonFxSim extends ServoIOTalonFx {
               mServo
                   .getSimState()
                   .setRawRotorPosition(
-                      mPhysicsModel.getAngularPosition().in(Rotations) * sensorToMechanismRatio);
+                      mPhysicsModel.getAngleRads() / (Math.PI * 2) * sensorToMechanismRatio);
               mServo
                   .getSimState()
-                  .setRotorVelocity(
-                      mPhysicsModel.getAngularVelocity().in(RotationsPerSecond)
-                          * sensorToMechanismRatio);
+                  .setRotorVelocity(mPhysicsModel.getVelocityRadPerSec() * sensorToMechanismRatio);
             });
 
     mNotifier.startPeriodic(0.002);
