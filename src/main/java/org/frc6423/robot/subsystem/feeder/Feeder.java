@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.DIO;
+import org.frc6423.lib.io.DIONone;
 import org.frc6423.lib.io.DIORio;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIONone;
@@ -90,7 +91,7 @@ public class Feeder extends SubsystemBase {
                 Constants.kServoCanDeviceId,
                 Constants.kServoTalonConfig),
             new DIORio(Constants.kBeamBreakDioPort))
-        : new Feeder(new ServoIONone("Servo"), new DIORio(Constants.kBeamBreakDioPort));
+        : new Feeder(new ServoIONone("Servo"), new DIONone());
   }
 
   @Logged private final ServoIO mServo;

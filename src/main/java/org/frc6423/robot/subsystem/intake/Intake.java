@@ -52,6 +52,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import org.frc6423.lib.io.DIO;
+import org.frc6423.lib.io.DIONone;
 import org.frc6423.lib.io.DIORio;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
@@ -254,7 +255,7 @@ public class Intake extends SubsystemBase {
             new EncoderIOCanCoder(
                 Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig),
             new ServoIONone("Roller"),
-            new DIORio(Constants.kBeamBreakDioPort));
+            new DIONone());
   }
 
   @Logged private final EncoderIO mEncoder;

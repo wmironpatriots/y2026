@@ -218,9 +218,6 @@ public class Flywheel extends SubsystemBase {
     // well
     // Init current filter
     mCurrentFilter = LinearFilter.highPass(0.1, 0.02);
-
-    // Set default command
-    setDefaultCommand(coast());
   }
 
   @Override
