@@ -17,14 +17,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
 import org.frc6423.robot.Rebuilt;
-import org.frc6423.robot.RobotState;
 
 /** WIP */
 public class Superstructure extends SubsystemBase {
   /** Constants for the {@link Superstructure} */
   public class Constants {}
 
-  private final RobotState mRobotState = RobotState.getInstance();
+  private final RobotState mRobotState = new RobotState();
 
   // * STATE MEMBERS
   private State mState = State.IDLE_NEUTRAL_ZONE;

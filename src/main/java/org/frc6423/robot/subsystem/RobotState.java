@@ -4,7 +4,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.robot;
+package org.frc6423.robot.subsystem;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.geometry.Twist3d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
@@ -29,7 +30,6 @@ import java.util.Optional;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
 
-// TODO rethink logging
 /** A singleton that tracks the robot's estimated position */
 public class RobotState {
   /** {@link RobotState} internal constants */
@@ -39,21 +39,6 @@ public class RobotState {
 
     /** {@link Double} representing how long odometry estimated position remain in buffer */
     private static final double kBufferDuration = 1.5;
-  }
-
-  private static RobotState kInstance;
-
-  /**
-   * Get singleton {@link RoboState} instance
-   *
-   * @return {@link RobotState}
-   */
-  public static RobotState getInstance() {
-    if (kInstance == null) {
-      kInstance = new RobotState();
-    }
-
-    return kInstance;
   }
 
   private Pose3d mPreviousOdoPose = new Pose3d();
@@ -70,7 +55,7 @@ public class RobotState {
   private SwerveModulePosition[] mPreviousSwerveModulePoses;
 
   /** Create new {@link RobotState} */
-  protected RobotState() {
+  public RobotState() {
     mPreviousSwerveModulePoses = new SwerveModulePosition[4];
     for (int i = 0; i < mPreviousSwerveModulePoses.length; i++) {
       mPreviousSwerveModulePoses[i] = new SwerveModulePosition();
@@ -93,6 +78,14 @@ public class RobotState {
    */
   public Pose3d getPose3d() {
     return mEstPose;
+  }
+
+  public Pose2d getPose2d() {
+    return getPose3d().toPose2d();
+  }
+
+  public Translation2d getTranslation2d() {
+    return getPose2d().getTranslation();
   }
 
   public void resetPose(Pose2d pose) {
