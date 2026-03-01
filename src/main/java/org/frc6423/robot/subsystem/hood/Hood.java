@@ -52,6 +52,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.Supplier;
+import org.frc6423.lib.command.IronCommands;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
@@ -167,10 +168,10 @@ public class Hood extends SubsystemBase {
      * {@link Velocity} of {@link CurrentUnit} Rate at which current output ramps up at in
      * Quasistatic Characterization
      */
-    public static final Velocity<CurrentUnit> kCharacterizationRampRate = Amps.of(15.0).per(Second);
+    public static final Velocity<CurrentUnit> kCharacterizationRampRate = Amps.of(5.0).per(Second);
 
     /** {@link Current} Current step size for Dynamic Characterization */
-    public static final Current kCharacterizationStepSize = Amps.of(6.0);
+    public static final Current kCharacterizationStepSize = Amps.of(3.0);
   }
 
   /**
@@ -319,23 +320,22 @@ public class Hood extends SubsystemBase {
    * @return {@link Command}
    */
   public Command runCharacterizationSequence() {
-    return Commands.sequence(
+    return IronCommands.fastSequence(
             mSysIdRoutine
                 .quasistatic(Direction.kForward)
-                .until(() -> getAngle().gte(Constants.kMaxAngle.minus(Degrees.of(5)))),
+                .until(() -> getAngle().gt(Constants.kMaxAngle.minus(Degrees.of(5)))),
             Commands.waitSeconds(2),
             mSysIdRoutine
                 .quasistatic(Direction.kReverse)
-                .until(() -> getAngle().gte(Constants.kMinAngle.plus(Degrees.of(5)))),
+                .until(() -> getAngle().lt(Constants.kMinAngle.plus(Degrees.of(5)))),
             Commands.waitSeconds(2),
             mSysIdRoutine
                 .dynamic(Direction.kForward)
-                .until(() -> getAngle().gte(Constants.kMaxAngle.minus(Degrees.of(5)))),
+                .until(() -> getAngle().gt(Constants.kMaxAngle.minus(Degrees.of(5)))),
             Commands.waitSeconds(2),
             mSysIdRoutine
                 .dynamic(Direction.kReverse)
-                .until(() -> getAngle().gte(Constants.kMinAngle.plus(Degrees.of(5)))))
-        .beforeStarting(() -> mTargetAngle = Revolutions.zero(), this)
+                .until(() -> getAngle().lt(Constants.kMinAngle.plus(Degrees.of(5)))))
         .withName("Hood Characterization");
   }
 

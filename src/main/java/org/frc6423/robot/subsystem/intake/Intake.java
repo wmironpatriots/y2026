@@ -51,6 +51,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import org.frc6423.lib.command.IronCommands;
 import org.frc6423.lib.io.DIO;
 import org.frc6423.lib.io.DIONone;
 import org.frc6423.lib.io.DIORio;
@@ -375,23 +376,22 @@ public class Intake extends SubsystemBase {
    * @return {@link Command}
    */
   public Command runCharacterizationSequence() {
-    return Commands.sequence(
+    return IronCommands.fastSequence(
             mSysIdRoutine
                 .quasistatic(Direction.kForward)
-                .until(() -> getAngle().gte(Constants.kMaxAngle.minus(Degrees.of(5)))),
+                .until(() -> getAngle().gt(Constants.kMaxAngle.minus(Degrees.of(5)))),
             Commands.waitSeconds(2),
             mSysIdRoutine
                 .quasistatic(Direction.kReverse)
-                .until(() -> getAngle().gte(Constants.kMinAngle.plus(Degrees.of(5)))),
+                .until(() -> getAngle().lt(Constants.kMinAngle.plus(Degrees.of(5)))),
             Commands.waitSeconds(2),
             mSysIdRoutine
                 .dynamic(Direction.kForward)
-                .until(() -> getAngle().gte(Constants.kMaxAngle.minus(Degrees.of(5)))),
+                .until(() -> getAngle().gt(Constants.kMaxAngle.minus(Degrees.of(5)))),
             Commands.waitSeconds(2),
             mSysIdRoutine
                 .dynamic(Direction.kReverse)
-                .until(() -> getAngle().gte(Constants.kMinAngle.plus(Degrees.of(5)))))
-        .beforeStarting(() -> mTargetAngle = Revolutions.zero(), this)
+                .until(() -> getAngle().lt(Constants.kMinAngle.plus(Degrees.of(5)))))
         .withName("Intake Characterization");
   }
 
