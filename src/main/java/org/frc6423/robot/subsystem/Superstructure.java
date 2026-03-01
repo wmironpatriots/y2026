@@ -31,21 +31,23 @@ public class Superstructure extends SubsystemBase {
   private Timer mTimer = new Timer();
 
   // * TRIGGERS
-  @Logged
   private final Trigger mInNeutralZone =
       new Trigger(() -> Rebuilt.kNeutralZone.contains(mRobotState.getTranslation2d()));
 
-  @Logged
   private final Trigger mInTrenchZone =
-      new Trigger(() -> Rebuilt.kTrenchZone.contains(mRobotState.getTranslation2d()));
+      new Trigger(() -> Rebuilt.kTrenchZone.contains(mRobotState.getTranslation2d()))
+          .and(() -> Rebuilt.kOpposingTrench.contains(mRobotState.getTranslation2d()));
 
-  @Logged
   private final Trigger mInAllianceZone =
       new Trigger(() -> Rebuilt.kRobotAllianceZone.contains(mRobotState.getTranslation2d()));
 
+  private final Trigger mInDefenseZone =
+      new Trigger(() -> Rebuilt.kOpposingAlliance.contains(mRobotState.getTranslation2d()));
+
+  private final Trigger mIsShooterReady = new Trigger(() -> false); // TODO fcs shooter en stuff
+
   // * DRIVER INPUT TRIGGERS
-  @Logged
-  private final Trigger mIntakeTrigger, mLeftAlign, mRightAlign, mSpinupTrigger, mFireTrigger;
+  @Logged private final Trigger mShouldIntake, mShouldSpinup, mShouldFire;
 
   @Logged private final DoubleSupplier mXVelocitySupplier;
   @Logged private final DoubleSupplier mYVelocitySupplier;
@@ -56,19 +58,15 @@ public class Superstructure extends SubsystemBase {
 
   public Superstructure(
       Trigger intakeTrigger,
-      Trigger leftAlignTrigger,
-      Trigger rightAlignTrigger,
       Trigger spinupTrigger,
       Trigger fireTrigger,
       DoubleSupplier xVelocitySupplier,
       DoubleSupplier yVelocitySupplier,
       DoubleSupplier omegaSupplier) {
     // Define driver input triggers
-    mIntakeTrigger = intakeTrigger;
-    mLeftAlign = leftAlignTrigger;
-    mRightAlign = rightAlignTrigger;
-    mSpinupTrigger = spinupTrigger;
-    mFireTrigger = fireTrigger;
+    mShouldIntake = intakeTrigger;
+    mShouldSpinup = spinupTrigger;
+    mShouldFire = fireTrigger;
 
     mXVelocitySupplier = xVelocitySupplier;
     mYVelocitySupplier = yVelocitySupplier;
@@ -97,69 +95,138 @@ public class Superstructure extends SubsystemBase {
     return mState;
   }
 
+  // * SETTERS
   /** Define behavior during different states */
-  private void defineStateBehavior() {}
+  private void defineStateBehavior() {
+    mStateMap.get(State.IDLE_NEUTRAL_ZONE).whileTrue(Commands.none());
+
+    mStateMap.get(State.IDLE_ALLIANCE_ZONE).whileTrue(Commands.none());
+
+    mStateMap.get(State.IDLE_DEFENSE_ZONE).whileTrue(Commands.none());
+
+    mStateMap.get(State.INTAKING).whileTrue(Commands.none());
+
+    mStateMap.get(State.PREPPING_FERRY).whileTrue(Commands.none());
+
+    mStateMap.get(State.FERRYING).whileTrue(Commands.none());
+
+    mStateMap.get(State.PREPPING_SCORE).whileTrue(Commands.none());
+
+    mStateMap.get(State.SCORING).whileTrue(Commands.none());
+  }
 
   /** Define transitions between two states */
   private void defineStateTransitions() {
-    // NEUTRAL ZONE TRANSITIONS
+    // !!!!!!!!!! NEUTRAL ZONE TRANSITIONS !!!!!!!!!!
     createTransition(State.IDLE_NEUTRAL_ZONE, State.IDLE_ALLIANCE_ZONE, mInAllianceZone);
 
-    createTransition(State.IDLE_NEUTRAL_ZONE, State.INTAKING, mIntakeTrigger);
+    createTransition(State.IDLE_NEUTRAL_ZONE, State.IDLE_DEFENSE_ZONE, mInDefenseZone);
 
-    createTransition(State.IDLE_NEUTRAL_ZONE, State.PREPPING_FERRY, mSpinupTrigger);
+    createTransition(State.IDLE_NEUTRAL_ZONE, State.INTAKING, mShouldIntake);
 
-    // FERRYING TRANSITIONS
-    createTransition(
-        State.PREPPING_FERRY,
-        State.FERRYING,
-        mFireTrigger.and(() -> false)); // TODO check for shooter ready
+    createTransition(State.IDLE_NEUTRAL_ZONE, State.PREPPING_FERRY, mShouldSpinup);
 
-    createTransition(State.PREPPING_FERRY, State.IDLE_NEUTRAL_ZONE, mSpinupTrigger.negate());
-
-    createTransition(
-        State.FERRYING,
-        State.PREPPING_FERRY,
-        new Trigger(() -> false)); // TODO check for shooter not ready
-
-    createTransition(
-        State.FERRYING, State.IDLE_NEUTRAL_ZONE, mFireTrigger.negate().and(mInNeutralZone));
-
-    createTransition(
-        State.FERRYING, State.IDLE_ALLIANCE_ZONE, mFireTrigger.negate().and(mInAllianceZone));
-
-    // ALLIANCE ZONE TRANSITIONS
+    // !!!!!!!!!! ALLIANCE ZONE TRANSITIONS !!!!!!!!!!
     createTransition(State.IDLE_ALLIANCE_ZONE, State.IDLE_NEUTRAL_ZONE, mInNeutralZone);
 
-    createTransition(State.IDLE_ALLIANCE_ZONE, State.INTAKING, mIntakeTrigger);
+    createTransition(State.IDLE_ALLIANCE_ZONE, State.IDLE_DEFENSE_ZONE, mInDefenseZone);
 
-    createTransition(State.IDLE_ALLIANCE_ZONE, State.PREPPING_SCORE, mSpinupTrigger);
+    createTransition(State.IDLE_ALLIANCE_ZONE, State.INTAKING, mShouldIntake);
 
-    // SCORING TRANSITIONS
+    createTransition(State.IDLE_ALLIANCE_ZONE, State.PREPPING_SCORE, mShouldSpinup);
+
+    // !!!!!!!!!! DEFENSE ZONE TRANSITIONS !!!!!!!!!!
+    createTransition(State.IDLE_DEFENSE_ZONE, State.IDLE_NEUTRAL_ZONE, mInNeutralZone);
+
+    createTransition(State.IDLE_DEFENSE_ZONE, State.IDLE_ALLIANCE_ZONE, mInAllianceZone);
+
+    createTransition(State.IDLE_DEFENSE_ZONE, State.INTAKING, mShouldIntake);
+
+    createTransition(State.IDLE_DEFENSE_ZONE, State.PREPPING_FERRY, mShouldSpinup);
+
+    // !!!!!!!!!! INTAKING TRANSITIONS !!!!!!!!!!
+    createTransition(
+        State.INTAKING, State.IDLE_NEUTRAL_ZONE, mShouldIntake.negate().and(mInNeutralZone));
+
+    createTransition(
+        State.INTAKING, State.IDLE_ALLIANCE_ZONE, mShouldIntake.negate().and(mInAllianceZone));
+
+    createTransition(
+        State.INTAKING, State.IDLE_DEFENSE_ZONE, mShouldIntake.negate().and(mInDefenseZone));
+
+    // !!!!!!!!!! FERRYING TRANSITIONS !!!!!!!!!!
+    createTransition(
+        State.PREPPING_FERRY, State.IDLE_NEUTRAL_ZONE, mShouldSpinup.negate().and(mInNeutralZone));
+
+    createTransition(
+        State.PREPPING_FERRY,
+        State.IDLE_ALLIANCE_ZONE,
+        mShouldSpinup.negate().and(mInAllianceZone));
+
+    createTransition(
+        State.PREPPING_FERRY, State.IDLE_DEFENSE_ZONE, mShouldSpinup.negate().and(mInDefenseZone));
+
+    createTransition(State.PREPPING_FERRY, State.PREPPING_SCORE, mInAllianceZone);
+
+    createTransition(State.PREPPING_FERRY, State.FERRYING, mShouldFire.and(mIsShooterReady));
+
+    // Trigger means (!mFire || !isShooterReady) && spinup
+    createTransition(
+        State.FERRYING,
+        State.PREPPING_FERRY,
+        mShouldFire.negate().or(mIsShooterReady.negate()).and(mShouldSpinup));
+
+    createTransition(
+        State.FERRYING,
+        State.IDLE_NEUTRAL_ZONE,
+        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInNeutralZone));
+
+    createTransition(
+        State.FERRYING,
+        State.IDLE_ALLIANCE_ZONE,
+        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInAllianceZone));
+
+    createTransition(
+        State.FERRYING,
+        State.IDLE_DEFENSE_ZONE,
+        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInDefenseZone));
+
+    // !!!!!!!!!! SCORING TRANSITIONS !!!!!!!!!!
+    createTransition(
+        State.PREPPING_SCORE, State.IDLE_NEUTRAL_ZONE, mShouldSpinup.negate().and(mInNeutralZone));
+
     createTransition(
         State.PREPPING_SCORE,
-        State.SCORING,
-        mFireTrigger.and(() -> false)); // TODO check for shooter ready
+        State.IDLE_ALLIANCE_ZONE,
+        mShouldSpinup.negate().and(mInAllianceZone));
 
-    createTransition(State.PREPPING_SCORE, State.IDLE_NEUTRAL_ZONE, mSpinupTrigger.negate());
+    createTransition(
+        State.PREPPING_SCORE, State.IDLE_DEFENSE_ZONE, mShouldSpinup.negate().and(mInDefenseZone));
 
+    createTransition(State.PREPPING_SCORE, State.PREPPING_FERRY, mInNeutralZone);
+
+    createTransition(State.PREPPING_SCORE, State.SCORING, mShouldFire.and(mIsShooterReady));
+
+    // Trigger means (!mFire || !isShooterReady) && spinup
     createTransition(
         State.SCORING,
-        State.PREPPING_FERRY,
-        new Trigger(() -> false)); // TODO check for shooter not ready
+        State.PREPPING_SCORE,
+        mShouldFire.negate().or(mIsShooterReady.negate()).and(mShouldSpinup));
 
     createTransition(
-        State.SCORING, State.IDLE_NEUTRAL_ZONE, mFireTrigger.negate().and(mInNeutralZone));
+        State.SCORING,
+        State.IDLE_NEUTRAL_ZONE,
+        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInNeutralZone));
 
     createTransition(
-        State.SCORING, State.IDLE_ALLIANCE_ZONE, mFireTrigger.negate().and(mInAllianceZone));
-
-    // INTAKING TRANSITIONS
-    createTransition(
-        State.INTAKING, State.IDLE_NEUTRAL_ZONE, mIntakeTrigger.negate().and(mInNeutralZone));
+        State.SCORING,
+        State.IDLE_ALLIANCE_ZONE,
+        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInAllianceZone));
 
     createTransition(
-        State.INTAKING, State.IDLE_ALLIANCE_ZONE, mIntakeTrigger.negate().and(mInAllianceZone));
+        State.SCORING,
+        State.IDLE_DEFENSE_ZONE,
+        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInDefenseZone));
   }
 
   /**
@@ -195,8 +262,10 @@ public class Superstructure extends SubsystemBase {
   public static enum State {
     /** {@link State} Superstructure is idle in neutral zone */
     IDLE_NEUTRAL_ZONE,
-    /** {@link State} Superstructure is idle in alliance zone */
+    /** {@link State} Superstructure is idle in trench zone */
     IDLE_ALLIANCE_ZONE,
+    /** {@link State} Superstructure is idle in other alliance zone */
+    IDLE_DEFENSE_ZONE,
     /** {@link State} Superstucture is intaking */
     INTAKING,
     /** {@link State} Superstructure is spinning up for ferry */
