@@ -31,10 +31,12 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.CurrentUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -54,6 +56,7 @@ import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
+import org.frc6423.lib.io.ServoIOTalonFxPivotSim;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
@@ -186,15 +189,22 @@ public class Hood extends SubsystemBase {
             new EncoderIOCanCoder(
                 Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig))
         : new Hood(
-            new ServoIOTalonFx(
+            new ServoIOTalonFxPivotSim(
                 "Servo",
                 Constants.kCanBus,
                 Constants.kServoCanDeviceId,
-                Constants.kServoTalonConfig),
+                Constants.kServoTalonConfig,
+                Constants.kRotationalInertia,
+                Constants.kLength,
+                Constants.kMinAngle,
+                Constants.kMaxAngle,
+                Constants.kMinAngle,
+                true,
+                MotorType.KrakenX44,
+                DCMotor.getKrakenX44Foc(1),
+                Constants.kSensorToMechRatio),
             new EncoderIOCanCoder(
-                Constants.kEncoderCanDeviceId,
-                Constants.kCanBus,
-                Constants.kEncoderConfig)); // TODO replace with sim
+                Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig));
   }
 
   @Logged private final ServoIO mServo;
@@ -225,7 +235,7 @@ public class Hood extends SubsystemBase {
                 (state) ->
                     Epilogue.getConfig()
                         .backend
-                        .log("Telemetry/mHood/SysID State", state.toString())),
+                        .log("Characterization/Hood/SysID State", state.toString())),
             new SysIdRoutine.Mechanism(
                 (voltage) -> mServo.setTorqueCurrentSetpoint(Amps.of(voltage.in(Volts))),
                 null,

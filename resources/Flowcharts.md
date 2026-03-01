@@ -4,92 +4,54 @@
 title: FRC 6423 Superstructure Finite State-Machine (2026)
 ---
 stateDiagram-v2
-    direction TB
-    ***PACKAGED*** --> UNPACKING
-    UNPACKING --> NZ: Kicker(Deployed) && In(NZ)
-    UNPACKING --> AZ: Kicker Deployed && In(AZ)
+    direction LR
+    IDLE_NEUTRAL_ZONE
+    IDLE_ALLIANCE_ZONE
+    IDLE_DEFENSE_ZONE
+    INTAKING
+    PREPPING_FERRY
+    FERRYING
+    PREPPING_SCORE
+    SCORING
 
-    state NZ {
-        direction TB
-        ***NZ_IDLE*** --> PREPPING_FERRY: Request(Action)
-        PREPPING_FERRY --> FERRYING: Drive(AIMED), HOOD(AIMED), Flywheel(CRUSING)
-        PREPPING_FERRY --> ***NZ_IDLE***: !Request(Action)
-        FERRYING --> ***NZ_IDLE***: !Request(Action)
-        FERRYING --> PREPPING_FERRY_INTAKE: Request(Intake) && Request(Action)
-        PREPPING_FERRY_INTAKE --> FERRYING_WHILE_INTAKING: Drive(AIMED), HOOD(AIMED), Flywheel(CRUSING), Intake(DEPLOYED)
-        PREPPING_FERRY_INTAKE --> PREPPING_FERRY: !Request(Intake) && Request(Action)
-        FERRYING_WHILE_INTAKING --> PREPPING_FERRY: !Request(Intake) && Request(Action)
-    }
-    ***NZ_IDLE*** --> ***AZ_IDLE***: In(AZ)
-    ***NZ_IDLE*** --> INTAKING: Request(Intake)
-    INTAKING --> ***NZ_IDLE***: !Request(Intake)
-    INTAKING --> PREPPING_FERRY_INTAKE: Request(Intake) && Request(Action)
-    PREPPING_FERRY_INTAKE --> INTAKING: Request(Intake) && !Request(Action)
-    FERRYING_WHILE_INTAKING --> INTAKING: Request(Intake) && !Request(Action)
+    IDLE_NEUTRAL_ZONE --> IDLE_ALLIANCE_ZONE: inAllianceZone
+    IDLE_NEUTRAL_ZONE --> IDLE_DEFENCE_ZONE: inDefenseZone
+    IDLE_NEUTRAL_ZONE --> INTAKING: intake
+    IDLE_NEUTRAL_ZONE --> PREPPING_FERRY: spinup
 
-    state AZ {
-        direction TB
-        ***AZ_IDLE*** --> PREPPING_FIRE: Request(Action)
-        PREPPING_FIRE --> FIRING: Drive(AIMED && TRAJ_ASSIST), HOOD(AIMED), Flywheel(CRUSING)
-        PREPPING_FIRE --> ***AZ_IDLE***: !Request(Action)
-        FIRING --> ***AZ_IDLE***: Hopper(EMPTY) || !Request(Action)
-    }
-    ***AZ_IDLE*** --> ***NZ_IDLE***: In(NZ)
-    ***AZ_IDLE*** --> INTAKING: Request(Intake)
-    INTAKING --> ***AZ_IDLE***: !Request(Intake)
-    PREPPING_FIRE --> INTAKING: Request(Intake)
-    FIRING --> INTAKING: Request(Intake)
+    IDLE_ALLIANCE_ZONE --> IDLE_NEUTRAL_ZONE: inNeutralZone
+    IDLE_ALLIANCE_ZONE --> IDLE_DEFENSE_ZONE: inDefenseZone
+    IDLE_ALLIANCE_ZONE --> INTAKING: intake
+    IDLE_ALLIANCE_ZONE --> PREPPING_SCORE: spinup
+
+    IDLE_DEFENSE_ZONE --> IDLE_NEUTRAL_ZONE: inNeutralZone
+    IDLE_DEFENSE_ZONE --> IDLE_ALLIANCE_ZONE: inAllianceZone
+    IDLE_DEFENSE_ZONE --> INTAKING: intake
+    IDLE_DEFENSE_ZONE --> PREPPING_FERRY: spinup
+
+    INTAKING --> IDLE_NEUTRAL_ZONE: !intake && inNeutralZone
+    INTAKING --> IDLE_ALLIANCE_ZONE: !intake && inAllianceZone
+    INTAKING --> IDLE_DEFENSE_ZONE: !intake && inDefenseZone
+
+    PREPPING_FERRY --> IDLE_NEUTRAL_ZONE: !spinup && inNeutralZone
+    PREPPING_FERRY --> IDLE_ALLIANCE_ZONE: !spinup && inAllianceZone
+    PREPPING_FERRY --> IDLE_DEFENSE_ZONE: !spinup && inDefenseZone
+    PREPPING_FERRY --> PREPPING_SCORE: inAllianceZone
+    PREPPING_FERRY --> FERRYING: action && isShooterReady
+
+    FERRYING --> PREPPING_FERRY: (!action || !isShooterReady) && spinup
+    FERRYING --> IDLE_NEUTRAL_ZONE: !action && !spinup && inNeutralZone
+    FERRYING --> IDLE_ALLIANCE_ZONE: !action && !spinup && inAllianceZone
+    FERRYING --> IDLE_DEFENSE_ZONE: !action && !spinup && inDefenseZone
+
+    PREPPING_SCORE --> IDLE_NEUTRAL_ZONE: !spinup && inNeutralZone
+    PREPPING_SCORE --> IDLE_ALLIANCE_ZONE: !spinup && inAllianceZone
+    PREPPING_SCORE --> IDLE_DEFENSE_ZONE: !spinup && inDefenseZone
+    PREPPING_SCORE --> PREPPING_FERRY: inNeutralZone
+    PREPPING_SCORE --> SCORING: action && isShooterReady
+
+    SCORING --> PREPPING_SCORE: (!action || !isShooterReady) && spinup
+    SCORING --> IDLE_NEUTRAL_ZONE: !action && !spinup && inNeutralZone
+    SCORING --> IDLE_ALLIANCE_ZONE: !action && !spinup && inAllianceZone
+    SCORING --> IDLE_DEFENSE_ZONE: !action && !spinup && inDefenseZone
 ```
-## Requests
-* Intake ~ Just what it sounds like
-* Action
-    * When in NZ, this is always just ferrying
-    * When in AZ, this is always just shooting
-
-## States
-#### PACKAGED
-Represents a state where kicker is folded within drivetrain
-
-#### UNPACKING
-Represents a state where intake is punching kicker to deploy it
-
-#### INTAKING
-Represents a state where intake is attempting to deploy and intake
-
-#### NZ_IDLE
-Represents a state where robot is idle in the neutral zone
-
-## Subsystems + Their states
-* In (representation of robotstate idk)
-    * NZ ~ Neutral Zone
-    * AZ ~ Alliance Zone
-* Drive
-    * AIMED ~ Heading is faced towards virtual target
-    * TRAJ_ASSIST ~ Drive trajectory is rubberbanded for consistant shots
-* Hood
-    * AIMED ~ Pitch is at desired angle
-* Flywheel
-    * CRUSING ~ At desired velocity
-* Hopper
-    * UNKNOWN ~ After the hopper starts intaking again, there's no way to know if it has balls
-    * EMPTY ~ If shooter beambreak stops detecting, it's assumed that there are no more balls
-#### PREPPING_FERRY
-Represents a state where robot preparing/aiming to ferry
-
-#### FERRYING
-Represents a state where robot is feeding balls to alliance zone
-
-#### PREPPING_FERRY_INTAKE
-Represents a state where robot is preparing/aiming to ferry while intaking
-
-#### FERRYING_WHILE_INTAKING
-Represents a state where robot is feeding balls to alliance zone while intaking
-
-#### ***AZ_IDLE***
-Represents a state where robot is idle in the neutral zone
-
-#### PREPPING_FIRE
-Represents a state where robot is preparing/aiming to shoot
-
-#### FIRING
-Represents a state where robot is shooting

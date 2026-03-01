@@ -45,7 +45,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.Supplier;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
-import org.frc6423.lib.io.ServoIOTalonFxSim;
+import org.frc6423.lib.io.ServoIOTalonFxFlywheelSim;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
@@ -156,7 +156,7 @@ public class Flywheel extends SubsystemBase {
                 Constants.kRightCanDeviceId,
                 Constants.kServoTalonConfig))
         : new Flywheel(
-            new ServoIOTalonFxSim(
+            new ServoIOTalonFxFlywheelSim(
                 "Left",
                 Constants.kCanBus,
                 Constants.kLeftCanDeviceId,
@@ -169,7 +169,7 @@ public class Flywheel extends SubsystemBase {
                 "Right",
                 Constants.kCanBus,
                 Constants.kRightCanDeviceId,
-                Constants.kServoTalonConfig));
+                Constants.kServoTalonConfig)); // We can get away with one sim
   }
 
   @Logged private final ServoIO mLeft, mRight;
@@ -203,7 +203,7 @@ public class Flywheel extends SubsystemBase {
                 (state) ->
                     Epilogue.getConfig()
                         .backend
-                        .log("Telemetry/Flywheel/SysID State", state.toString())),
+                        .log("Characterization/Flywheel/SysID State", state.toString())),
             new SysIdRoutine.Mechanism(
                 (voltage) -> mLeft.setTorqueCurrentSetpoint(Amps.of(voltage.in(Volts))),
                 null,
@@ -218,9 +218,6 @@ public class Flywheel extends SubsystemBase {
     // well
     // Init current filter
     mCurrentFilter = LinearFilter.highPass(0.1, 0.02);
-
-    // Set default command
-    setDefaultCommand(coast());
   }
 
   @Override

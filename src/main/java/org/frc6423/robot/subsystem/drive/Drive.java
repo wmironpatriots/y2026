@@ -33,8 +33,8 @@ import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.RobotState;
-import org.frc6423.robot.RobotState.OdometryMeasurement;
+import org.frc6423.robot.subsystem.RobotState;
+import org.frc6423.robot.subsystem.RobotState.OdometryMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
 import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
@@ -43,8 +43,9 @@ import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 
 /** TODO WIP */
 public class Drive extends SubsystemBase {
-  public static Drive create() {
+  public static Drive create(RobotState robotState) {
     return new Drive(
+        robotState,
         new GyroIOPigeon2(0, CANBus.roboRIO(), new Pigeon2Configuration()),
         new SwerveModuleIOServo(
             "placeholder1",
@@ -76,8 +77,9 @@ public class Drive extends SubsystemBase {
             Flags.kRobotType.mDriveConstants));
   }
 
+  private final RobotState mRobotState;
+
   private final DriveConstants mConstants = Flags.kRobotType.mDriveConstants;
-  private final RobotState mRobotState = RobotState.getInstance();
 
   // * HARDWARE MEMBERS
   @Logged private final SwerveModuleIO mFrModule;
@@ -96,6 +98,7 @@ public class Drive extends SubsystemBase {
   /**
    * Create new {@link Drive}
    *
+   * @param robotState {@link RobotState} Robot Tracker to send odometry measurements to
    * @param gyro {@link GyroIO} Gyro for odometry
    * @param frontRightModule {@link SwerveModuleIO} Front Right Swerve Module
    * @param frontLeftModule {@link SwerveModuleIO} Front Left Swerve Module
@@ -103,11 +106,14 @@ public class Drive extends SubsystemBase {
    * @param backRightModule {@link SwerveModuleIO} Back Right Swerve Module
    */
   public Drive(
+      RobotState robotState,
       GyroIO gyro,
       SwerveModuleIO frontRightModule,
       SwerveModuleIO frontLeftModule,
       SwerveModuleIO backLeftModule,
       SwerveModuleIO backRightModule) {
+    mRobotState = robotState;
+
     // Init hardware
     mFrModule = frontRightModule;
     mFlModule = frontLeftModule;
