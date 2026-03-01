@@ -122,7 +122,7 @@ public class Feeder extends SubsystemBase {
   /**
    * Check if roller subsystem is running
    *
-   * @return
+   * @return {@link Boolean}
    */
   @Logged(name = "Is Running (bool)", importance = Importance.INFO)
   public boolean isRunning() {
@@ -179,6 +179,7 @@ public class Feeder extends SubsystemBase {
               mIsRunning = true;
             })
         .until(() -> (Robot.isReal()) ? isLoaded() : mSimTimer.hasElapsed(Constants.kLoadTime))
+        .andThen(stop())
         .withName("Feeder Load");
   }
 
