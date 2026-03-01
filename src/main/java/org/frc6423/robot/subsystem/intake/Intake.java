@@ -30,10 +30,12 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.CurrentUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularAcceleration;
@@ -54,7 +56,9 @@ import org.frc6423.lib.io.DIORio;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
+import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
+import org.frc6423.lib.io.ServoIOTalonFxPivotSim;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
@@ -233,19 +237,24 @@ public class Intake extends SubsystemBase {
                 Constants.kRollerTalonConfig),
             new DIORio(Constants.kBeamBreakDioPort))
         : new Intake(
-            new ServoIOTalonFx(
+            new ServoIOTalonFxPivotSim(
                 "Pivot",
                 Constants.kCanBus,
                 Constants.kPivotCanDeviceId,
-                Constants.kPivotTalonConfig),
+                Constants.kPivotTalonConfig,
+                Constants.kRotationalInertia,
+                Constants.kLength,
+                Constants.kMinAngle,
+                Constants.kMaxAngle,
+                Constants.kMinAngle,
+                true,
+                MotorType.KrakenX60,
+                DCMotor.getKrakenX60Foc(1),
+                Constants.kSensorToMechRatio),
             new EncoderIOCanCoder(
                 Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig),
-            new ServoIOTalonFx(
-                "Roller",
-                Constants.kCanBus,
-                Constants.kRollerCanDeviceId,
-                Constants.kRollerTalonConfig),
-            new DIORio(Constants.kBeamBreakDioPort)); // TODO SIM
+            new ServoIONone("Roller"),
+            new DIORio(Constants.kBeamBreakDioPort));
   }
 
   @Logged private final EncoderIO mEncoder;
