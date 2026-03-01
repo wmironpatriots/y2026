@@ -22,12 +22,22 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.drive.Drive;
+import org.frc6423.robot.subsystem.feeder.Feeder;
+import org.frc6423.robot.subsystem.flywheel.Flywheel;
+import org.frc6423.robot.subsystem.hood.Hood;
+import org.frc6423.robot.subsystem.indexer.Indexer;
+import org.frc6423.robot.subsystem.intake.Intake;
 
 @Logged
 public class Robot extends CommandRobot {
   private final CommandXboxController mController;
 
   private final Drive mDrive = Drive.create();
+  private final Intake mIntake = Intake.create();
+  private final Indexer mIndexer = Indexer.create();
+  private final Feeder mFeeder = Feeder.create();
+  private final Hood mHood = Hood.create();
+  private final Flywheel mFlywheel = Flywheel.create();
 
   public Robot() {
     // Initialize Devices
@@ -50,6 +60,9 @@ public class Robot extends CommandRobot {
           if (Robot.isReal()) {
             DataLogManager.start();
           }
+
+          // TODO remove
+          DataLogManager.start();
 
           // Set error handling
           if (Robot.isSimulation()) {

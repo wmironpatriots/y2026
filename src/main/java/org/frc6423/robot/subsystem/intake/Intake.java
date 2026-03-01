@@ -56,7 +56,6 @@ import org.frc6423.lib.io.DIONone;
 import org.frc6423.lib.io.DIORio;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
-import org.frc6423.lib.io.EncoderIOCanCoderSim;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
@@ -252,8 +251,8 @@ public class Intake extends SubsystemBase {
                 true,
                 MotorType.KrakenX60,
                 DCMotor.getKrakenX60Foc(1),
-                Constants.kSensorToMechRatio),
-            new EncoderIOCanCoderSim(
+                Constants.kRotorToSensorRatio * Constants.kSensorToMechRatio),
+            new EncoderIOCanCoder(
                 Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig),
             new ServoIONone("Roller"),
             new DIONone());
@@ -296,11 +295,6 @@ public class Intake extends SubsystemBase {
                 (voltage) -> mPivot.setTorqueCurrentSetpoint(Amps.of(voltage.in(Volts))),
                 null,
                 this));
-
-    // Configure Sim
-    if (mEncoder instanceof EncoderIOCanCoderSim simEncoder) {
-      simEncoder.setRawAngleOverride(mPivot::getRawAngle);
-    }
 
     // Publish characterization command in tuning mode
     if (Flags.kTuningModeEnabled) {

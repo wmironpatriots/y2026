@@ -31,7 +31,7 @@ public abstract class ServoIO {
   public final String mName;
   public final int mCanDeviceId;
 
-  public final TalonFXConfiguration mTalonConfig;
+  public TalonFXConfiguration mTalonConfig;
 
   /**
    * Create new {@link ServoIO}

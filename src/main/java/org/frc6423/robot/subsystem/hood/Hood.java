@@ -54,7 +54,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.Supplier;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
-import org.frc6423.lib.io.EncoderIOCanCoderSim;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.lib.io.ServoIOTalonFxPivotSim;
@@ -203,8 +202,8 @@ public class Hood extends SubsystemBase {
                 true,
                 MotorType.KrakenX44,
                 DCMotor.getKrakenX44Foc(1),
-                Constants.kSensorToMechRatio),
-            new EncoderIOCanCoderSim(
+                Constants.kSensorToMechRatio * Constants.kRotorToSensorRatio),
+            new EncoderIOCanCoder(
                 Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig));
   }
 
@@ -225,11 +224,6 @@ public class Hood extends SubsystemBase {
     // Init Hardware
     mServo = servo;
     mEncoder = encoder;
-
-    // Configure Sim
-    if (mEncoder instanceof EncoderIOCanCoderSim simEncoder) {
-      simEncoder.setRawAngleOverride(mServo::getRawAngle);
-    }
 
     // Init SysId
     mSysIdRoutine =
@@ -278,7 +272,7 @@ public class Hood extends SubsystemBase {
    */
   @Logged(name = "Angular Position (rads)", importance = Importance.INFO)
   public Angle getAngle() {
-    return mEncoder.getAngle();
+    return mServo.getAngle();
   }
 
   /**

@@ -6,11 +6,14 @@
 
 package org.frc6423.lib.io;
 
+import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
@@ -28,6 +31,8 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 public class ServoIOTalonFxPivotSim extends ServoIOTalonFx {
   private final SingleJointedArmSim mPhysicsModel;
 
+  private final double mRatio;
+
   private double previousTimestamp;
   private final Notifier mNotifier;
 
@@ -41,8 +46,8 @@ public class ServoIOTalonFxPivotSim extends ServoIOTalonFx {
    * @param rotationalInertia {@link MomentOfInertia} representing the rotational inertia of system
    * @param motorType {@link MotorType} representing the type of motors used for gearbox input
    * @param gearbox {@link DCMotor} representing the gearbox input
-   * @param sensorToMechanismRatio {@link Double} representing the gear ratio between the encoder
-   *     and mechanism output
+   * @param rotorToMechanismRatio {@link Double} representing the gear ratio between the servo rotor
+   *     and the mechanism
    */
   public ServoIOTalonFxPivotSim(
       String name,
@@ -57,19 +62,28 @@ public class ServoIOTalonFxPivotSim extends ServoIOTalonFx {
       boolean simulateGravity,
       MotorType motorType,
       DCMotor gearbox,
-      double sensorToMechanismRatio) {
+      double rotorToMechanismRatio) {
     super(name, canBus, deviceId, talonConfig);
 
     mPhysicsModel =
         new SingleJointedArmSim(
-            LinearSystemId.createSingleJointedArmSystem(gearbox, deviceId, sensorToMechanismRatio),
+            LinearSystemId.createSingleJointedArmSystem(
+                gearbox, rotationalInertia.in(KilogramSquareMeters), rotorToMechanismRatio),
             gearbox,
-            sensorToMechanismRatio,
+            rotorToMechanismRatio,
             armLength.in(Meters),
             minAngle.in(Radians),
             maxAngle.in(Radians),
             simulateGravity,
-            sensorToMechanismRatio);
+            startingAngle.in(Radians));
+
+    mTalonConfig =
+        mTalonConfig.withFeedback(
+            new FeedbackConfigs().withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor));
+
+    mRatio = rotorToMechanismRatio;
+
+    mServo.getConfigurator().apply(mTalonConfig);
 
     mServo.getSimState().setMotorType(motorType);
     mServo.getSimState().Orientation =
@@ -92,12 +106,19 @@ public class ServoIOTalonFxPivotSim extends ServoIOTalonFx {
               mServo
                   .getSimState()
                   .setRawRotorPosition(
-                      mPhysicsModel.getAngleRads() / (Math.PI * 2) * sensorToMechanismRatio);
+                      (mPhysicsModel.getAngleRads() / (Math.PI * 2)) * rotorToMechanismRatio);
               mServo
                   .getSimState()
-                  .setRotorVelocity(mPhysicsModel.getVelocityRadPerSec() * sensorToMechanismRatio);
+                  .setRotorVelocity(
+                      (mPhysicsModel.getVelocityRadPerSec() / (Math.PI * 2))
+                          * rotorToMechanismRatio);
             });
 
     mNotifier.startPeriodic(0.002);
+  }
+
+  @Override
+  public Angle getAngle() {
+    return mRawPositionSignal.getValue().div(mRatio);
   }
 }
