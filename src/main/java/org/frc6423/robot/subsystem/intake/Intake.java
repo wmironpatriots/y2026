@@ -290,7 +290,7 @@ public class Intake extends SubsystemBase {
                 (state) ->
                     Epilogue.getConfig()
                         .backend
-                        .log("Telemetry/mHood/SysID State", state.toString())),
+                        .log("Characterization/Hood/SysID State", state.toString())),
             new SysIdRoutine.Mechanism(
                 (voltage) -> mPivot.setTorqueCurrentSetpoint(Amps.of(voltage.in(Volts))),
                 null,

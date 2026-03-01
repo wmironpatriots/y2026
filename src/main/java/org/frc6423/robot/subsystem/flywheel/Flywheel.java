@@ -203,7 +203,7 @@ public class Flywheel extends SubsystemBase {
                 (state) ->
                     Epilogue.getConfig()
                         .backend
-                        .log("Telemetry/Flywheel/SysID State", state.toString())),
+                        .log("Characterization/Flywheel/SysID State", state.toString())),
             new SysIdRoutine.Mechanism(
                 (voltage) -> mLeft.setTorqueCurrentSetpoint(Amps.of(voltage.in(Volts))),
                 null,
