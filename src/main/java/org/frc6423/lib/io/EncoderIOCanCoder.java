@@ -19,12 +19,14 @@ import edu.wpi.first.units.measure.Angle;
  * @see https://v6.docs.ctr-electronics.com/en/stable/docs/hardware-reference/cancoder/index.html
  */
 public class EncoderIOCanCoder extends EncoderIO {
-  private final CANcoder mEncoder;
+  protected final CANcoder mEncoder;
+  protected final CANcoderConfiguration mConfig;
 
-  private final StatusSignal<Angle> mAngleSig;
+  protected final StatusSignal<Angle> mAngleSig;
 
   public EncoderIOCanCoder(int canDeviceId, CANBus canBusId, CANcoderConfiguration config) {
     mEncoder = new CANcoder(canDeviceId, canBusId);
+    mConfig = config;
 
     mEncoder.getConfigurator().apply(config);
 

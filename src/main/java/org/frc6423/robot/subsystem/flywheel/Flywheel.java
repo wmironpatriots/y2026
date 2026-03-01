@@ -7,8 +7,8 @@
 package org.frc6423.robot.subsystem.flywheel;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RevolutionsPerSecond;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
@@ -28,6 +28,7 @@ import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.CurrentUnit;
@@ -64,8 +65,8 @@ public class Flywheel extends SubsystemBase {
         KilogramSquareMeters.of(10.491008 * 0.0002926397);
 
     // * CONTROL CONSTANTS
-    /** {@link Double} Max allowed percent error in subsystem velocity */
-    public static final double kEpsilon = 0.01;
+    /** {@link Double} Max allowed error in subsystem angular velocity */
+    public static final AngularVelocity kEpsilon = DegreesPerSecond.of(2);
 
     // * HARDWARE CONSTANTS
     /** {@link Integer} CAN ID of the left flywheel servo */
@@ -289,8 +290,10 @@ public class Flywheel extends SubsystemBase {
    */
   @Logged(name = "is Near Setpoint (bool)", importance = Importance.INFO)
   public boolean isNearSetpoint() {
-    return getAngularVelocity().in(RadiansPerSecond) / mTargetVelocity.in(RadiansPerSecond)
-        > Constants.kEpsilon;
+    return MathUtil.isNear(
+        mTargetVelocity.in(RevolutionsPerSecond),
+        getAngularVelocity().in(RevolutionsPerSecond),
+        Constants.kEpsilon.in(RevolutionsPerSecond));
   }
 
   // * COMMANDS

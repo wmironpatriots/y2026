@@ -56,6 +56,7 @@ import org.frc6423.lib.io.DIONone;
 import org.frc6423.lib.io.DIORio;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
+import org.frc6423.lib.io.EncoderIOCanCoderSim;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
@@ -78,11 +79,11 @@ public class Intake extends SubsystemBase {
   public class Constants {
     // * PHYSICAL CONSTANTS
     /** {@link Distance} 'Length' of Pivot System */
-    public static final Distance kLength = Meters.of(1); // TODO
+    public static final Distance kLength = Meters.of(0.5); // TODO
 
     /** {@link MomentOfInertia} Rotational Inertia of Pivot System */
     public static final MomentOfInertia kRotationalInertia =
-        KilogramSquareMeters.of(1 * 0.0002926397); // TODO
+        KilogramSquareMeters.of(402.290096 * 0.0002926397);
 
     // * CONTROL CONSTANTS
     // TODO check these values
@@ -252,7 +253,7 @@ public class Intake extends SubsystemBase {
                 MotorType.KrakenX60,
                 DCMotor.getKrakenX60Foc(1),
                 Constants.kSensorToMechRatio),
-            new EncoderIOCanCoder(
+            new EncoderIOCanCoderSim(
                 Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig),
             new ServoIONone("Roller"),
             new DIONone());
@@ -295,6 +296,11 @@ public class Intake extends SubsystemBase {
                 (voltage) -> mPivot.setTorqueCurrentSetpoint(Amps.of(voltage.in(Volts))),
                 null,
                 this));
+
+    // Configure Sim
+    if (mEncoder instanceof EncoderIOCanCoderSim simEncoder) {
+      simEncoder.setRawAngleOverride(mPivot::getRawAngle);
+    }
 
     // Publish characterization command in tuning mode
     if (Flags.kTuningModeEnabled) {

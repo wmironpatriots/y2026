@@ -67,6 +67,11 @@ public class ServoIONone extends ServoIO {
   }
 
   @Override
+  public Angle getRawAngle() {
+    return Revolution.zero();
+  }
+
+  @Override
   public Angle getAngle() {
     return Revolution.zero();
   }

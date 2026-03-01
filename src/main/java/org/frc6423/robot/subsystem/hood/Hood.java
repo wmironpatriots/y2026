@@ -10,8 +10,8 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Revolutions;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.Second;
@@ -54,6 +54,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.Supplier;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
+import org.frc6423.lib.io.EncoderIOCanCoderSim;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.lib.io.ServoIOTalonFxPivotSim;
@@ -75,11 +76,11 @@ public class Hood extends SubsystemBase {
   public class Constants {
     // * PHYSICAL CONSTANTS
     /** {@link Distance} 'Length' of Pivot System */
-    public static final Distance kLength = Meters.of(1); // TODO
+    public static final Distance kLength = Inches.of(7.510000);
 
     /** {@link MomentOfInertia} Rotational Inertia of Pivot System */
     public static final MomentOfInertia kRotationalInertia =
-        KilogramSquareMeters.of(1 * 0.0002926397); // TODO
+        KilogramSquareMeters.of(75.752248 * 0.0002926397);
 
     // * CONTROL CONSTANTS
     /** {@link Angle} Max allowed angular position error in subsystem */
@@ -102,7 +103,7 @@ public class Hood extends SubsystemBase {
     public static final int kEncoderCanDeviceId = Matrix.kHoodEncoderId;
 
     /** {@link Angle} Angular Offset to the stowed angle of abs encoder */
-    public static final Angle kEncoderAngularOffset = Revolutions.of(0.0).plus(kMinAngle); // TODO
+    public static final Angle kEncoderAngularOffset = Revolutions.of(0.0); // TODO
 
     /** {@link Angle} Angular Position in the middle of the 'unreachable' area of pivot */
     public static final Angle kEncoderSensorDiscontinuityPoint =
@@ -203,7 +204,7 @@ public class Hood extends SubsystemBase {
                 MotorType.KrakenX44,
                 DCMotor.getKrakenX44Foc(1),
                 Constants.kSensorToMechRatio),
-            new EncoderIOCanCoder(
+            new EncoderIOCanCoderSim(
                 Constants.kEncoderCanDeviceId, Constants.kCanBus, Constants.kEncoderConfig));
   }
 
@@ -224,6 +225,11 @@ public class Hood extends SubsystemBase {
     // Init Hardware
     mServo = servo;
     mEncoder = encoder;
+
+    // Configure Sim
+    if (mEncoder instanceof EncoderIOCanCoderSim simEncoder) {
+      simEncoder.setRawAngleOverride(mServo::getRawAngle);
+    }
 
     // Init SysId
     mSysIdRoutine =

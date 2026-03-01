@@ -124,7 +124,17 @@ public abstract class ServoIO {
   public abstract Current getTorqueCurrent();
 
   /**
+   * Get raw rotor angular position of servo
+   *
+   * @return {@link Angle}
+   */
+  @Logged(name = "Raw Angle (rads)", importance = Importance.DEBUG)
+  public abstract Angle getRawAngle();
+
+  /**
    * Get angular position of servo
+   *
+   * <p>Note that this output will depend on talon feedback configs
    *
    * <p>Note that gear ratios specified in hardware config will automatically be applied
    *

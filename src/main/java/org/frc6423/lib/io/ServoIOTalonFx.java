@@ -47,7 +47,7 @@ public class ServoIOTalonFx extends ServoIO {
   public final StatusSignal<Current> mSupplyCurrentSignal,
       mStatorCurrentSignal,
       mTorqueCurrentSignal;
-  public final StatusSignal<Angle> mPositionSignal;
+  public final StatusSignal<Angle> mPositionSignal, mRawPositionSignal;
   public final StatusSignal<AngularVelocity> mVelocitySignal;
   public final StatusSignal<AngularAcceleration> mAccelerationSignal;
   public final StatusSignal<Temperature> mTemperatureSignal;
@@ -87,6 +87,7 @@ public class ServoIOTalonFx extends ServoIO {
     mTorqueCurrentSignal = mServo.getTorqueCurrent();
 
     mPositionSignal = mServo.getPosition();
+    mRawPositionSignal = mServo.getRotorPosition();
 
     mVelocitySignal = mServo.getVelocity();
     mAccelerationSignal = mServo.getAcceleration();
@@ -101,6 +102,7 @@ public class ServoIOTalonFx extends ServoIO {
         mStatorCurrentSignal,
         mTorqueCurrentSignal,
         mPositionSignal,
+        mRawPositionSignal,
         mVelocitySignal,
         mAccelerationSignal,
         mTemperatureSignal);
@@ -148,6 +150,11 @@ public class ServoIOTalonFx extends ServoIO {
   @Override
   public Current getTorqueCurrent() {
     return mTorqueCurrentSignal.getValue();
+  }
+
+  @Override
+  public Angle getRawAngle() {
+    return mRawPositionSignal.getValue();
   }
 
   @Override
