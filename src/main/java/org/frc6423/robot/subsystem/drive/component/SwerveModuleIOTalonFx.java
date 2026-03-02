@@ -33,33 +33,33 @@ import org.frc6423.robot.subsystem.drive.constants.DriveConstants.ModuleConfig;
  * Interface for interacting with a swerve module with {@link TalonFX} & {@link CANcoder} hardware
  */
 public class SwerveModuleIOTalonFx extends SwerveModuleIO {
-  private final CANcoder mEncoder;
-  private final CANcoderConfiguration mEncoderConfig;
+  protected final CANcoder mEncoder;
+  protected final CANcoderConfiguration mEncoderConfig;
 
-  private final TalonFX mPivot, mDrive;
-  private final TalonFXConfiguration mPivotConfig, mDriveConfig;
-  private final StatusSignal<Voltage> mPSupplyVoltageSupplier, mPStatorVoltageSupplier;
-  private final StatusSignal<Current> mPSupplyCurrentSupplier,
+  protected final TalonFX mPivot, mDrive;
+  protected final TalonFXConfiguration mPivotConfig, mDriveConfig;
+  protected final StatusSignal<Voltage> mPSupplyVoltageSupplier, mPStatorVoltageSupplier;
+  protected final StatusSignal<Current> mPSupplyCurrentSupplier,
       mPStatorCurrentSupplier,
       mPTorqueCurrentSupplier;
-  private final StatusSignal<Temperature> mPTemperatureSupplier;
-  private final StatusSignal<Angle> mPAngleSupplier;
+  protected final StatusSignal<Temperature> mPTemperatureSupplier;
+  protected final StatusSignal<Angle> mPAngleSupplier;
 
-  private final StatusSignal<Voltage> mDSupplyVoltageSupplier, mDStatorVoltageSupplier;
-  private final StatusSignal<Current> mDSupplyCurrentSupplier,
+  protected final StatusSignal<Voltage> mDSupplyVoltageSupplier, mDStatorVoltageSupplier;
+  protected final StatusSignal<Current> mDSupplyCurrentSupplier,
       mDStatorCurrentSupplier,
       mDTorqueCurrentSupplier;
-  private final StatusSignal<Temperature> mDTemperatureSupplier;
-  private final StatusSignal<Angle> mDAngleSupplier;
-  private final StatusSignal<AngularVelocity> mDVelocitySupplier;
-  private final StatusSignal<AngularAcceleration> mDAccelerationSupplier;
+  protected final StatusSignal<Temperature> mDTemperatureSupplier;
+  protected final StatusSignal<Angle> mDAngleSupplier;
+  protected final StatusSignal<AngularVelocity> mDVelocitySupplier;
+  protected final StatusSignal<AngularAcceleration> mDAccelerationSupplier;
 
-  private final VoltageOut mVoltReq = new VoltageOut(0.0).withEnableFOC(false);
-  private final TorqueCurrentFOC mTorqueCurrentReq = new TorqueCurrentFOC(0.0);
-  private final MotionMagicTorqueCurrentFOC mPoseTorqueReq = new MotionMagicTorqueCurrentFOC(0.0);
-  private final MotionMagicVelocityVoltage mVelVoltReq =
+  protected final VoltageOut mVoltReq = new VoltageOut(0.0).withEnableFOC(false);
+  protected final TorqueCurrentFOC mTorqueCurrentReq = new TorqueCurrentFOC(0.0);
+  protected final MotionMagicTorqueCurrentFOC mPoseTorqueReq = new MotionMagicTorqueCurrentFOC(0.0);
+  protected final MotionMagicVelocityVoltage mVelVoltReq =
       new MotionMagicVelocityVoltage(0.0).withEnableFOC(false);
-  private final MotionMagicVelocityTorqueCurrentFOC mVelTorqueReq =
+  protected final MotionMagicVelocityTorqueCurrentFOC mVelTorqueReq =
       new MotionMagicVelocityTorqueCurrentFOC(0.0);
 
   public SwerveModuleIOTalonFx(String name, ModuleConfig config, DriveConstants constants) {
