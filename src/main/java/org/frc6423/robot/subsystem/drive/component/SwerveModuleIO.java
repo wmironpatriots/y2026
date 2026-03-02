@@ -30,6 +30,7 @@ import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Torque;
+import edu.wpi.first.units.measure.Voltage;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants.ModuleConfig;
 
@@ -177,107 +178,122 @@ public abstract class SwerveModuleIO {
   }
 
   // * ABSTRACT
-  /**
-   * Get absolute angular position of encoder
-   *
-   * @return {@link Angle}
-   */
-  protected abstract Angle getEncoderAngle();
+  // Pivot
+  @Logged(name = "Pivot Servo Supply Voltage (volts)", importance = Importance.INFO)
+  public abstract Voltage getPivotSupplyVoltage();
 
-  /**
-   * Get angular position of pivot servo
-   *
-   * @return {@link Angle}
-   */
-  protected abstract Angle getPivotAngle();
+  @Logged(name = "Pivot Servo Stator Voltage (volts)", importance = Importance.INFO)
+  public abstract Voltage getPivotStatorVoltage();
 
-  /**
-   * Get temperature of pivot servo
-   *
-   * @return
-   */
+  @Logged(name = "Pivot Servo Supply Current (amps)", importance = Importance.INFO)
+  public abstract Current getPivotSupplyCurrent();
+
+  @Logged(name = "Pivot Servo Stator Current (amps)", importance = Importance.INFO)
+  public abstract Current getPivotStatorCurrent();
+
+  @Logged(name = "Pivot Servo Torque Current (amps)", importance = Importance.INFO)
+  public abstract Current getPivotTorqueCurrent();
+
   @Logged(name = "Pivot Servo Temperature (Celsius)", importance = Importance.INFO)
   public abstract Temperature getPivotTemperature();
 
-  /**
-   * Get angular position of drive servo
-   *
-   * @return {@link Angle}
-   */
-  protected abstract Angle getDriveAngle();
+  @Logged(name = "Pivot Servo Angle (rads)", importance = Importance.INFO)
+  public abstract Angle getPivotAngle();
 
   /**
-   * Get angular velocity of drive servo
+   * Set Pivot servo Open-Loop Voltage Setpoint
    *
-   * @return {@link AngularVelocity}
+   * @param voltage {@link Voltage} Desired voltage output
    */
-  protected abstract AngularVelocity getDriveAngularVelocity();
+  public abstract void setPivotVoltage(Voltage voltage);
 
   /**
-   * Get angular acceleration of drive servo
+   * Set Pivot servo Open-Loop Torque Current Setpoint
    *
-   * @return {@link AngularAcceleration}
-   */
-  protected abstract AngularAcceleration getDriveAngularAcceleration();
-
-  /**
-   * Get temperature of drive servo
-   *
-   * @return {@link Temperature}
-   */
-  @Logged(name = "Drive Servo Temperature (Celsius)", importance = Importance.INFO)
-  public abstract Temperature getDriveTemperature();
-
-  /**
-   * Run Open-Loop current output for pivot
-   *
-   * @param current {@link Current} Desired current output
+   * @param current {@link Current} Desired torque current output
    */
   public abstract void setPivotCurrent(Current current);
 
   /**
-   * Set setpoint pivot angular position
+   * Set Pivot servo Closed-Loop Angular Position Setpoint
    *
    * @param setpoint {@link Angle} Desired angular position
    */
   protected abstract void setPivotSetpoint(Angle setpoint);
 
+  // Drive
+  @Logged(name = "Drive Servo Supply Voltage (volts)", importance = Importance.INFO)
+  public abstract Voltage getDriveSupplyVoltage();
+
+  @Logged(name = "Drive Servo Stator Voltage (volts)", importance = Importance.INFO)
+  public abstract Voltage getDriveStatorVoltage();
+
+  @Logged(name = "Drive Servo Supply Current (amps)", importance = Importance.INFO)
+  public abstract Current getDriveSupplyCurrent();
+
+  @Logged(name = "Drive Servo Stator Current (amps)", importance = Importance.INFO)
+  public abstract Current getDriveStatorCurrent();
+
+  @Logged(name = "Drive Servo Torque Current (amps)", importance = Importance.INFO)
+  public abstract Current getDriveTorqueCurrent();
+
+  @Logged(name = "Drive Servo Temperature (Celsius)", importance = Importance.INFO)
+  public abstract Temperature getDriveTemperature();
+
+  @Logged(name = "Drive Servo Angle (rads)", importance = Importance.INFO)
+  public abstract Angle getDriveAngle();
+
+  @Logged(name = "Drive Servo Angular Velocity (rads per second)", importance = Importance.INFO)
+  public abstract AngularVelocity getDriveAngularVelocity();
+
+  @Logged(
+      name = "Drive Servo Angular Acceleration (rads per second per second)",
+      importance = Importance.INFO)
+  public abstract AngularAcceleration getDriveAngularAcceleration();
+
   /**
-   * Run Open-Loop current output for drive
+   * Set Drive servo Open-Loop Voltage Setpoint
    *
-   * @param current {@link Current} Desired current ouput
+   * @param voltage {@link Voltage} Desired voltage output
+   */
+  public abstract void setDriveVoltage(Voltage voltage);
+
+  /**
+   * Set Drive servo Open-Loop Torque Current Setpoint
+   *
+   * @param current {@link Current} Desired torque current output
    */
   public abstract void setDriveCurrent(Current current);
 
   /**
-   * Set setpoint drive velocity
+   * Set Drive servo Closed-Loop Angular Velocity Setpoint
    *
    * @param velocity {@link AngularVelocity} Desired angular velocity
-   * @param focEnabled {@link Boolean} Whether or not FOC based control should be used
+   * @param focEnabled {@link Boolean} Whether or not FOC should be utilized to reach setpoint
    */
   protected abstract void setDriveSetpoint(AngularVelocity velocity, boolean focEnabled);
 
   /**
-   * Set setpoint drive velocity & wheel torque
+   * Set Drive servo Closed-Loop Angular Velocity Setpoint /w desired torque
    *
    * @param velocity {@link AngularVelocity} Desired angular velocity
-   * @param torque {@link Torque} Desired wheel torque
+   * @param torque {@link Torque} Wheel torque output
    */
   protected abstract void setDriveSetpoint(AngularVelocity velocity, Torque torque);
 
-  /** Reset drive & pivot relative encoder angular positions */
+  /** Reset all relative encoders to zero */
   public void resetEncoders() {
     resetEncoders(Revolution.zero(), Revolution.zero());
   }
 
   /**
-   * Reset drive & pivot relative encoder angular position to specified positions
+   * Reset pivot/drive relative encoders to specified angular position
    *
-   * @param pivotAngle {@link Angle} Angle for pivot relative encoder to reset to
-   * @param driveAngle {@link Angle} Angle for drive relative encoder to reset to
+   * @param pivotAngle {@link Angle} Angular position for pivot relative encoder to reset to
+   * @param driveAngle {@link Angle} Angular position for drive relative encoder to reset to
    */
   public abstract void resetEncoders(Angle pivotAngle, Angle driveAngle);
 
-  /** Stop module completely */
+  /** Stop module servos completely */
   public abstract void stop();
 }
