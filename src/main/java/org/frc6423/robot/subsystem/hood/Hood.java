@@ -8,11 +8,11 @@ package org.frc6423.robot.subsystem.hood;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.Revolutions;
+import static edu.wpi.first.units.Units.RevolutionsPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
@@ -92,30 +92,12 @@ public class Hood extends SubsystemBase {
     public static final Angle kMaxAngle = Degrees.of(45.812);
 
     /** {@link AngularVelocity} The maximum allowed angular velocity of subsystem */
-    public static final AngularVelocity kMaxVelocity = DegreesPerSecond.of(35.0);
+    public static final AngularVelocity kMaxVelocity = RevolutionsPerSecond.of(1);
 
     /** {@link AngularAcceleration} The maximum allowed angular acceleration of subsystem */
     public static final AngularAcceleration kMaxAcceleration = DegreesPerSecondPerSecond.of(15.0);
 
     // * HARDWARE CONSTANTS
-    /** {@link Integer} CAN ID of abs encoder */
-    public static final int kEncoderCanDeviceId = Matrix.kHoodEncoderId;
-
-    /** {@link Angle} Angular Offset to the stowed angle of abs encoder */
-    public static final Angle kEncoderAngularOffset = Revolutions.of(0.0); // TODO
-
-    /** {@link Angle} Angular Position in the middle of the 'unreachable' area of pivot */
-    public static final Angle kEncoderSensorDiscontinuityPoint =
-        Degrees.of(360).minus(kMaxAngle.minus(kMinAngle)).div(2).plus(kMaxAngle);
-
-    /** {@link CANcoderConfiguration} Hardware config of abs encoder */
-    public static final CANcoderConfiguration kEncoderConfig =
-        new CANcoderConfiguration()
-            .withMagnetSensor(
-                new MagnetSensorConfigs()
-                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
-                    .withMagnetOffset(kEncoderAngularOffset)
-                    .withAbsoluteSensorDiscontinuityPoint(kEncoderSensorDiscontinuityPoint));
 
     /** {@link CANBus} CAN bus devices are on */
     public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
@@ -132,6 +114,26 @@ public class Hood extends SubsystemBase {
     /** {@link Double} Gear ratio between the encoder shaft and the mechanism pivot */
     public static final double kSensorToMechRatio = 10.83;
 
+    /** {@link Integer} CAN ID of abs encoder */
+    public static final int kEncoderCanDeviceId = Matrix.kHoodEncoderId;
+
+    /** {@link Angle} Angular Offset to the stowed angle of abs encoder */
+    public static final Angle kEncoderAngularOffset =
+        Revolutions.of(-0.354736328125).plus(kMinAngle.times(kSensorToMechRatio)); // TODO
+
+    /** {@link Angle} Angular Position in the middle of the 'unreachable' area of pivot */
+    public static final Angle kEncoderSensorDiscontinuityPoint =
+        Degrees.of(360).minus(kMaxAngle.minus(kMinAngle)).div(2).plus(kMaxAngle);
+
+    /** {@link CANcoderConfiguration} Hardware config of abs encoder */
+    public static final CANcoderConfiguration kEncoderConfig =
+        new CANcoderConfiguration()
+            .withMagnetSensor(
+                new MagnetSensorConfigs()
+                    .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
+                    .withMagnetOffset(kEncoderAngularOffset)
+                    .withAbsoluteSensorDiscontinuityPoint(kEncoderSensorDiscontinuityPoint));
+
     /** {@link TalonFXConfiguration} Hardware config of servo */
     public static final TalonFXConfiguration kServoTalonConfig =
         new TalonFXConfiguration()
@@ -146,21 +148,21 @@ public class Hood extends SubsystemBase {
                     .withStatorCurrentLimitEnable(true))
             .withFeedback(
                 new FeedbackConfigs()
-                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
                     .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
                     .withRotorToSensorRatio(kRotorToSensorRatio)
                     .withSensorToMechanismRatio(kSensorToMechRatio))
             .withMotionMagic(
                 new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity(kMaxVelocity)
-                    .withMotionMagicAcceleration(kMaxAcceleration))
+                    .withMotionMagicCruiseVelocity(1)
+                    .withMotionMagicAcceleration(2))
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0.0)
                     .withKV(0.0)
                     .withKA(0.0)
-                    .withKP(0.0)
-                    .withKD(0.0)); // TODO Torque Current Control Gains (accelerating)
+                    .withKP(250.0)
+                    .withKD(10.0)); // TODO Torque Current Control Gains (accelerating)
 
     // * CHARACTERIZATON
     /**

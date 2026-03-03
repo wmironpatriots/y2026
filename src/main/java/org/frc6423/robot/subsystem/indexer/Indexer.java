@@ -24,10 +24,8 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
-import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.robot.Constants.Matrix;
-import org.frc6423.robot.Robot;
 
 /** {@link SubsystemBase} Indexer (Belt) Subsystem */
 public class Indexer extends SubsystemBase {
@@ -35,7 +33,7 @@ public class Indexer extends SubsystemBase {
   public class Constants {
     // * CONTROL CONSTANTS
     /** {@link Voltage} Voltage speed for indexing */
-    public static final Voltage kIndexingSpeed = Volts.of(5.0);
+    public static final Voltage kIndexingSpeed = Volts.of(2.0);
 
     /** {@link Voltage} Voltage speed for outdexing */
     public static final Voltage kOutdexingSpeed = kIndexingSpeed.times(-1);
@@ -70,14 +68,9 @@ public class Indexer extends SubsystemBase {
    * @return {@link Indexer}
    */
   public static Indexer create() {
-    return (Robot.isReal())
-        ? new Indexer(
-            new ServoIOTalonFx(
-                "Servo",
-                Constants.kCanBus,
-                Constants.kServoCanDeviceId,
-                Constants.kServoTalonConfig))
-        : new Indexer(new ServoIONone("Servo"));
+    return new Indexer(
+        new ServoIOTalonFx(
+            "Servo", Constants.kCanBus, Constants.kServoCanDeviceId, Constants.kServoTalonConfig));
   }
 
   @Logged private final ServoIO mServo;
@@ -143,8 +136,8 @@ public class Indexer extends SubsystemBase {
   public Command index() {
     return this.run(
             () -> {
+              mServo.setVoltageSetpoint(Constants.kIndexingSpeed, false);
               mIsRunning = true;
-              mServo.setVoltageSetpoint(Constants.kIndexingSpeed, true);
             })
         .withName("Indexer Index");
   }

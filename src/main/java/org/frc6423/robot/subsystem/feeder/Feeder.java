@@ -28,7 +28,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.DIO;
 import org.frc6423.lib.io.DIONone;
-import org.frc6423.lib.io.DIORio;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
@@ -52,7 +51,7 @@ public class Feeder extends SubsystemBase {
 
     // * HARDWARE CONSTANTS
     /** {@link Integer} CAN ID of servo */
-    public static final int kServoCanDeviceId = Matrix.kIndexerId;
+    public static final int kServoCanDeviceId = Matrix.kFeederId;
 
     /** {@link Current} Stator current limit of servo */
     public static final Current kServoStatorCurrentLimit = Amps.of(40.0);
@@ -90,7 +89,7 @@ public class Feeder extends SubsystemBase {
                 Constants.kCanBus,
                 Constants.kServoCanDeviceId,
                 Constants.kServoTalonConfig),
-            new DIORio(Constants.kBeamBreakDioPort))
+            new DIONone())
         : new Feeder(new ServoIONone("Servo"), new DIONone());
   }
 

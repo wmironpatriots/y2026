@@ -113,30 +113,14 @@ public class Intake extends SubsystemBase {
     public static final Voltage kStowedSpeed = Volts.of(0.0);
 
     /** {@link Voltage} Speed when intaking */
-    public static final Voltage kIntakingSpeed = Volts.of(5.0);
+    public static final Voltage kIntakingSpeed = Volts.of(9.0);
 
     /** {@link Voltage} Speed when outaking */
-    public static final Voltage kOutakingSpeed = Volts.of(-7.0);
+    public static final Voltage kOutakingSpeed = Volts.of(-9.0);
 
     // * HARDWARE CONSTANTS
     /** {@link Integer} CAN ID of abs encoder */
     public static final int kEncoderCanDeviceId = Matrix.kIntakeEncoderId;
-
-    /** {@link Angle} Angular Offset to the stowed angle of abs encoder */
-    public static final Angle kEncoderAngularOffset = Revolutions.of(0.0).plus(kMinAngle); // TODO
-
-    /** {@link Angle} Angular Position in the middle of the 'unreachable' area of pivot */
-    public static final Angle kEncoderSensorDiscontinuityPoint =
-        Degrees.of(360).minus(kMaxAngle.minus(kMinAngle)).div(2).plus(kMaxAngle);
-
-    /** {@link CANcoderConfiguration} Hardware config of abs encoder */
-    public static final CANcoderConfiguration kEncoderConfig =
-        new CANcoderConfiguration()
-            .withMagnetSensor(
-                new MagnetSensorConfigs()
-                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
-                    .withMagnetOffset(kEncoderAngularOffset)
-                    .withAbsoluteSensorDiscontinuityPoint(kEncoderSensorDiscontinuityPoint));
 
     /** {@link CANBus} CAN bus devices are on */
     public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
@@ -153,6 +137,23 @@ public class Intake extends SubsystemBase {
     /** {@link Double} Gear ratio between the abs encoder shaft and the mechanism pivot */
     public static final double kSensorToMechRatio = (36.0 / 16.0);
 
+    /** {@link Angle} Angular Offset to the stowed angle of abs encoder */
+    public static final Angle kEncoderAngularOffset =
+        Revolutions.of(-0.728515625).plus(kMinAngle.times(kSensorToMechRatio)); // TODO
+
+    /** {@link Angle} Angular Position in the middle of the 'unreachable' area of pivot */
+    public static final Angle kEncoderSensorDiscontinuityPoint =
+        Degrees.of(360).minus(kMaxAngle.minus(kMinAngle)).div(2).plus(kMaxAngle);
+
+    /** {@link CANcoderConfiguration} Hardware config of abs encoder */
+    public static final CANcoderConfiguration kEncoderConfig =
+        new CANcoderConfiguration()
+            .withMagnetSensor(
+                new MagnetSensorConfigs()
+                    .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
+                    .withMagnetOffset(kEncoderAngularOffset)
+                    .withAbsoluteSensorDiscontinuityPoint(kEncoderSensorDiscontinuityPoint));
+
     /** {@link TalonFXConfiguration} Hardware config of pivot servo */
     public static final TalonFXConfiguration kPivotTalonConfig =
         new TalonFXConfiguration()
@@ -167,22 +168,22 @@ public class Intake extends SubsystemBase {
                     .withStatorCurrentLimitEnable(true))
             .withFeedback(
                 new FeedbackConfigs()
-                    .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
+                    .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
                     .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
                     .withRotorToSensorRatio(kRotorToSensorRatio)
                     .withSensorToMechanismRatio(kSensorToMechRatio))
             .withMotionMagic(
                 new MotionMagicConfigs()
-                    .withMotionMagicCruiseVelocity(kPivotMaxVelocity)
-                    .withMotionMagicAcceleration(kPivotMaxAcceleration))
+                    .withMotionMagicCruiseVelocity(2)
+                    .withMotionMagicAcceleration(3))
             .withSlot0(
                 new Slot0Configs()
                     .withKS(0.0)
                     .withKG(0.0)
                     .withKV(0.0)
                     .withKA(0.0)
-                    .withKP(0.0)
-                    .withKD(0.0)); // TODO Torque Current Control Gains (accelerating)
+                    .withKP(250.0)
+                    .withKD(30.0)); // TODO Torque Current Control Gains (accelerating)
 
     /** {@link Integer} CAN ID of servo */
     public static final int kRollerCanDeviceId = Matrix.kIntakeRollerId;
@@ -211,10 +212,10 @@ public class Intake extends SubsystemBase {
      * {@link Velocity} of {@link CurrentUnit} Rate at which current output ramps up at in
      * Quasistatic Characterization
      */
-    public static final Velocity<CurrentUnit> kCharacterizationRampRate = Amps.of(15.0).per(Second);
+    public static final Velocity<CurrentUnit> kCharacterizationRampRate = Amps.of(25.0).per(Second);
 
     /** {@link Current} Current step size for Dynamic Characterization */
-    public static final Current kCharacterizationStepSize = Amps.of(6.0);
+    public static final Current kCharacterizationStepSize = Amps.of(10.0);
   }
 
   /**
@@ -329,7 +330,7 @@ public class Intake extends SubsystemBase {
    */
   @Logged(name = "Angular Position (rads)", importance = Importance.INFO)
   public Angle getAngle() {
-    return mEncoder.getAngle();
+    return mPivot.getAngle();
   }
 
   /**
@@ -441,6 +442,8 @@ public class Intake extends SubsystemBase {
                       Constants.kMinAngle.in(Revolutions),
                       Constants.kMaxAngle.in(Revolutions)));
           mPivot.setTorqueMotionProfiledPositionSetpoint(mTargetAngle);
+
+          mRoller.setVoltageSetpoint(speed, true);
         });
   }
 }

@@ -99,7 +99,7 @@ public class Flywheel extends SubsystemBase {
             .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
             .withMotorOutput(
                 new MotorOutputConfigs()
-                    .withInverted(InvertedValue.CounterClockwise_Positive)
+                    .withInverted(InvertedValue.Clockwise_Positive)
                     .withNeutralMode(NeutralModeValue.Coast))
             .withCurrentLimits(
                 new CurrentLimitsConfigs()
@@ -108,27 +108,34 @@ public class Flywheel extends SubsystemBase {
                     .withSupplyCurrentLimit(kServoSupplyCurrentLimit)
                     .withSupplyCurrentLimitEnable(true))
             .withMotionMagic(new MotionMagicConfigs().withMotionMagicAcceleration(9999.0))
-            .withSlot0(
-                new Slot0Configs()
-                    .withKS(4.7248)
-                    .withKV(0.10759)
-                    .withKA(3.6145)
-                    .withKP(0.23165)
-                    .withKD(0.0)) // Torque Current Control Gains (accelerating)
-            .withSlot1(
-                new Slot1Configs()
-                    .withKS(4.7248)
-                    .withKV(0.10759)
-                    .withKA(3.6145)
-                    .withKP(0.23165)
-                    .withKD(0.0)) // TODO Torque Current Control Gains (maintaing)
-            .withSlot2(
-                new Slot2Configs()
-                    .withKS(4.7248)
-                    .withKV(0.10759)
-                    .withKA(3.6145)
-                    .withKP(0.23165)
-                    .withKD(0.0)); // TODO Torque Current Control Gains (deaccelerating)
+            .withSlot0(new Slot0Configs().withKP(10.0).withKD(0.1))
+            .withSlot1(new Slot1Configs().withKP(10.0).withKD(0.1))
+            .withSlot2(new Slot2Configs().withKP(10.0).withKD(0.1));
+
+    // .withSlot0(
+    //     new Slot0Configs()
+    //         .withKS(4.8691)
+    //         .withKV(0.10515)
+    //         .withKA(1.729)
+    //         .withKG(0.52863)
+    //         .withKP(0.26322)
+    //         .withKD(0.0)) // Torque Current Control Gains (accelerating)
+    // .withSlot1(
+    //     new Slot1Configs()
+    //         .withKS(4.8691)
+    //         .withKV(0.10515)
+    //         .withKA(1.729)
+    //         .withKG(0.52863)
+    //         .withKP(0.26322)
+    //         .withKD(0.0)) // TODO Torque Current Control Gains (maintaing)
+    // .withSlot2(
+    //     new Slot2Configs()
+    //         .withKS(4.8691)
+    //         .withKV(0.10515)
+    //         .withKA(1.729)
+    //         .withKG(0.52863)
+    //         .withKP(0.26322)
+    //         .withKD(0.0)); // TODO Torque Current Control Gains (deaccelerating)
 
     /** {@link CANBus} CAN bus devices are on */
     public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
