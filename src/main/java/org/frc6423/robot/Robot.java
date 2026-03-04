@@ -12,6 +12,7 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -77,6 +78,10 @@ public class Robot extends CommandRobot {
 
     configureBindings();
     configureGameBehavior();
+  }
+
+  public double applyJoystick(double value) {
+    return Math.pow(MathUtil.applyDeadband(0.05, value), 2) * Math.signum(value);
   }
 
   /** Define Driver & Operator controller bindings */

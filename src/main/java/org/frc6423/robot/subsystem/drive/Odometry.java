@@ -4,7 +4,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.robot.subsystem;
+package org.frc6423.robot.subsystem.drive;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
@@ -15,7 +15,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.geometry.Twist3d;
 import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -27,81 +26,137 @@ import edu.wpi.first.math.numbers.N6;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.Optional;
+import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.lib.util.Tracer;
-import org.frc6423.robot.Constants.Flags;
 
-/** A singleton that tracks the robot's estimated position */
-public class RobotState {
-  /** {@link RobotState} internal constants */
-  private static class Constants {
-    /** {@link Matrix} representing expected position estimate error */
-    private static final Matrix<N4, N1> kPoseEstimateStdevs = VecBuilder.fill(0.6, 0.6, 0.07, 0.0);
-
-    /** {@link Double} representing how long odometry estimated position remain in buffer */
-    private static final double kBufferDuration = 1.5;
-  }
-
+// TODO cleanup
+/**
+ * A class for calculating the position of the robot based on odometry inputs (drive encoders,
+ * vision localization systems, etc)
+ *
+ * <p>To feed drive encoder measurements for calculations, use {@link
+ * #addEncoderMeasurement(EncoderMeasurement)}
+ *
+ * <p>To feed vision position estimates for calculations, use {@link
+ * #addVisionMeasurement(VisionMeasurement...)}
+ */
+public class Odometry {
+  // * GEOMETRY MEMBERS
   private Pose3d mPreviousOdoPose = new Pose3d();
   private Pose3d mOdoPose = new Pose3d();
   private Pose3d mEstPose = new Pose3d();
-  private final TimeInterpolatableBuffer<Pose3d> mOdoPoseBuffer =
-      TimeInterpolatableBuffer.createBuffer(Constants.kBufferDuration);
+  private final double mEstimateBufferSize;
+  private final TimeInterpolatableBuffer<Pose3d> mOdoPoseBuffer;
 
-  private final Field2d mF2d = new Field2d();
+  private Rotation2d mGyroOffset = Rotation2d.kZero;
 
-  private Rotation2d mOffset = Rotation2d.kZero;
+  private final Matrix<N4, N1> mEstimateStdevs;
 
+  // * KINEMATICS MEMBERS
   private final SwerveDriveKinematics mKinematics;
   private SwerveModulePosition[] mPreviousSwerveModulePoses;
 
-  /** Create new {@link RobotState} */
-  public RobotState() {
+  // * PUBLISHER/VISUALIZER MEMBERS
+  private final Field2d mF2d = new Field2d();
+
+  /**
+   * Create new {@link Odometry}
+   *
+   * @param kinematics {@link SwerveDriveKinematics} Kinematics model to use for calculations
+   * @param positionEstimateStdevs {@link Matrix} of length {@link N4} Standard deviations of the
+   *     pose estimate (x position in meters, y position in meters, z position in meters, and angle
+   *     in radians). Increase these numbers to trust your state estimate less.
+   * @param odometryBufferSizeSeconds {@link Double} How long odometry estimations should last in
+   *     the buffer
+   */
+  public Odometry(
+      SwerveDriveKinematics kinematics,
+      Matrix<N4, N1> positionEstimateStdevs,
+      double odometryBufferSizeSeconds) {
+    mKinematics = kinematics;
     mPreviousSwerveModulePoses = new SwerveModulePosition[4];
     for (int i = 0; i < mPreviousSwerveModulePoses.length; i++) {
       mPreviousSwerveModulePoses[i] = new SwerveModulePosition();
     }
 
-    mKinematics = Flags.kRobotType.mDriveConstants.getKinematics();
+    mEstimateBufferSize = odometryBufferSizeSeconds;
+    mOdoPoseBuffer = TimeInterpolatableBuffer.createBuffer(odometryBufferSizeSeconds);
 
+    mEstimateStdevs = positionEstimateStdevs;
     SmartDashboard.putData(mF2d);
   }
 
+  /** Update visualizers */
+  public void update() {
+    // Update visualizers
+    mF2d.setRobotPose(getPose2d());
+  }
+
   /**
-   * @return {@link Rotation3d} representing the estimated robot rotation in 3d space
+   * Get the estimated rotation of the robot in 2-Dimensional Space
+   *
+   * @return {@link Rotation2d}
+   */
+  public Rotation2d getRotation2d() {
+    return getPose2d().getRotation();
+  }
+
+  /**
+   * Get the estimated displacement of robot from the origin in 2-Dimensional Space
+   *
+   * @return {@link Translation2d}
+   */
+  public Translation2d getTranslation2d() {
+    return getPose2d().getTranslation();
+  }
+
+  /**
+   * Get the estimated position of robot in 2-Dimensional Space
+   *
+   * @return {@link Pose2d}
+   */
+  public Pose2d getPose2d() {
+    return getPose3d().toPose2d();
+  }
+
+  /**
+   * Get the estimated rotation of robot in 3-Dimensional Space
+   *
+   * @return {@link Rotation3d}
    */
   public Rotation3d getRotation3d() {
     return getPose3d().getRotation();
   }
 
   /**
-   * @return {@link Pose3d} representing the estimated robot position in 3d space
+   * Get the esimated position of robot in 3-Dimensional Space
+   *
+   * @return {@link Pose3d}
    */
   public Pose3d getPose3d() {
     return mEstPose;
   }
 
-  public Pose2d getPose2d() {
-    return getPose3d().toPose2d();
-  }
-
-  public Translation2d getTranslation2d() {
-    return getPose2d().getTranslation();
-  }
-
+  /**
+   * Reset odometry position to a specified point
+   *
+   * @param pose {@link Pose2d} The position to reset to
+   */
   public void resetPose(Pose2d pose) {
-    mOffset = pose.getRotation().minus(mOdoPose.getRotation().toRotation2d().minus(mOffset));
+    mGyroOffset =
+        pose.getRotation().minus(mOdoPose.getRotation().toRotation2d().minus(mGyroOffset));
     mEstPose = new Pose3d(pose);
     mOdoPose = new Pose3d(pose);
     mOdoPoseBuffer.clear();
   }
 
-  public void addOdometryMeasurement(OdometryMeasurement sample) {
+  public void addEncoderMeasurement(EncoderMeasurement sample) {
     Tracer.traceFunc(
         "RecordOdometryMeasurement",
         () -> {
           // Calculate the change in distance of swerve module poses and apply to odometry pose
           Twist3d odoPoseTwist =
-              toTwist3d(
+              GeometryUtil.toTwist3d(
                   mKinematics.toTwist2d(mPreviousSwerveModulePoses, sample.swerveModulePoses()));
           mPreviousSwerveModulePoses = sample.swerveModulePoses;
           mOdoPose = mOdoPose.exp(odoPoseTwist);
@@ -110,10 +165,10 @@ public class RobotState {
           sample.gyroRotation3d.ifPresent(
               r ->
                   mOdoPose =
-                      new Pose3d(mOdoPose.getTranslation(), r.plus(new Rotation3d(mOffset))));
+                      new Pose3d(mOdoPose.getTranslation(), r.plus(new Rotation3d(mGyroOffset))));
 
           // Add odometry sample of specified timestamp to odo buffer
-          mOdoPoseBuffer.addSample(Constants.kBufferDuration, mOdoPose);
+          mOdoPoseBuffer.addSample(sample.timestampSeconds, mOdoPose);
 
           // Calculate change in distance between odometry positions and apply to estimated pose
           Twist3d estPoseTwist = mPreviousOdoPose.log(mOdoPose);
@@ -129,7 +184,7 @@ public class RobotState {
           () -> {
             // exit if sample is too old or there are no recent odometry samples
             if (mOdoPoseBuffer.getInternalBuffer().isEmpty()
-                || mOdoPoseBuffer.getInternalBuffer().lastKey() - Constants.kBufferDuration
+                || mOdoPoseBuffer.getInternalBuffer().lastKey() - mEstimateBufferSize
                     > measurement.timestampSeconds) {
               return;
             }
@@ -151,15 +206,15 @@ public class RobotState {
             // Solve for closed form Kalman gain for continuous Kalman filter with A = 0
             // and C = I. See WPIMath/algorithms.md.
             for (int row = 0; row < 4; ++row) {
-              if (Constants.kPoseEstimateStdevs.get(row, 0) == 0.0) {
+              if (mEstimateStdevs.get(row, 0) == 0.0) {
                 visionK.set(row, row, 0.0);
               } else {
                 visionK.set(
                     row,
                     row,
-                    Constants.kPoseEstimateStdevs.get(row, 0)
-                        / (Constants.kPoseEstimateStdevs.get(row, 0)
-                            + Math.sqrt(Constants.kPoseEstimateStdevs.get(row, 0) * r[row])));
+                    mEstimateStdevs.get(row, 0)
+                        / (mEstimateStdevs.get(row, 0)
+                            + Math.sqrt(mEstimateStdevs.get(row, 0) * r[row])));
               }
             }
             // Fill in the gains for the other components of the rotation vector
@@ -201,37 +256,11 @@ public class RobotState {
     }
   }
 
-  /**
-   * Convert a specified {@link Twist2d} to a {@link Twist3d}
-   *
-   * @param twist2d {@link Twist2d} to convert
-   * @return {@link Twist3d}
-   */
-  public static Twist3d toTwist3d(Twist2d twist2d) {
-    return new Twist3d(twist2d.dx, twist2d.dy, 0.0, 0.0, 0.0, twist2d.dtheta);
-  }
-
-  /**
-   * Represents a swerve drive position measurement using encoders
-   *
-   * @param timestampSeconds the timestamp when the measurement was taken
-   * @param swerveModulePoses {@link SwerveModulePosition} array representing the measured positions
-   *     of swerve modules
-   * @param gyroRotation3d {@link Rotation3d} representing the orientation of gyro in 3D space
-   */
-  public record OdometryMeasurement(
+  public record EncoderMeasurement(
       double timestampSeconds,
       SwerveModulePosition[] swerveModulePoses,
       Optional<Rotation3d> gyroRotation3d) {}
 
-  /**
-   * Represents a vision position estimation in 3d space
-   *
-   * @param timestampSeconds timestamp estimation was measured at
-   * @param pose3d {@link Pose3d} representing the estimated position in 3d space
-   * @param stdevsMatrix {@link Matrix} of 3x1 dimension representing standard deviations of pose
-   *     estimation
-   */
   public record VisionMeasurement(
       double timestampSeconds, Pose3d pose3dMeasurement, Matrix<N3, N1> measurementStdevs) {}
 }
