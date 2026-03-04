@@ -138,10 +138,11 @@ public abstract class SwerveModuleIO {
 
     // Send Drive Setpoint
     var speed =
-        RadiansPerSecond.of(
-            MetersPerSecond.of(setpoint.speedMetersPerSecond)
-                .div(mConstants.getWheelRadius().in(Meters))
-                .baseUnitMagnitude());
+        RadiansPerSecond.of(setpoint.speedMetersPerSecond / mConstants.getWheelRadius().in(Meters));
+    // RadiansPerSecond.of(
+    //     MetersPerSecond.of(setpoint.speedMetersPerSecond)
+    //         .div(mConstants.getWheelRadius().in(Meters))
+    //         .baseUnitMagnitude());
 
     if (focEnabled) setDriveSetpoint(speed, true);
     else setDriveSetpoint(speed, false);

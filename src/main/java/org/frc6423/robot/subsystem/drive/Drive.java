@@ -170,6 +170,8 @@ public class Drive extends SubsystemBase {
                         getSwerveModulePositions(),
                         Optional.of(mGyro.getRotation3d())));
               });
+
+          mRobotState.update();
         });
   }
 

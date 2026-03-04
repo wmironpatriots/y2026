@@ -43,8 +43,7 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
       mPStatorCurrentSupplier,
       mPTorqueCurrentSupplier;
   protected final StatusSignal<Temperature> mPTemperatureSupplier;
-  protected final StatusSignal<Angle> mPAngleSupplier;
-
+  protected final StatusSignal<Angle> mPAngleSupplier, mPRawAngleSupplier;
   protected final StatusSignal<Voltage> mDSupplyVoltageSupplier, mDStatorVoltageSupplier;
   protected final StatusSignal<Current> mDSupplyCurrentSupplier,
       mDStatorCurrentSupplier,
@@ -54,13 +53,13 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
   protected final StatusSignal<AngularVelocity> mDVelocitySupplier;
   protected final StatusSignal<AngularAcceleration> mDAccelerationSupplier;
 
-  protected final VoltageOut mVoltReq = new VoltageOut(0.0).withEnableFOC(false);
-  protected final TorqueCurrentFOC mTorqueCurrentReq = new TorqueCurrentFOC(0.0);
-  protected final MotionMagicTorqueCurrentFOC mPoseTorqueReq = new MotionMagicTorqueCurrentFOC(0.0);
-  protected final MotionMagicVelocityVoltage mVelVoltReq =
-      new MotionMagicVelocityVoltage(0.0).withEnableFOC(false);
-  protected final MotionMagicVelocityTorqueCurrentFOC mVelTorqueReq =
+  protected final VoltageOut mVoltOut = new VoltageOut(0.0).withEnableFOC(false);
+  protected final TorqueCurrentFOC mCurrentOut = new TorqueCurrentFOC(0.0);
+  protected final MotionMagicTorqueCurrentFOC mTorquePoseOut = new MotionMagicTorqueCurrentFOC(0.0);
+  protected final MotionMagicVelocityTorqueCurrentFOC mTorqueVelOut =
       new MotionMagicVelocityTorqueCurrentFOC(0.0);
+  protected final MotionMagicVelocityVoltage mVoltVelOut =
+      new MotionMagicVelocityVoltage(0.0).withEnableFOC(false);
 
   public SwerveModuleIOTalonFx(String name, ModuleConfig config, DriveConstants constants) {
     super(name, config, constants);
@@ -90,6 +89,7 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
     mPTemperatureSupplier = mPivot.getDeviceTemp(true);
 
     mPAngleSupplier = mPivot.getPosition(true);
+    mPRawAngleSupplier = mPivot.getRotorPosition(true);
 
     mDSupplyVoltageSupplier = mDrive.getSupplyVoltage(true);
     mDStatorVoltageSupplier = mDrive.getMotorVoltage(true);
@@ -113,6 +113,7 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
         mPTorqueCurrentSupplier,
         mPTemperatureSupplier,
         mPAngleSupplier,
+        mPRawAngleSupplier,
         mDSupplyVoltageSupplier,
         mDStatorVoltageSupplier,
         mDSupplyCurrentSupplier,
@@ -134,6 +135,7 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
         mPTorqueCurrentSupplier,
         mPTemperatureSupplier,
         mPAngleSupplier,
+        mPRawAngleSupplier,
         mDSupplyVoltageSupplier,
         mDStatorVoltageSupplier,
         mDSupplyCurrentSupplier,
@@ -182,17 +184,17 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
 
   @Override
   public void setPivotVoltage(Voltage voltage) {
-    mPivot.setControl(mVoltReq.withOutput(voltage));
+    mPivot.setControl(mVoltOut.withOutput(voltage));
   }
 
   @Override
   public void setPivotCurrent(Current current) {
-    mPivot.setControl(mTorqueCurrentReq.withOutput(current));
+    mPivot.setControl(mCurrentOut.withOutput(current));
   }
 
   @Override
   protected void setPivotSetpoint(Angle setpoint) {
-    mPivot.setControl(mPoseTorqueReq.withPosition(setpoint));
+    mPivot.setControl(mTorquePoseOut.withPosition(setpoint));
   }
 
   @Override
@@ -242,24 +244,24 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
 
   @Override
   public void setDriveVoltage(Voltage voltage) {
-    mDrive.setControl(mVoltReq.withOutput(voltage));
+    mDrive.setControl(mVoltOut.withOutput(voltage));
   }
 
   @Override
   public void setDriveCurrent(Current current) {
-    mDrive.setControl(mTorqueCurrentReq.withOutput(current));
+    mDrive.setControl(mCurrentOut.withOutput(current));
   }
 
   @Override
   protected void setDriveSetpoint(AngularVelocity velocity, boolean focEnabled) {
-    if (focEnabled) mDrive.setControl(mVelTorqueReq.withVelocity(velocity));
-    else mDrive.setControl(mVelVoltReq.withVelocity(velocity));
+    if (focEnabled) mDrive.setControl(mTorqueVelOut.withVelocity(velocity).withSlot(0));
+    else mDrive.setControl(mVoltVelOut.withVelocity(velocity).withSlot(1));
   }
 
   @Override
   protected void setDriveSetpoint(AngularVelocity velocity, Torque torque) {
     mDrive.setControl(
-        mVelTorqueReq
+        mTorqueVelOut
             .withVelocity(velocity)
             .withFeedForward(mConstants.getDriveGearboxKt() / torque.in(NewtonMeters)));
   }
