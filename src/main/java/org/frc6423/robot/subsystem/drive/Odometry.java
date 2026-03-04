@@ -266,7 +266,7 @@ public class Odometry {
                         transformTimesK.get(4, 0),
                         transformTimesK.get(5, 0)));
 
-            mEstPose = estPoseAtTimestamp.plus(scaledTransform).plus(transform.inverse());
+            mEstPose = estPoseAtTimestamp.plus(scaledTransform).plus(transform);
             mF2d.setRobotPose(mEstPose.toPose2d());
           });
     }
