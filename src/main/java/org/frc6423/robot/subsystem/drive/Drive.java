@@ -6,16 +6,12 @@
 
 package org.frc6423.robot.subsystem.drive;
 
-import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.NewtonMeters;
-import static edu.wpi.first.units.Units.Second;
-import static edu.wpi.first.units.Units.Volts;
 
 import choreo.trajectory.SwerveSample;
-import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
@@ -34,20 +30,16 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
-import org.frc6423.robot.subsystem.RobotState;
-import org.frc6423.robot.subsystem.RobotState.OdometryMeasurement;
+import org.frc6423.robot.subsystem.drive.Odometry.EncoderMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
 import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
@@ -55,20 +47,20 @@ import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFx;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFxSim;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 
-/** TODO WIP */
+// TODO cleanup
 public class Drive extends SubsystemBase {
   private static final DriveConstants mConstants = Flags.kRobotType.mDriveConstants;
 
   /**
    * Create new {@link Drive}
    *
-   * @param robotState {@link RobotState} Robot Tracker to send odometry measurements to
+   * @param robotState {@link Odometry} Robot Tracker to send odometry measurements to
    * @return {@link Drive}
    */
-  public static Drive create(RobotState robotState) {
+  public static Drive create() {
     return (Robot.isReal())
         ? new Drive(
-            robotState,
+            new Odometry(mConstants.getKinematics(), VecBuilder.fill(0.6, 0.6, 0.07, 0.0), 1.5),
             new GyroIOPigeon2(
                 mConstants.getGyroConfig().deviceId(),
                 mConstants.getGyroConfig().canBus(),
@@ -82,7 +74,7 @@ public class Drive extends SubsystemBase {
             new SwerveModuleIOTalonFx(
                 "Back Right", mConstants.getBackRightModuleConfig(), mConstants))
         : new Drive(
-            robotState,
+            new Odometry(mConstants.getKinematics(), VecBuilder.fill(0.6, 0.6, 0.07, 0.0), 1.5),
             new GyroIOPigeon2(
                 mConstants.getGyroConfig().deviceId(),
                 mConstants.getGyroConfig().canBus(),
@@ -97,7 +89,7 @@ public class Drive extends SubsystemBase {
                 "Back Right", mConstants.getBackRightModuleConfig(), mConstants));
   }
 
-  private final RobotState mRobotState;
+  private final Odometry mRobotState;
 
   // * HARDWARE MEMBERS
   @Logged private final SwerveModuleIO mFrModule;
@@ -119,15 +111,12 @@ public class Drive extends SubsystemBase {
 
   private final PIDController mPositionXController, mPositionYController, mRotationController;
 
-  // * SYSID MEMBERS
-  private final SysIdRoutine mPivotCharacterization,
-      mDriveLinearCharacterization,
-      mDriveAngularCharacterization;
+  // TODO * SYSID MEMBERS
 
   /**
    * Create new {@link Drive}
    *
-   * @param robotState {@link RobotState} Robot Tracker to send odometry measurements to
+   * @param robotState {@link Odometry} Robot Tracker to send odometry measurements to
    * @param gyro {@link GyroIO} Gyro for odometry
    * @param frontRightModule {@link SwerveModuleIO} Front Right Swerve Module
    * @param frontLeftModule {@link SwerveModuleIO} Front Left Swerve Module
@@ -135,7 +124,7 @@ public class Drive extends SubsystemBase {
    * @param backRightModule {@link SwerveModuleIO} Back Right Swerve Module
    */
   public Drive(
-      RobotState robotState,
+      Odometry robotState,
       GyroIO gyro,
       SwerveModuleIO frontRightModule,
       SwerveModuleIO frontLeftModule,
@@ -159,63 +148,6 @@ public class Drive extends SubsystemBase {
     mPositionXController = new PIDController(0.0, 0.0, 0.0);
     mPositionYController = new PIDController(0.0, 0.0, 0.0);
     mRotationController = new PIDController(0.0, 0.0, 0.0);
-
-    // Init SysId
-    mPivotCharacterization =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                Volts.of(15).per(Second),
-                Volts.of(35),
-                null,
-                (state) -> SignalLogger.writeString("state", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (Voltage) -> {
-                  for (int i = 0; i < mModules.length; i++) {
-                    mModules[i].setPivotCurrent(Amps.of(Voltage.in(Volts)));
-                  }
-                },
-                null,
-                this,
-                "SwervePivotSysId"));
-
-    mDriveLinearCharacterization =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                Volts.of(15).per(Second),
-                Volts.of(35),
-                null,
-                (state) -> SignalLogger.writeString("state", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (Voltage) -> {
-                  for (var module : mModules) {
-                    module.setSetpointState(
-                        new SwerveModuleState(MetersPerSecond.zero(), Rotation2d.kZero), true);
-                    module.setDriveCurrent(Amps.of(Voltage.in(Volts)));
-                  }
-                },
-                null,
-                this,
-                "SwerveLinearSysId"));
-
-    mDriveAngularCharacterization =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                Volts.of(15).per(Second),
-                Volts.of(35),
-                null,
-                (state) -> SignalLogger.writeString("state", state.toString())),
-            new SysIdRoutine.Mechanism(
-                (Voltage) -> {}, // TODO
-                null,
-                this,
-                "SwerveAngularSysId"));
-
-    // Publish SysId commands if in tuning mode
-    if (Flags.kTuningModeEnabled) {
-      SmartDashboard.putData(runPivotCharacterizationSequence());
-      SmartDashboard.putData(runLinearDriveCharacterization());
-      SmartDashboard.putData(runAngularDriveCharacterization());
-    }
   }
 
   @Override
@@ -232,8 +164,8 @@ public class Drive extends SubsystemBase {
           Tracer.traceFunc(
               "Swerve Update Odometry",
               () -> {
-                mRobotState.addOdometryMeasurement(
-                    new OdometryMeasurement(
+                mRobotState.addEncoderMeasurement(
+                    new EncoderMeasurement(
                         Timer.getFPGATimestamp(),
                         getSwerveModulePositions(),
                         Optional.of(mGyro.getRotation3d())));
@@ -487,47 +419,18 @@ public class Drive extends SubsystemBase {
   }
 
   // * COMMANDS
-  public Command runPivotCharacterizationSequence() {
-    return Commands.sequence(
-            mPivotCharacterization.quasistatic(Direction.kForward),
-            Commands.waitSeconds(1.5),
-            mPivotCharacterization.quasistatic(Direction.kReverse),
-            Commands.waitSeconds(1.5),
-            mPivotCharacterization.dynamic(Direction.kForward),
-            Commands.waitSeconds(1.5),
-            mPivotCharacterization.dynamic(Direction.kReverse))
-        .withName("Drive Pivot Characterization");
-  }
-
-  public Command runLinearDriveCharacterization() {
-    return Commands.sequence(
-            mDriveLinearCharacterization.quasistatic(Direction.kForward),
-            Commands.waitSeconds(1.5),
-            mDriveLinearCharacterization.dynamic(Direction.kReverse),
-            Commands.waitSeconds(1.5),
-            mDriveLinearCharacterization.quasistatic(Direction.kForward),
-            Commands.waitSeconds(1.5),
-            mDriveLinearCharacterization.dynamic(Direction.kReverse))
-        .withName("Drive Linear Characterization");
-  }
-
-  public Command runAngularDriveCharacterization() {
-    return Commands.sequence(
-            mDriveAngularCharacterization.quasistatic(Direction.kForward),
-            Commands.waitSeconds(1.5),
-            mDriveAngularCharacterization.dynamic(Direction.kReverse),
-            Commands.waitSeconds(1.5),
-            mDriveAngularCharacterization.quasistatic(Direction.kForward),
-            Commands.waitSeconds(1.5),
-            mDriveAngularCharacterization.dynamic(Direction.kReverse))
-        .withName("Drive Angular Characterization");
-  }
-
   public Command driveFromTeleoperatedInputs(
       DoubleSupplier xVelocitySupplier,
       DoubleSupplier yVelocitySupplier,
       DoubleSupplier omegaSupplier) {
-    return Commands.none();
+    return this.run(
+        () ->
+            setChassisSpeedsSetpoint(
+                ChassisSpeeds.fromFieldRelativeSpeeds(
+                    mConstants.getMaxLinearVelocity().times(xVelocitySupplier.getAsDouble()),
+                    mConstants.getMaxLinearVelocity().times(yVelocitySupplier.getAsDouble()),
+                    mConstants.getMaxAngularVelocity().times(omegaSupplier.getAsDouble()),
+                    getRotation3d().toRotation2d())));
   }
 
   public Command driveWhileFacing(
@@ -540,7 +443,6 @@ public class Drive extends SubsystemBase {
         () -> {
           for (var module : mModules) {
             module.stop();
-            ;
           }
         });
   }
