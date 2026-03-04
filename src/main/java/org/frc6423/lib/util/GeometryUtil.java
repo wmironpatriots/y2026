@@ -8,13 +8,15 @@ package org.frc6423.lib.util;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.geometry.Twist3d;
 
 /**
  * Utility class for interacting with classes related to the Field Coordinate System
  *
  * @see https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
  */
-public class CoordUtil {
+public class GeometryUtil {
   /**
    * Convert specified {@link Pose2d} to its opposing alliance equivalent
    *
@@ -38,5 +40,15 @@ public class CoordUtil {
 
     // I think this should work?
     return pose.rotateAround(fieldMidpoint.getTranslation(), angle.times(2).times(-1));
+  }
+
+  /**
+   * Convert a {@link Twist2d} into a {@link Twist3d}
+   *
+   * @param twist2d {@link Twist2d}
+   * @return {@link Twist3d}
+   */
+  public static Twist3d toTwist3d(Twist2d twist2d) {
+    return new Twist3d(twist2d.dx, twist2d.dy, 0.0, 0.0, 0.0, twist2d.dtheta);
   }
 }

@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import java.util.Optional;
-import org.frc6423.lib.util.CoordUtil;
+import org.frc6423.lib.util.GeometryUtil;
 
 /**
  * Game specific constants for the 2026 FRC Game: Rebuilt
@@ -93,14 +93,14 @@ public class Rebuilt {
   /** {@link Rectangle2d} Opposing Trench Zone */
   public static final Rectangle2d kOpposingTrench =
       new Rectangle2d(
-          CoordUtil.allianceFlipPose2d(kMidPose, kTrenchZone.getCenter()),
+          GeometryUtil.allianceFlipPose2d(kMidPose, kTrenchZone.getCenter()),
           kTrenchZoneLength,
           kFieldWidth);
 
   /** {@link Rectangle2d} Opposing Alliance Zone */
   public static final Rectangle2d kOpposingAlliance =
       new Rectangle2d(
-          CoordUtil.allianceFlipPose2d(kMidPose, kRobotAllianceZone.getCenter()),
+          GeometryUtil.allianceFlipPose2d(kMidPose, kRobotAllianceZone.getCenter()),
           kAllianceZoneLength,
           kFieldWidth);
 
@@ -175,11 +175,11 @@ public class Rebuilt {
       new Rectangle2d(kMidPose, kNeutralMassLength, kNeutralMassWidth);
 
   public static Pose2d allianceFlipPose2d(Pose2d pose) {
-    return CoordUtil.allianceFlipPose2d(kMidPose, pose);
+    return GeometryUtil.allianceFlipPose2d(kMidPose, pose);
   }
 
   public static Pose2d mirrorPose2d(Pose2d pose) {
-    return CoordUtil.mirrorPose2d(kMidPose, pose);
+    return GeometryUtil.mirrorPose2d(kMidPose, pose);
   }
 
   // * MATCH TIME
