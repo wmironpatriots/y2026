@@ -196,20 +196,20 @@ public class RebuiltL2 extends DriveConstants {
                         .in(FeetPerSecondPerSecond)))
         // TODO tune; current values stolen from cascade
         .withSlot0(
-            new Slot0Configs()
+            new Slot0Configs() // Torque Based Motion Magic Velocity Controls
                 .withKS(5.0)
                 .withKV(0.0)
                 .withKA(0.0)
                 .withKP(35.0)
-                .withKD(0.0)) // Torque Based Motion Magic Velocity Controls
-        // TODO tune; no values
+                .withKD(0.0))
+        // TODO tune;
         .withSlot1(
-            new Slot1Configs()
-                .withKS(0.0)
-                .withKV(0.0)
+            new Slot1Configs() // Voltage Based Motion Magic Velocity Controls
+                .withKS(10.0)
+                .withKV(5.0)
                 .withKA(0.0)
-                .withKP(0.0)
-                .withKD(0.0)); // Voltage Based Motion Magic Velocity Controls
+                .withKP(300.0)
+                .withKD(0.0));
   }
 
   @Override
@@ -244,7 +244,7 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveFrEncoderId,
         getPivotServoConfig(Matrix.kDriveFrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.0)));
+        getCANcoderConfig(Degrees.of(0.363037109375)));
   }
 
   @Override
@@ -257,7 +257,7 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveFlEncoderId,
         getPivotServoConfig(Matrix.kDriveFlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.0)));
+        getCANcoderConfig(Degrees.of(-0.226318359375)));
   }
 
   @Override
@@ -270,7 +270,7 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveBlEncoderId,
         getPivotServoConfig(Matrix.kDriveBlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.0)));
+        getCANcoderConfig(Degrees.of(-0.129638671875)));
   }
 
   @Override
@@ -283,6 +283,6 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveBrEncoderId,
         getPivotServoConfig(Matrix.kDriveBrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.0)));
+        getCANcoderConfig(Degrees.of(0.385986328125)));
   }
 }
