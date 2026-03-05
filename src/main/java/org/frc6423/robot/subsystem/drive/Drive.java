@@ -195,6 +195,15 @@ public class Drive extends SubsystemBase {
   }
 
   // * SETTERS
+  /**
+   * Reset drive position to a specified position
+   *
+   * @param pose {@link Pose2d} Position to reset to in 3-Dimensional Space
+   */
+  private void resetPosition(Pose2d pose) {
+    mPoseEstimator.resetPose(pose);
+  }
+
   private void setChassisSpeedsSetpoint(ChassisSpeeds speeds) {
     // Generate a time-specific setpoint from continous-time speeds
     speeds = ChassisSpeeds.discretize(speeds, 0.02);
