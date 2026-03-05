@@ -200,7 +200,7 @@ public class Drive extends SubsystemBase {
    *
    * @param pose {@link Pose2d} Position to reset to in 3-Dimensional Space
    */
-  private void resetPosition(Pose2d pose) {
+  public void resetPosition(Pose2d pose) {
     mPoseEstimator.resetPose(pose);
   }
 
