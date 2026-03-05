@@ -109,6 +109,9 @@ public class Intake extends SubsystemBase {
     public static final AngularAcceleration kPivotMaxAcceleration =
         DegreesPerSecondPerSecond.of(5.0);
 
+    /** {@link Voltage} Speed when stowwing */
+    public static final Voltage kStowingSpeed = Volts.of(3.0);
+
     /** {@link Voltage} Speed while idling */
     public static final Voltage kStowedSpeed = Volts.of(0.0);
 
@@ -168,10 +171,11 @@ public class Intake extends SubsystemBase {
                     .withStatorCurrentLimitEnable(true))
             .withFeedback(
                 new FeedbackConfigs()
-                    .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-                    .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
-                    .withRotorToSensorRatio(kRotorToSensorRatio)
-                    .withSensorToMechanismRatio(kSensorToMechRatio))
+                    .withFeedbackSensorSource(
+                        FeedbackSensorSourceValue.RotorSensor) // TODO fix abs encoder
+                    // .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
+                    // .withRotorToSensorRatio(kRotorToSensorRatio)
+                    .withSensorToMechanismRatio(kSensorToMechRatio * kSensorToMechRatio))
             .withMotionMagic(
                 new MotionMagicConfigs()
                     .withMotionMagicCruiseVelocity(2)
@@ -402,7 +406,10 @@ public class Intake extends SubsystemBase {
    * @return {@link Command}
    */
   public Command stow() {
-    return runSetpoint(Constants.kStowedAngle, Constants.kStowedSpeed).withName("Intake Stow");
+    return runSetpoint(Constants.kStowedAngle, Constants.kStowingSpeed)
+        .until(() -> isNearSetpoint())
+        .andThen(runSetpoint(Constants.kStowedAngle, Constants.kStowedSpeed))
+        .withName("Intake Stow");
   }
 
   /**
