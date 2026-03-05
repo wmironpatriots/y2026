@@ -16,32 +16,30 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
-import org.frc6423.robot.Rebuilt;
 
 /** WIP */
+@Deprecated
 public class Superstructure extends SubsystemBase {
   /** Constants for the {@link Superstructure} */
   public class Constants {}
-
-  private final RobotState mRobotState = new RobotState();
 
   // * STATE MEMBERS
   private State mState = State.IDLE_NEUTRAL_ZONE;
   private Timer mTimer = new Timer();
 
   // * TRIGGERS
-  private final Trigger mInNeutralZone =
-      new Trigger(() -> Rebuilt.kNeutralZone.contains(mRobotState.getTranslation2d()));
+  //   private final Trigger mInNeutralZone =
+  //       new Trigger(() -> Rebuilt.kNeutralZone.contains(mRobotState.getTranslation2d()));
 
-  private final Trigger mInTrenchZone =
-      new Trigger(() -> Rebuilt.kTrenchZone.contains(mRobotState.getTranslation2d()))
-          .and(() -> Rebuilt.kOpposingTrench.contains(mRobotState.getTranslation2d()));
+  //   private final Trigger mInTrenchZone =
+  //       new Trigger(() -> Rebuilt.kTrenchZone.contains(mRobotState.getTranslation2d()))
+  //           .and(() -> Rebuilt.kOpposingTrench.contains(mRobotState.getTranslation2d()));
 
-  private final Trigger mInAllianceZone =
-      new Trigger(() -> Rebuilt.kRobotAllianceZone.contains(mRobotState.getTranslation2d()));
+  //   private final Trigger mInAllianceZone =
+  //       new Trigger(() -> Rebuilt.kRobotAllianceZone.contains(mRobotState.getTranslation2d()));
 
-  private final Trigger mInDefenseZone =
-      new Trigger(() -> Rebuilt.kOpposingAlliance.contains(mRobotState.getTranslation2d()));
+  //   private final Trigger mInDefenseZone =
+  //       new Trigger(() -> Rebuilt.kOpposingAlliance.contains(mRobotState.getTranslation2d()));
 
   private final Trigger mIsShooterReady = new Trigger(() -> false); // TODO fcs shooter en stuff
 
@@ -117,115 +115,119 @@ public class Superstructure extends SubsystemBase {
   /** Define transitions between two states */
   private void defineStateTransitions() {
     // !!!!!!!!!! NEUTRAL ZONE TRANSITIONS !!!!!!!!!! //
-    createTransition(State.IDLE_NEUTRAL_ZONE, State.IDLE_ALLIANCE_ZONE, mInAllianceZone);
+    // createTransition(State.IDLE_NEUTRAL_ZONE, State.IDLE_ALLIANCE_ZONE, mInAllianceZone);
 
-    createTransition(State.IDLE_NEUTRAL_ZONE, State.IDLE_DEFENSE_ZONE, mInDefenseZone);
+    // createTransition(State.IDLE_NEUTRAL_ZONE, State.IDLE_DEFENSE_ZONE, mInDefenseZone);
 
-    createTransition(State.IDLE_NEUTRAL_ZONE, State.INTAKING, mShouldIntake);
+    // createTransition(State.IDLE_NEUTRAL_ZONE, State.INTAKING, mShouldIntake);
 
-    createTransition(State.IDLE_NEUTRAL_ZONE, State.PREPPING_FERRY, mShouldSpinup);
+    // createTransition(State.IDLE_NEUTRAL_ZONE, State.PREPPING_FERRY, mShouldSpinup);
 
-    // !!!!!!!!!! ALLIANCE ZONE TRANSITIONS !!!!!!!!!! //
-    createTransition(State.IDLE_ALLIANCE_ZONE, State.IDLE_NEUTRAL_ZONE, mInNeutralZone);
+    // // !!!!!!!!!! ALLIANCE ZONE TRANSITIONS !!!!!!!!!! //
+    // createTransition(State.IDLE_ALLIANCE_ZONE, State.IDLE_NEUTRAL_ZONE, mInNeutralZone);
 
-    createTransition(State.IDLE_ALLIANCE_ZONE, State.IDLE_DEFENSE_ZONE, mInDefenseZone);
+    // createTransition(State.IDLE_ALLIANCE_ZONE, State.IDLE_DEFENSE_ZONE, mInDefenseZone);
 
-    createTransition(State.IDLE_ALLIANCE_ZONE, State.INTAKING, mShouldIntake);
+    // createTransition(State.IDLE_ALLIANCE_ZONE, State.INTAKING, mShouldIntake);
 
-    createTransition(State.IDLE_ALLIANCE_ZONE, State.PREPPING_SCORE, mShouldSpinup);
+    // createTransition(State.IDLE_ALLIANCE_ZONE, State.PREPPING_SCORE, mShouldSpinup);
 
-    // !!!!!!!!!! DEFENSE ZONE TRANSITIONS !!!!!!!!!! //
-    createTransition(State.IDLE_DEFENSE_ZONE, State.IDLE_NEUTRAL_ZONE, mInNeutralZone);
+    // // !!!!!!!!!! DEFENSE ZONE TRANSITIONS !!!!!!!!!! //
+    // createTransition(State.IDLE_DEFENSE_ZONE, State.IDLE_NEUTRAL_ZONE, mInNeutralZone);
 
-    createTransition(State.IDLE_DEFENSE_ZONE, State.IDLE_ALLIANCE_ZONE, mInAllianceZone);
+    // createTransition(State.IDLE_DEFENSE_ZONE, State.IDLE_ALLIANCE_ZONE, mInAllianceZone);
 
-    createTransition(State.IDLE_DEFENSE_ZONE, State.INTAKING, mShouldIntake);
+    // createTransition(State.IDLE_DEFENSE_ZONE, State.INTAKING, mShouldIntake);
 
-    createTransition(State.IDLE_DEFENSE_ZONE, State.PREPPING_FERRY, mShouldSpinup);
+    // createTransition(State.IDLE_DEFENSE_ZONE, State.PREPPING_FERRY, mShouldSpinup);
 
-    // !!!!!!!!!! INTAKING TRANSITIONS !!!!!!!!!! //
-    createTransition(
-        State.INTAKING, State.IDLE_NEUTRAL_ZONE, mShouldIntake.negate().and(mInNeutralZone));
+    // // !!!!!!!!!! INTAKING TRANSITIONS !!!!!!!!!! //
+    // createTransition(
+    //     State.INTAKING, State.IDLE_NEUTRAL_ZONE, mShouldIntake.negate().and(mInNeutralZone));
 
-    createTransition(
-        State.INTAKING, State.IDLE_ALLIANCE_ZONE, mShouldIntake.negate().and(mInAllianceZone));
+    // createTransition(
+    //     State.INTAKING, State.IDLE_ALLIANCE_ZONE, mShouldIntake.negate().and(mInAllianceZone));
 
-    createTransition(
-        State.INTAKING, State.IDLE_DEFENSE_ZONE, mShouldIntake.negate().and(mInDefenseZone));
+    // createTransition(
+    //     State.INTAKING, State.IDLE_DEFENSE_ZONE, mShouldIntake.negate().and(mInDefenseZone));
 
-    // !!!!!!!!!! FERRYING TRANSITIONS !!!!!!!!!! //
-    createTransition(
-        State.PREPPING_FERRY, State.IDLE_NEUTRAL_ZONE, mShouldSpinup.negate().and(mInNeutralZone));
+    // // !!!!!!!!!! FERRYING TRANSITIONS !!!!!!!!!! //
+    // createTransition(
+    //     State.PREPPING_FERRY, State.IDLE_NEUTRAL_ZONE,
+    // mShouldSpinup.negate().and(mInNeutralZone));
 
-    createTransition(
-        State.PREPPING_FERRY,
-        State.IDLE_ALLIANCE_ZONE,
-        mShouldSpinup.negate().and(mInAllianceZone));
+    // createTransition(
+    //     State.PREPPING_FERRY,
+    //     State.IDLE_ALLIANCE_ZONE,
+    //     mShouldSpinup.negate().and(mInAllianceZone));
 
-    createTransition(
-        State.PREPPING_FERRY, State.IDLE_DEFENSE_ZONE, mShouldSpinup.negate().and(mInDefenseZone));
+    // createTransition(
+    //     State.PREPPING_FERRY, State.IDLE_DEFENSE_ZONE,
+    // mShouldSpinup.negate().and(mInDefenseZone));
 
-    createTransition(State.PREPPING_FERRY, State.PREPPING_SCORE, mInAllianceZone);
+    // createTransition(State.PREPPING_FERRY, State.PREPPING_SCORE, mInAllianceZone);
 
-    createTransition(State.PREPPING_FERRY, State.FERRYING, mShouldFire.and(mIsShooterReady));
+    // createTransition(State.PREPPING_FERRY, State.FERRYING, mShouldFire.and(mIsShooterReady));
 
-    // Trigger means (!mFire || !isShooterReady) && spinup
-    createTransition(
-        State.FERRYING,
-        State.PREPPING_FERRY,
-        mShouldFire.negate().or(mIsShooterReady.negate()).and(mShouldSpinup));
+    // // Trigger means (!mFire || !isShooterReady) && spinup
+    // createTransition(
+    //     State.FERRYING,
+    //     State.PREPPING_FERRY,
+    //     mShouldFire.negate().or(mIsShooterReady.negate()).and(mShouldSpinup));
 
-    createTransition(
-        State.FERRYING,
-        State.IDLE_NEUTRAL_ZONE,
-        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInNeutralZone));
+    // createTransition(
+    //     State.FERRYING,
+    //     State.IDLE_NEUTRAL_ZONE,
+    //     mShouldFire.negate().and(mShouldSpinup.negate()).and(mInNeutralZone));
 
-    createTransition(
-        State.FERRYING,
-        State.IDLE_ALLIANCE_ZONE,
-        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInAllianceZone));
+    // createTransition(
+    //     State.FERRYING,
+    //     State.IDLE_ALLIANCE_ZONE,
+    //     mShouldFire.negate().and(mShouldSpinup.negate()).and(mInAllianceZone));
 
-    createTransition(
-        State.FERRYING,
-        State.IDLE_DEFENSE_ZONE,
-        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInDefenseZone));
+    // createTransition(
+    //     State.FERRYING,
+    //     State.IDLE_DEFENSE_ZONE,
+    //     mShouldFire.negate().and(mShouldSpinup.negate()).and(mInDefenseZone));
 
-    // !!!!!!!!!! SCORING TRANSITIONS !!!!!!!!!! //
-    createTransition(
-        State.PREPPING_SCORE, State.IDLE_NEUTRAL_ZONE, mShouldSpinup.negate().and(mInNeutralZone));
+    // // !!!!!!!!!! SCORING TRANSITIONS !!!!!!!!!! //
+    // createTransition(
+    //     State.PREPPING_SCORE, State.IDLE_NEUTRAL_ZONE,
+    // mShouldSpinup.negate().and(mInNeutralZone));
 
-    createTransition(
-        State.PREPPING_SCORE,
-        State.IDLE_ALLIANCE_ZONE,
-        mShouldSpinup.negate().and(mInAllianceZone));
+    // createTransition(
+    //     State.PREPPING_SCORE,
+    //     State.IDLE_ALLIANCE_ZONE,
+    //     mShouldSpinup.negate().and(mInAllianceZone));
 
-    createTransition(
-        State.PREPPING_SCORE, State.IDLE_DEFENSE_ZONE, mShouldSpinup.negate().and(mInDefenseZone));
+    // createTransition(
+    //     State.PREPPING_SCORE, State.IDLE_DEFENSE_ZONE,
+    // mShouldSpinup.negate().and(mInDefenseZone));
 
-    createTransition(State.PREPPING_SCORE, State.PREPPING_FERRY, mInNeutralZone);
+    // createTransition(State.PREPPING_SCORE, State.PREPPING_FERRY, mInNeutralZone);
 
-    createTransition(State.PREPPING_SCORE, State.SCORING, mShouldFire.and(mIsShooterReady));
+    // createTransition(State.PREPPING_SCORE, State.SCORING, mShouldFire.and(mIsShooterReady));
 
-    // Trigger means (!mFire || !isShooterReady) && spinup
-    createTransition(
-        State.SCORING,
-        State.PREPPING_SCORE,
-        mShouldFire.negate().or(mIsShooterReady.negate()).and(mShouldSpinup));
+    // // Trigger means (!mFire || !isShooterReady) && spinup
+    // createTransition(
+    //     State.SCORING,
+    //     State.PREPPING_SCORE,
+    //     mShouldFire.negate().or(mIsShooterReady.negate()).and(mShouldSpinup));
 
-    createTransition(
-        State.SCORING,
-        State.IDLE_NEUTRAL_ZONE,
-        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInNeutralZone));
+    // createTransition(
+    //     State.SCORING,
+    //     State.IDLE_NEUTRAL_ZONE,
+    //     mShouldFire.negate().and(mShouldSpinup.negate()).and(mInNeutralZone));
 
-    createTransition(
-        State.SCORING,
-        State.IDLE_ALLIANCE_ZONE,
-        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInAllianceZone));
+    // createTransition(
+    //     State.SCORING,
+    //     State.IDLE_ALLIANCE_ZONE,
+    //     mShouldFire.negate().and(mShouldSpinup.negate()).and(mInAllianceZone));
 
-    createTransition(
-        State.SCORING,
-        State.IDLE_DEFENSE_ZONE,
-        mShouldFire.negate().and(mShouldSpinup.negate()).and(mInDefenseZone));
+    // createTransition(
+    //     State.SCORING,
+    //     State.IDLE_DEFENSE_ZONE,
+    //     mShouldFire.negate().and(mShouldSpinup.negate()).and(mInDefenseZone));
   }
 
   /**

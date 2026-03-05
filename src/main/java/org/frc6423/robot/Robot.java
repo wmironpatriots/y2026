@@ -20,22 +20,20 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
+import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.robot.Constants.Flags;
-<<<<<<< HEAD
 import org.frc6423.robot.subsystem.drive.Drive;
+import org.frc6423.robot.subsystem.fcs.FireControlSystem;
 import org.frc6423.robot.subsystem.feeder.Feeder;
 import org.frc6423.robot.subsystem.flywheel.Flywheel;
 import org.frc6423.robot.subsystem.hood.Hood;
 import org.frc6423.robot.subsystem.indexer.Indexer;
 import org.frc6423.robot.subsystem.intake.Intake;
-=======
->>>>>>> 86b9999 (remove testing code from Robot class)
 
 @Logged
 public class Robot extends CommandRobot {
   private final CommandXboxController mController;
 
-<<<<<<< HEAD
   private final Drive mDrive = Drive.create();
   private final Intake mIntake = Intake.create();
   private final Indexer mIndexer = Indexer.create();
@@ -43,8 +41,9 @@ public class Robot extends CommandRobot {
   private final Hood mHood = Hood.create();
   private final Flywheel mFlywheel = Flywheel.create();
 
-=======
->>>>>>> 86b9999 (remove testing code from Robot class)
+  private final FireControlSystem mFcs =
+      new FireControlSystem(mDrive::getPose2d, mDrive::getChassisSpeeds);
+
   public Robot() {
     // Initialize Devices
     mController = new CommandXboxController(0);
@@ -113,7 +112,7 @@ public class Robot extends CommandRobot {
             () -> -modifyJoystick(mController.getLeftY()),
             () -> -modifyJoystick(mController.getLeftX()),
             () -> -modifyJoystick(mController.getRightX()),
-            Rebuilt.kHubPose2d));
+            () -> GeometryUtil.applyForAlliance(Rebuilt.kMidPose, Rebuilt.kHubPose2d)));
     // mDrive.driveFromTeleoperatedInputs(
     //     () -> -modifyJoystick(mController.getLeftY()),
     //     () -> -modifyJoystick(mController.getLeftX()),
