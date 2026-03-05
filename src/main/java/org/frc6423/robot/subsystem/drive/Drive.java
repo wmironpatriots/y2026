@@ -10,6 +10,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.NewtonMeters;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
@@ -29,7 +30,6 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -106,7 +106,7 @@ public class Drive extends SubsystemBase {
 
     mPositionXController = new PIDController(5.0, 0.0, 0.0);
     mPositionYController = new PIDController(5.0, 0.0, 0.0);
-    mRotationController = new PIDController(6.0, 0.0, 0.0);
+    mRotationController = new PIDController(8.0, 0.0, 0.0);
     mRotationController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
@@ -132,9 +132,7 @@ public class Drive extends SubsystemBase {
           else
             mPoseEstimator.addOdometryMeasurement(
                 new EncoderMeasurement(
-                    Timer.getFPGATimestamp(),
-                    getSwerveModulePositions(),
-                    Optional.of(mGyro.getRotation3d())));
+                    Timer.getFPGATimestamp(), getSwerveModulePositions(), Optional.empty()));
 
           mPoseEstimator.update();
         });
@@ -156,8 +154,29 @@ public class Drive extends SubsystemBase {
   }
 
   public Command driveWhileFacing(
-      DoubleSupplier xVelocitySupplier, DoubleSupplier yVelocitySupplier, Pose2d pose2d) {
-    return Commands.none();
+      DoubleSupplier xVelocitySupplier,
+      DoubleSupplier yVelocitySupplier,
+      DoubleSupplier omegaSupplier,
+      Pose2d targetPose2d) {
+    return this.run(
+        () -> {
+          var poseToTarget = getPose2d().minus(targetPose2d).getTranslation();
+          var angle = poseToTarget.getAngle();
+
+          var setpoint =
+              omegaSupplier.getAsDouble() == 0.0
+                  ? RadiansPerSecond.of(
+                      mRotationController.calculate(
+                          getRotation2d().getRadians(), angle.getRadians()))
+                  : mConstants.getMaxAngularVelocity().times(omegaSupplier.getAsDouble());
+
+          setChassisSpeedsSetpoint(
+              ChassisSpeeds.fromFieldRelativeSpeeds(
+                  mConstants.getMaxLinearVelocity().times(xVelocitySupplier.getAsDouble()),
+                  mConstants.getMaxLinearVelocity().times(yVelocitySupplier.getAsDouble()),
+                  setpoint,
+                  getRotation2d()));
+        });
   }
 
   public Command stop() {
