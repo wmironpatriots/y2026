@@ -44,17 +44,12 @@ import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFx;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFxSim;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
+import org.frc6423.robot.subsystem.drive.localization.Vision;
 
 // TODO cleanup
 public class Drive extends SubsystemBase {
   private static final DriveConstants mConstants = Flags.kRobotType.mDriveConstants;
 
-  /**
-   * Create new {@link Drive}
-   *
-   * @param robotState {@link PositionEstimator} Robot Tracker to send odometry measurements to
-   * @return {@link Drive}
-   */
   public static Drive create() {
     return (Robot.isReal())
         ? new Drive(
@@ -85,7 +80,6 @@ public class Drive extends SubsystemBase {
                 "Back Right", mConstants.getBackRightModuleConfig(), mConstants));
   }
 
-  // * HARDWARE MEMBERS
   @Logged private final SwerveModuleIO mFrModule;
   @Logged private final SwerveModuleIO mFlModule;
   @Logged private final SwerveModuleIO mBlModule;
@@ -94,7 +88,8 @@ public class Drive extends SubsystemBase {
   private final SwerveModuleIO[] mModules;
   private final GyroIO mGyro;
 
-  // * CONTROL MEMBERS
+  private final Vision mVision = Vision.create();
+
   private SwerveModuleState[] mSetpointStates =
       new SwerveModuleState[] {
         new SwerveModuleState(),
@@ -107,15 +102,6 @@ public class Drive extends SubsystemBase {
 
   private final PIDController mPositionXController, mPositionYController, mRotationController;
 
-  /**
-   * Create new {@link Drive}
-   *
-   * @param gyro {@link GyroIO} Gyro for odometry
-   * @param frontRightModule {@link SwerveModuleIO} Front Right Swerve Module
-   * @param frontLeftModule {@link SwerveModuleIO} Front Left Swerve Module
-   * @param backLeftModule {@link SwerveModuleIO} Back Left Swerve Module
-   * @param backRightModule {@link SwerveModuleIO} Back Right Swerve Module
-   */
   public Drive(
       GyroIO gyro,
       SwerveModuleIO frontRightModule,
@@ -147,14 +133,8 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
-    updateHardware();
-    updateOdometry();
-  }
-
-  /** Update all swerve hardware */
-  private void updateHardware() {
     Tracer.traceFunc(
-        "UpdateSwerveHardware",
+        "Update Swerve Hardware",
         () -> {
           for (var module : mModules) {
             module.periodic();
@@ -162,37 +142,88 @@ public class Drive extends SubsystemBase {
 
           mGyro.periodic();
         });
-  }
 
-  private void updateOdometry() {
     Tracer.traceFunc(
-        "UpdateOdometry",
+        "Update Swerve Position Estimator",
         () -> {
-          mPoseEstimator.addOdometryMeasurement(
-              new EncoderMeasurement(
-                  Timer.getFPGATimestamp(), getSwerveModulePositions(), Optional.empty()));
+          if (Robot.isReal())
+            mPoseEstimator.addOdometryMeasurement(
+                new EncoderMeasurement(
+                    Timer.getFPGATimestamp(), getSwerveModulePositions(), Optional.empty()));
+          else
+            mPoseEstimator.addOdometryMeasurement(
+                new EncoderMeasurement(
+                    Timer.getFPGATimestamp(),
+                    getSwerveModulePositions(),
+                    Optional.of(mGyro.getRotation3d())));
 
           mPoseEstimator.update();
         });
   }
 
+  // * COMMANDS
+  public Command driveFromTeleoperatedInputs(
+      DoubleSupplier xVelocitySupplier,
+      DoubleSupplier yVelocitySupplier,
+      DoubleSupplier omegaSupplier) {
+    return this.run(
+        () ->
+            setChassisSpeedsSetpoint(
+                ChassisSpeeds.fromFieldRelativeSpeeds(
+                    mConstants.getMaxLinearVelocity().times(xVelocitySupplier.getAsDouble()),
+                    mConstants.getMaxLinearVelocity().times(yVelocitySupplier.getAsDouble()),
+                    mConstants.getMaxAngularVelocity().times(omegaSupplier.getAsDouble()),
+                    getRotation2d())));
+  }
+
+  public Command driveWhileFacing(
+      DoubleSupplier xVelocitySupplier, DoubleSupplier yVelocitySupplier, Pose2d pose2d) {
+    return Commands.none();
+  }
+
+  public Command stop() {
+    return this.run(
+        () -> {
+          for (var module : mModules) {
+            module.stop();
+          }
+        });
+  }
+
+  public Command lock() {
+    return Commands.none();
+  }
+
+  // * SETTERS
+  private void setChassisSpeedsSetpoint(ChassisSpeeds speeds) {
+    // Generate a time-specific setpoint from continous-time speeds
+    speeds = ChassisSpeeds.discretize(speeds, 0.02);
+
+    // Convert to SwerveModuleState setpoints & clamp their velocities
+    var states = mConstants.getKinematics().toSwerveModuleStates(speeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(states, mConstants.getMaxLinearVelocity());
+
+    // Auto FOC Toggle calculations
+    var focEnabled =
+        !getVelocity()
+            .gt(mConstants.getMaxLinearVelocity().times(mConstants.getFocAutoToggleMagnitude()));
+
+    // Send setpoints
+    for (int i = 0; i < mModules.length; i++) {
+      mModules[i].setSetpointState(states[i], focEnabled);
+    }
+
+    // Log setpoints
+    mSetpointStates = states;
+  }
+
   // * GETTERS
-  /**
-   * Check if robot is accelerating abnormally
-   *
-   * @return {@link Boolean}
-   */
   @Logged(name = "Is Colliding (bool)", importance = Importance.INFO)
   public boolean isColliding() {
     return mGyro.getAccelerationMetersPerSecondPerSecond().norm()
         > mConstants.getMaxLinearAcceleration().in(MetersPerSecondPerSecond);
   }
 
-  /**
-   * Check if robot wheels are slipping
-   *
-   * @return {@link Boolean}
-   */
   @Logged(name = "Is Slipping (bool)", importance = Importance.INFO)
   public boolean isSlipping() {
     boolean is = false;
@@ -208,41 +239,21 @@ public class Drive extends SubsystemBase {
     return is;
   }
 
-  /**
-   * Get the estimated yaw rotation of robot
-   *
-   * @return {@link Rotation2d}
-   */
   @Logged(name = "Rotation2d", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
     return getPose2d().getRotation();
   }
 
-  /**
-   * Get the estimated position of robot in 2-Dimensional Space (x, y)
-   *
-   * @return {@link Pose2d}
-   */
   @Logged(name = "Pose2d", importance = Importance.INFO)
   public Pose2d getPose2d() {
     return mPoseEstimator.getPose3d().toPose2d();
   }
 
-  /**
-   * Get magnitude of velocity
-   *
-   * @return {@link LinearVelocity}
-   */
   @Logged(name = "Linear Velocity (meters per second)", importance = Importance.INFO)
   public LinearVelocity getVelocity() {
     return MetersPerSecond.of(getVelocityMetersPerSecond().norm());
   }
 
-  /**
-   * Get velocity with reference to field origin as a 3-Dimensional vector (vx, vy, omega)
-   *
-   * @return {@link Vector} of length {@link N3}
-   */
   public Vector<N3> getVelocityWrtFieldMetersPerSecond() {
     return VecBuilder.fill(
         getChassisSpeedsWrtField().vxMetersPerSecond,
@@ -250,11 +261,6 @@ public class Drive extends SubsystemBase {
         getChassisSpeedsWrtField().omegaRadiansPerSecond);
   }
 
-  /**
-   * Get setpoint velocity as a 3-Dimensional vector (vx, vy, omega)
-   *
-   * @return {@link Vector} of length (@link N3)
-   */
   public Vector<N3> getSetpointVelocityMetersPerSecond() {
     return VecBuilder.fill(
         getSetpointChassisSpeeds().vxMetersPerSecond,
@@ -262,11 +268,6 @@ public class Drive extends SubsystemBase {
         getSetpointChassisSpeeds().omegaRadiansPerSecond);
   }
 
-  /**
-   * Get velocity as a 3-Dimensional vector (vx, vy, omega)
-   *
-   * @return {@link Vector} of length {@link N3}
-   */
   public Vector<N3> getVelocityMetersPerSecond() {
     return VecBuilder.fill(
         getChassisSpeeds().vxMetersPerSecond,
@@ -274,41 +275,21 @@ public class Drive extends SubsystemBase {
         getChassisSpeeds().omegaRadiansPerSecond);
   }
 
-  /**
-   * Get velocity components with refence to field origin
-   *
-   * @return {@link ChassisSpeeds}
-   */
   @Logged(name = "Chassis Speeds (wrt field)", importance = Importance.INFO)
   public ChassisSpeeds getChassisSpeedsWrtField() {
     return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation2d());
   }
 
-  /**
-   * Get velocity components
-   *
-   * @return {@link ChassisSpeeds}
-   */
   @Logged(name = "Setpoint Chassis Speeds", importance = Importance.INFO)
   public ChassisSpeeds getSetpointChassisSpeeds() {
     return mConstants.getKinematics().toChassisSpeeds(getSetpointSwerveModuleState());
   }
 
-  /**
-   * Get velocity components
-   *
-   * @return {@link ChassisSpeeds}
-   */
   @Logged(name = "Chassis Speeds", importance = Importance.INFO)
   public ChassisSpeeds getChassisSpeeds() {
     return mConstants.getKinematics().toChassisSpeeds(getSwerveModuleStates());
   }
 
-  /**
-   * Get positions of all swerve modules
-   *
-   * @return {@link SwerveModulePosition} array
-   */
   @Logged(name = "Swerve Module Positions", importance = Importance.INFO)
   public SwerveModulePosition[] getSwerveModulePositions() {
     SwerveModulePosition[] poses = new SwerveModulePosition[mModules.length];
@@ -319,21 +300,11 @@ public class Drive extends SubsystemBase {
     return poses;
   }
 
-  /**
-   * Get desired states of all swerve modules
-   *
-   * @return {@link SwerveModuleState} array
-   */
   @Logged(name = "Setpoint Swerve Module State", importance = Importance.INFO)
   public SwerveModuleState[] getSetpointSwerveModuleState() {
     return mSetpointStates;
   }
 
-  /**
-   * Get states of all swerve modules
-   *
-   * @return {@link SwerveModuleState} array
-   */
   @Logged(name = "Swerve Module States", importance = Importance.INFO)
   public SwerveModuleState[] getSwerveModuleStates() {
     SwerveModuleState[] states = new SwerveModuleState[mModules.length];
@@ -344,11 +315,6 @@ public class Drive extends SubsystemBase {
     return states;
   }
 
-  /**
-   * Get a consumer for applying {@link SwerveSample}
-   *
-   * @return {@link Consumer} of {@link SwerveSample}
-   */
   public Consumer<SwerveSample> getSwerveSampleConsumer() {
     return (sample) -> {
       // Get sample velocities & feedback velocities
@@ -389,66 +355,5 @@ public class Drive extends SubsystemBase {
       // Log setpoints
       mSetpointStates = states;
     };
-  }
-
-  // * SETTERS
-  /**
-   * Set a {@link ChassisSpeeds} setpoint
-   *
-   * @param speeds {@link ChassisSpeeds} Desired velocity components
-   */
-  private void setChassisSpeedsSetpoint(ChassisSpeeds speeds) {
-    // Generate a time-specific setpoint from continous-time speeds
-    speeds = ChassisSpeeds.discretize(speeds, 0.02);
-
-    // Convert to SwerveModuleState setpoints & clamp their velocities
-    var states = mConstants.getKinematics().toSwerveModuleStates(speeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(states, mConstants.getMaxLinearVelocity());
-
-    // Auto FOC Toggle calculations
-    var focEnabled =
-        !getVelocity()
-            .gt(mConstants.getMaxLinearVelocity().times(mConstants.getFocAutoToggleMagnitude()));
-
-    // Send setpoints
-    for (int i = 0; i < mModules.length; i++) {
-      mModules[i].setSetpointState(states[i], focEnabled);
-    }
-
-    // Log setpoints
-    mSetpointStates = states;
-  }
-
-  // * COMMANDS
-  public Command driveFromTeleoperatedInputs(
-      DoubleSupplier xVelocitySupplier,
-      DoubleSupplier yVelocitySupplier,
-      DoubleSupplier omegaSupplier) {
-    return this.run(
-        () ->
-            setChassisSpeedsSetpoint(
-                ChassisSpeeds.fromFieldRelativeSpeeds(
-                    mConstants.getMaxLinearVelocity().times(xVelocitySupplier.getAsDouble()),
-                    mConstants.getMaxLinearVelocity().times(yVelocitySupplier.getAsDouble()),
-                    mConstants.getMaxAngularVelocity().times(omegaSupplier.getAsDouble()),
-                    getRotation2d())));
-  }
-
-  public Command driveWhileFacing(
-      DoubleSupplier xVelocitySupplier, DoubleSupplier yVelocitySupplier, Pose2d pose2d) {
-    return Commands.none();
-  }
-
-  public Command stop() {
-    return this.run(
-        () -> {
-          for (var module : mModules) {
-            module.stop();
-          }
-        });
-  }
-
-  public Command lock() {
-    return Commands.none();
   }
 }

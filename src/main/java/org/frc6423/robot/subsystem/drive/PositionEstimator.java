@@ -22,7 +22,6 @@ import edu.wpi.first.math.interpolation.TimeInterpolatableBuffer;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N4;
 import edu.wpi.first.math.numbers.N6;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -30,6 +29,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.Optional;
 import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.lib.util.Tracer;
+import org.frc6423.robot.subsystem.drive.localization.CameraIO.VisionMeasurement;
 
 // TODO cleanup
 /**
@@ -44,7 +44,6 @@ import org.frc6423.lib.util.Tracer;
  */
 public class PositionEstimator {
   // * GEOMETRY MEMBERS
-  private Pose3d mPreviousOdoPose = new Pose3d();
   private Pose3d mOdoPose = new Pose3d();
   private Pose3d mEstPose = new Pose3d();
   private final double mEstimateBufferSize;
@@ -229,7 +228,8 @@ public class PositionEstimator {
             visionK.set(4, 4, angle_gain);
             visionK.set(5, 5, angle_gain);
 
-            var transform = new Transform3d(estPoseAtTimestamp, measurement.pose3dMeasurement);
+            var transform =
+                new Transform3d(estPoseAtTimestamp, new Pose3d(measurement.positionEstimate()));
 
             // Step 5: We should not trust the transform entirely, so instead we scale this
             // transform by a
@@ -267,7 +267,4 @@ public class PositionEstimator {
       double timestampSeconds,
       SwerveModulePosition[] swerveModulePoses,
       Optional<Rotation3d> gyroRotation3d) {}
-
-  public record VisionMeasurement(
-      double timestampSeconds, Pose3d pose3dMeasurement, Matrix<N3, N1> measurementStdevs) {}
 }
