@@ -97,6 +97,8 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
 
+    addPeriodic(() -> mFcs.getProjectileParameters(), 0.02);
+
     configureBindings();
     configureGameBehavior();
   }

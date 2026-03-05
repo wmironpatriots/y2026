@@ -10,7 +10,9 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import java.util.TreeMap;
 
@@ -34,6 +36,10 @@ public class InterpolatingProjectileParametersTree {
 
   public Distance getMaxKey() {
     return map.lastKey();
+  }
+
+  public ProjectileParameters calculateShot(Pose2d robot, Translation2d target) {
+    return get(Meters.of(robot.getTranslation().getDistance(target)));
   }
 
   public ProjectileParameters get(Distance r) {
