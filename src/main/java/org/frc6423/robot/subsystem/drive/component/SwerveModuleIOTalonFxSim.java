@@ -18,7 +18,6 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Torque;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
@@ -34,6 +33,8 @@ public class SwerveModuleIOTalonFxSim extends SwerveModuleIOTalonFx {
 
   public SwerveModuleIOTalonFxSim(String name, ModuleConfig config, DriveConstants constants) {
     super(name, config, constants);
+
+    mPivotFeedback.enableContinuousInput(-0.5, 0.5);
 
     mPivotModel =
         new DCMotorSim(
@@ -98,13 +99,13 @@ public class SwerveModuleIOTalonFxSim extends SwerveModuleIOTalonFx {
     return mDriveModel.getAngularVelocity();
   }
 
-  @Override
-  protected void setDriveSetpoint(AngularVelocity velocity, Torque torque) {
-    setDriveSetpoint(velocity, false);
-  }
+  // @Override
+  // protected void setDriveSetpoint(AngularVelocity velocity, Torque torque) {
+  //   setDriveSetpoint(velocity, false);
+  // }
 
-  @Override
-  protected void setDriveSetpoint(AngularVelocity velocity, boolean focEnabled) {
-    mDrive.setControl(mVoltVelOut.withVelocity(velocity).withEnableFOC(false).withSlot(1));
-  }
+  // @Override
+  // protected void setDriveSetpoint(AngularVelocity velocity, boolean focEnabled) {
+  //   mDrive.setControl(mVoltVelOut.withVelocity(velocity).withEnableFOC(false).withSlot(1));
+  // }
 }
