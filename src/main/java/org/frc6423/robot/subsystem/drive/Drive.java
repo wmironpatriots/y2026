@@ -104,9 +104,10 @@ public class Drive extends SubsystemBase {
         new PositionEstimator(
             mConstants.getKinematics(), VecBuilder.fill(0.6, 0.6, 0.6, 0.07), 0.0);
 
-    mPositionXController = new PIDController(0.0, 0.0, 0.0);
-    mPositionYController = new PIDController(0.0, 0.0, 0.0);
-    mRotationController = new PIDController(0.0, 0.0, 0.0);
+    mPositionXController = new PIDController(5.0, 0.0, 0.0);
+    mPositionYController = new PIDController(5.0, 0.0, 0.0);
+    mRotationController = new PIDController(6.0, 0.0, 0.0);
+    mRotationController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   @Override
@@ -168,20 +169,21 @@ public class Drive extends SubsystemBase {
         });
   }
 
-  public Command lock() {
-    return Commands.none();
-  }
-
   // * SETTERS
   /**
    * Reset drive position to a specified position
    *
-   * @param pose {@link Pose2d} Position to reset to in 3-Dimensional Space
+   * @param pose {@link Pose2d} Position to reset to in 2-Dimensional Space
    */
   public void resetPosition(Pose2d pose) {
     mPoseEstimator.resetPose(pose);
   }
 
+  /**
+   * Set setpoint speeds of drivetrain
+   *
+   * @param speeds {@link ChassisSpeeds} Desired speeds of drivetrain
+   */
   private void setChassisSpeedsSetpoint(ChassisSpeeds speeds) {
     // Generate a time-specific setpoint from continous-time speeds
     speeds = ChassisSpeeds.discretize(speeds, 0.02);
@@ -205,37 +207,63 @@ public class Drive extends SubsystemBase {
   }
 
   // * GETTERS
+  /**
+   * Checks if accelerometer is accelerating abnormally
+   *
+   * @return {@link Boolean}
+   */
   @Logged(name = "Is Colliding (bool)", importance = Importance.INFO)
   public boolean isColliding() {
     return mGyro.getAccelerationMetersPerSecondPerSecond().norm()
         > mConstants.getMaxLinearAcceleration().in(MetersPerSecondPerSecond);
   }
 
+  /**
+   * Check if any wheels are slipping
+   *
+   * @return {@link Boolean}
+   */
   @Logged(name = "Is Slipping (bool)", importance = Importance.INFO)
   public boolean isSlipping() {
-    boolean is = false;
+    boolean slipping = false;
     var expectedStates = mConstants.getKinematics().toSwerveModuleStates(getChassisSpeeds());
     var actualState = getSwerveModuleStates();
 
     for (int i = 0; i < expectedStates.length; i++) {
-      is =
+      // TODO adjust tolerance
+      slipping =
           !MathUtil.isNear(
               expectedStates[i].speedMetersPerSecond, actualState[i].speedMetersPerSecond, 0.01);
     }
 
-    return is;
+    return slipping;
   }
 
+  /**
+   * Get yaw rotation of drivetrain
+   *
+   * @return {@link Rotation2d}
+   */
   @Logged(name = "Rotation2d", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
     return getPose2d().getRotation();
   }
 
+  /**
+   * Get estimated drivetrain position in 2-Dimensional Space
+   *
+   * @return {@link Pose2d}
+   */
   @Logged(name = "Pose2d", importance = Importance.INFO)
   public Pose2d getPose2d() {
     return mPoseEstimator.getPose3d().toPose2d();
   }
 
+  /**
+   * Get estimated linear velocity magnitude of drivetrain
+   *
+   * @return {@link LinearVelocity}
+   */
   @Logged(name = "Linear Velocity (meters per second)", importance = Importance.INFO)
   public LinearVelocity getVelocity() {
     return MetersPerSecond.of(getVelocityMetersPerSecond().norm());
