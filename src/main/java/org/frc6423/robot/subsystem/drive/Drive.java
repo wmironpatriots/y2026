@@ -18,7 +18,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -28,14 +27,17 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
+import org.frc6423.robot.subsystem.drive.PositionEstimator.EncoderMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
 import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
@@ -101,7 +103,7 @@ public class Drive extends SubsystemBase {
         new SwerveModuleState()
       };
 
-  private final SwerveDrivePoseEstimator mPoseEstimator;
+  private final PositionEstimator mPoseEstimator;
 
   private final PIDController mPositionXController, mPositionYController, mRotationController;
 
@@ -135,11 +137,8 @@ public class Drive extends SubsystemBase {
 
     // Init controls
     mPoseEstimator =
-        new SwerveDrivePoseEstimator(
-            mConstants.getKinematics(),
-            mGyro.getRotation2d(),
-            getSwerveModulePositions(),
-            new Pose2d());
+        new PositionEstimator(
+            mConstants.getKinematics(), VecBuilder.fill(0.6, 0.6, 0.6, 0.07), 0.0);
 
     mPositionXController = new PIDController(0.0, 0.0, 0.0);
     mPositionYController = new PIDController(0.0, 0.0, 0.0);
@@ -169,7 +168,11 @@ public class Drive extends SubsystemBase {
     Tracer.traceFunc(
         "UpdateOdometry",
         () -> {
-          mPoseEstimator.update(mGyro.getRotation2d(), getSwerveModulePositions());
+          mPoseEstimator.addOdometryMeasurement(
+              new EncoderMeasurement(
+                  Timer.getFPGATimestamp(), getSwerveModulePositions(), Optional.empty()));
+
+          mPoseEstimator.update();
         });
   }
 
@@ -222,7 +225,7 @@ public class Drive extends SubsystemBase {
    */
   @Logged(name = "Pose2d", importance = Importance.INFO)
   public Pose2d getPose2d() {
-    return mPoseEstimator.getEstimatedPosition();
+    return mPoseEstimator.getPose3d().toPose2d();
   }
 
   /**

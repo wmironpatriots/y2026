@@ -25,10 +25,6 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N4;
 import edu.wpi.first.math.numbers.N6;
-import edu.wpi.first.networktables.DoubleSubscriber;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.PubSubOption;
-import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.Optional;
@@ -46,7 +42,6 @@ import org.frc6423.lib.util.Tracer;
  * <p>To feed vision position estimates for calculations, use {@link
  * #addVisionMeasurement(VisionMeasurement...)}
  */
-@Deprecated
 public class PositionEstimator {
   // * GEOMETRY MEMBERS
   private Pose3d mPreviousOdoPose = new Pose3d();
@@ -65,16 +60,6 @@ public class PositionEstimator {
 
   // * PUBLISHER/VISUALIZER MEMBERS
   private final Field2d mF2d = new Field2d();
-
-  private final StructSubscriber<Pose3d> mPoseSubscriber =
-      NetworkTableInstance.getDefault()
-          .getTable("iron-sight/estimates/bessie")
-          .getStructTopic("Pose3d", Pose3d.struct)
-          .subscribe(new Pose3d(), PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
-  private final DoubleSubscriber mTimestamp =
-      NetworkTableInstance.getDefault()
-          .getDoubleTopic("iron-sight/estimates/bessie/TimestampSeconds")
-          .subscribe(0.0, PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
 
   /**
    * Create new {@link PositionEstimator}
@@ -105,10 +90,6 @@ public class PositionEstimator {
 
   /** Update visualizers */
   public void update() {
-    addVisionMeasurement(
-        new VisionMeasurement(
-            mTimestamp.get(), mPoseSubscriber.get(), VecBuilder.fill(0.0, 0.0, 0.0)));
-
     // Update visualizers
     mF2d.setRobotPose(getPose2d());
   }
