@@ -89,11 +89,11 @@ public class Robot extends CommandRobot {
 
   /** Define Driver & Operator controller bindings */
   public void configureBindings() {
-    // mDrive.setDefaultCommand(
-    //     mDrive.driveFromTeleoperatedInputs(
-    //         () -> modifyJoystick(mController.getLeftY()),
-    //         () -> modifyJoystick(mController.getLeftX()),
-    //         () -> modifyJoystick(mController.getRightX())));
+    mDrive.setDefaultCommand(
+        mDrive.driveFromTeleoperatedInputs(
+            () -> modifyJoystick(mController.getLeftY()),
+            () -> modifyJoystick(mController.getLeftX()),
+            () -> modifyJoystick(mController.getRightX())));
   }
 
   /** Define behavior during different oppmodes */
