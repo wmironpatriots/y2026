@@ -93,7 +93,7 @@ public abstract class SwerveModuleIO {
    * @return {@link Distnace}
    */
   public Distance getDriveDistance() {
-    return mConstants.getWheelRadius().times(getPivotAngle().in(Radians));
+    return mConstants.getWheelRadius().times(getDriveAngle().in(Radians));
   }
 
   /**
