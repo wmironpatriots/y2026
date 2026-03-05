@@ -6,13 +6,23 @@
 
 package org.frc6423.robot.subsystem.drive.component;
 
+import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
+
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.LinearAcceleration;
 
+/** Interface for interacting with gyro hardware */
 public abstract class GyroIO {
+  /** Update all loggable values */
+  public abstract void periodic();
+
   /**
    * Get yaw rotation of gyro
    *
@@ -38,4 +48,40 @@ public abstract class GyroIO {
    */
   @Logged(name = "Rotation3d", importance = Importance.INFO)
   public abstract Rotation3d getRotation3d();
+
+  /**
+   * Get measured acceleration as a 3-Dimensional vector
+   *
+   * @return {@link Vector} of length {@link N3}
+   */
+  public Vector<N3> getAccelerationMetersPerSecondPerSecond() {
+    return VecBuilder.fill(
+        getAccelerationX().in(MetersPerSecondPerSecond),
+        getAccelerationY().in(MetersPerSecondPerSecond),
+        getAccelerationZ().in(MetersPerSecondPerSecond));
+  }
+
+  /**
+   * Get measured acceleration in the X direction
+   *
+   * @return {@link LinearAcceleration}
+   */
+  @Logged(name = "Acceleration X (meters per second per second)", importance = Importance.INFO)
+  public abstract LinearAcceleration getAccelerationX();
+
+  /**
+   * Get measured acceleration in the Y direction
+   *
+   * @return {@link LinearAcceleration}
+   */
+  @Logged(name = "Acceleration Y (meters per second per second)", importance = Importance.INFO)
+  public abstract LinearAcceleration getAccelerationY();
+
+  /**
+   * Get measured acceleration in the Z direction
+   *
+   * @return {@link LinearAcceleration}
+   */
+  @Logged(name = "Acceleration Z (meters per second per second)", importance = Importance.INFO)
+  public abstract LinearAcceleration getAccelerationZ();
 }
