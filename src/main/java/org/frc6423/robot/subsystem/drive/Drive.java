@@ -31,6 +31,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.lang.reflect.Array;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
@@ -39,12 +40,66 @@ import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
 import org.frc6423.robot.subsystem.drive.PositionEstimator.EncoderMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
+import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
+import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFx;
+import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFxSim;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.localization.Vision;
 
 /** {@link SubsystemBase} The class controlling the swerve drivetrain subsystem */
 public class Drive extends SubsystemBase {
+  /**
+   * Create new {@link Drive} subsystem
+   *
+   * @return {@link Drive}
+   */
+  public static Drive createDriveSubsystem() {
+    return (Robot.isReal())
+        ? new Drive(
+            new GyroIOPigeon2(
+                Flags.kRobotType.mDriveConstants.getGyroConfig().deviceId(),
+                Flags.kRobotType.mDriveConstants.getGyroConfig().canBus(),
+                Flags.kRobotType.mDriveConstants.getGyroConfig().config()),
+            new SwerveModuleIOTalonFx(
+                "Front Right",
+                Flags.kRobotType.mDriveConstants.getFrontRightModuleConfig(),
+                Flags.kRobotType.mDriveConstants),
+            new SwerveModuleIOTalonFx(
+                "Front Left",
+                Flags.kRobotType.mDriveConstants.getFrontLeftModuleConfig(),
+                Flags.kRobotType.mDriveConstants),
+            new SwerveModuleIOTalonFx(
+                "Back Left",
+                Flags.kRobotType.mDriveConstants.getBackLeftModuleConfig(),
+                Flags.kRobotType.mDriveConstants),
+            new SwerveModuleIOTalonFx(
+                "Back Right",
+                Flags.kRobotType.mDriveConstants.getBackRightModuleConfig(),
+                Flags.kRobotType.mDriveConstants))
+        : new Drive(
+            new GyroIOPigeon2(
+                Flags.kRobotType.mDriveConstants.getGyroConfig().deviceId(),
+                Flags.kRobotType.mDriveConstants.getGyroConfig().canBus(),
+                Flags.kRobotType.mDriveConstants.getGyroConfig().config()),
+            new SwerveModuleIOTalonFxSim(
+                "Front Right",
+                Flags.kRobotType.mDriveConstants.getFrontRightModuleConfig(),
+                Flags.kRobotType.mDriveConstants),
+            new SwerveModuleIOTalonFxSim(
+                "Front Left",
+                Flags.kRobotType.mDriveConstants.getFrontLeftModuleConfig(),
+                Flags.kRobotType.mDriveConstants),
+            new SwerveModuleIOTalonFxSim(
+                "Back Left",
+                Flags.kRobotType.mDriveConstants.getBackLeftModuleConfig(),
+                Flags.kRobotType.mDriveConstants),
+            new SwerveModuleIOTalonFxSim(
+                "Back Right",
+                Flags.kRobotType.mDriveConstants.getBackRightModuleConfig(),
+                Flags.kRobotType.mDriveConstants));
+  }
+
   private static final DriveConstants mConstants = Flags.kRobotType.mDriveConstants;
 
   // * HARDWARE MEMBERS
