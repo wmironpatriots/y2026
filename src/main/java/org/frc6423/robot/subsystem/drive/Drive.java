@@ -18,10 +18,9 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -29,17 +28,14 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
-import org.frc6423.robot.subsystem.drive.Odometry.EncoderMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
 import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
@@ -54,13 +50,12 @@ public class Drive extends SubsystemBase {
   /**
    * Create new {@link Drive}
    *
-   * @param robotState {@link Odometry} Robot Tracker to send odometry measurements to
+   * @param robotState {@link PositionEstimator} Robot Tracker to send odometry measurements to
    * @return {@link Drive}
    */
   public static Drive create() {
     return (Robot.isReal())
         ? new Drive(
-            new Odometry(mConstants.getKinematics(), VecBuilder.fill(0.6, 0.6, 0.07, 0.0), 1.5),
             new GyroIOPigeon2(
                 mConstants.getGyroConfig().deviceId(),
                 mConstants.getGyroConfig().canBus(),
@@ -74,7 +69,6 @@ public class Drive extends SubsystemBase {
             new SwerveModuleIOTalonFx(
                 "Back Right", mConstants.getBackRightModuleConfig(), mConstants))
         : new Drive(
-            new Odometry(mConstants.getKinematics(), VecBuilder.fill(0.6, 0.6, 0.07, 0.0), 1.5),
             new GyroIOPigeon2(
                 mConstants.getGyroConfig().deviceId(),
                 mConstants.getGyroConfig().canBus(),
@@ -88,8 +82,6 @@ public class Drive extends SubsystemBase {
             new SwerveModuleIOTalonFxSim(
                 "Back Right", mConstants.getBackRightModuleConfig(), mConstants));
   }
-
-  private final Odometry mRobotState;
 
   // * HARDWARE MEMBERS
   @Logged private final SwerveModuleIO mFrModule;
@@ -109,14 +101,13 @@ public class Drive extends SubsystemBase {
         new SwerveModuleState()
       };
 
-  private final PIDController mPositionXController, mPositionYController, mRotationController;
+  private final SwerveDrivePoseEstimator mPoseEstimator;
 
-  // TODO * SYSID MEMBERS
+  private final PIDController mPositionXController, mPositionYController, mRotationController;
 
   /**
    * Create new {@link Drive}
    *
-   * @param robotState {@link Odometry} Robot Tracker to send odometry measurements to
    * @param gyro {@link GyroIO} Gyro for odometry
    * @param frontRightModule {@link SwerveModuleIO} Front Right Swerve Module
    * @param frontLeftModule {@link SwerveModuleIO} Front Left Swerve Module
@@ -124,13 +115,11 @@ public class Drive extends SubsystemBase {
    * @param backRightModule {@link SwerveModuleIO} Back Right Swerve Module
    */
   public Drive(
-      Odometry robotState,
       GyroIO gyro,
       SwerveModuleIO frontRightModule,
       SwerveModuleIO frontLeftModule,
       SwerveModuleIO backLeftModule,
       SwerveModuleIO backRightModule) {
-    mRobotState = robotState;
 
     // Init hardware
     mFrModule = frontRightModule;
@@ -145,6 +134,13 @@ public class Drive extends SubsystemBase {
     mGyro = gyro;
 
     // Init controls
+    mPoseEstimator =
+        new SwerveDrivePoseEstimator(
+            mConstants.getKinematics(),
+            mGyro.getRotation2d(),
+            getSwerveModulePositions(),
+            new Pose2d());
+
     mPositionXController = new PIDController(0.0, 0.0, 0.0);
     mPositionYController = new PIDController(0.0, 0.0, 0.0);
     mRotationController = new PIDController(0.0, 0.0, 0.0);
@@ -152,26 +148,28 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
+    updateHardware();
+    updateOdometry();
+  }
+
+  /** Update all swerve hardware */
+  private void updateHardware() {
     Tracer.traceFunc(
-        "Swerve Full Periodic",
+        "UpdateSwerveHardware",
         () -> {
-          // Update Hardware
           for (var module : mModules) {
-            Tracer.traceFunc("Swerve Update Module " + module.mName, module::periodic);
+            module.periodic();
           }
 
-          // Send odometry measurements to robot state
-          Tracer.traceFunc(
-              "Swerve Update Odometry",
-              () -> {
-                mRobotState.addEncoderMeasurement(
-                    new EncoderMeasurement(
-                        Timer.getFPGATimestamp(),
-                        getSwerveModulePositions(),
-                        Optional.of(mGyro.getRotation3d())));
-              });
+          mGyro.periodic();
+        });
+  }
 
-          mRobotState.update();
+  private void updateOdometry() {
+    Tracer.traceFunc(
+        "UpdateOdometry",
+        () -> {
+          mPoseEstimator.update(mGyro.getRotation2d(), getSwerveModulePositions());
         });
   }
 
@@ -208,23 +206,23 @@ public class Drive extends SubsystemBase {
   }
 
   /**
-   * Get Rotation in 3-Dimensional Space
+   * Get the estimated yaw rotation of robot
    *
-   * @return {@link Rotation3d}
+   * @return {@link Rotation2d}
    */
-  @Logged(name = "Rotation3d", importance = Importance.INFO)
-  public Rotation3d getRotation3d() {
-    return mRobotState.getRotation3d();
+  @Logged(name = "Rotation2d", importance = Importance.INFO)
+  public Rotation2d getRotation2d() {
+    return getPose2d().getRotation();
   }
 
   /**
-   * Get Field Position in 3-Dimensional Space
+   * Get the estimated position of robot in 2-Dimensional Space (x, y)
    *
-   * @return {@link Pose3d}
+   * @return {@link Pose2d}
    */
-  @Logged(name = "Pose3d", importance = Importance.INFO)
-  public Pose3d getPose3d() {
-    return mRobotState.getPose3d();
+  @Logged(name = "Pose2d", importance = Importance.INFO)
+  public Pose2d getPose2d() {
+    return mPoseEstimator.getEstimatedPosition();
   }
 
   /**
@@ -280,8 +278,7 @@ public class Drive extends SubsystemBase {
    */
   @Logged(name = "Chassis Speeds (wrt field)", importance = Importance.INFO)
   public ChassisSpeeds getChassisSpeedsWrtField() {
-    return ChassisSpeeds.fromRobotRelativeSpeeds(
-        getChassisSpeeds(), getRotation3d().toRotation2d());
+    return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation2d());
   }
 
   /**
@@ -355,10 +352,9 @@ public class Drive extends SubsystemBase {
       var speeds = sample.getChassisSpeeds();
       var feedbackSpeeds =
           new ChassisSpeeds(
-              mPositionXController.calculate(getPose3d().getX(), sample.x),
-              mPositionYController.calculate(getPose3d().getY(), sample.y),
-              mRotationController.calculate(
-                  getRotation3d().toRotation2d().getRadians(), sample.heading));
+              mPositionXController.calculate(getPose2d().getX(), sample.x),
+              mPositionYController.calculate(getPose2d().getY(), sample.y),
+              mRotationController.calculate(getRotation2d().getRadians(), sample.heading));
 
       // Create full velocities & convert to states
       speeds = speeds.plus(feedbackSpeeds);
@@ -432,7 +428,7 @@ public class Drive extends SubsystemBase {
                     mConstants.getMaxLinearVelocity().times(xVelocitySupplier.getAsDouble()),
                     mConstants.getMaxLinearVelocity().times(yVelocitySupplier.getAsDouble()),
                     mConstants.getMaxAngularVelocity().times(omegaSupplier.getAsDouble()),
-                    getRotation3d().toRotation2d())));
+                    getRotation2d())));
   }
 
   public Command driveWhileFacing(

@@ -6,6 +6,8 @@
 
 package org.frc6423.robot.subsystem.drive;
 
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
@@ -25,6 +27,7 @@ import edu.wpi.first.math.numbers.N4;
 import edu.wpi.first.math.numbers.N6;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.networktables.StructSubscriber;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -38,12 +41,13 @@ import org.frc6423.lib.util.Tracer;
  * vision localization systems, etc)
  *
  * <p>To feed drive encoder measurements for calculations, use {@link
- * #addEncoderMeasurement(EncoderMeasurement)}
+ * #addOdometryMeasurement(EncoderMeasurement)}
  *
  * <p>To feed vision position estimates for calculations, use {@link
  * #addVisionMeasurement(VisionMeasurement...)}
  */
-public class Odometry {
+@Deprecated
+public class PositionEstimator {
   // * GEOMETRY MEMBERS
   private Pose3d mPreviousOdoPose = new Pose3d();
   private Pose3d mOdoPose = new Pose3d();
@@ -64,15 +68,16 @@ public class Odometry {
 
   private final StructSubscriber<Pose3d> mPoseSubscriber =
       NetworkTableInstance.getDefault()
-          .getStructTopic("iron-sight/estimates/bessie/Pose3d", Pose3d.struct)
-          .subscribe(new Pose3d());
+          .getTable("iron-sight/estimates/bessie")
+          .getStructTopic("Pose3d", Pose3d.struct)
+          .subscribe(new Pose3d(), PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
   private final DoubleSubscriber mTimestamp =
       NetworkTableInstance.getDefault()
           .getDoubleTopic("iron-sight/estimates/bessie/TimestampSeconds")
-          .subscribe(0.0);
+          .subscribe(0.0, PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
 
   /**
-   * Create new {@link Odometry}
+   * Create new {@link PositionEstimator}
    *
    * @param kinematics {@link SwerveDriveKinematics} Kinematics model to use for calculations
    * @param positionEstimateStdevs {@link Matrix} of length {@link N4} Standard deviations of the
@@ -81,7 +86,7 @@ public class Odometry {
    * @param odometryBufferSizeSeconds {@link Double} How long odometry estimations should last in
    *     the buffer
    */
-  public Odometry(
+  public PositionEstimator(
       SwerveDriveKinematics kinematics,
       Matrix<N4, N1> positionEstimateStdevs,
       double odometryBufferSizeSeconds) {
@@ -113,6 +118,7 @@ public class Odometry {
    *
    * @return {@link Rotation2d}
    */
+  @Logged(name = "Rotation2d", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
     return getPose2d().getRotation();
   }
@@ -122,6 +128,7 @@ public class Odometry {
    *
    * @return {@link Translation2d}
    */
+  @Logged(name = "Translation2d", importance = Importance.INFO)
   public Translation2d getTranslation2d() {
     return getPose2d().getTranslation();
   }
@@ -131,6 +138,7 @@ public class Odometry {
    *
    * @return {@link Pose2d}
    */
+  @Logged(name = "Pose2d", importance = Importance.INFO)
   public Pose2d getPose2d() {
     return getPose3d().toPose2d();
   }
@@ -140,6 +148,7 @@ public class Odometry {
    *
    * @return {@link Rotation3d}
    */
+  @Logged(name = "Rotation3d", importance = Importance.INFO)
   public Rotation3d getRotation3d() {
     return getPose3d().getRotation();
   }
@@ -149,6 +158,7 @@ public class Odometry {
    *
    * @return {@link Pose3d}
    */
+  @Logged(name = "Pose3d", importance = Importance.INFO)
   public Pose3d getPose3d() {
     return mEstPose;
   }
@@ -166,7 +176,7 @@ public class Odometry {
     mOdoPoseBuffer.clear();
   }
 
-  public void addEncoderMeasurement(EncoderMeasurement sample) {
+  public void addOdometryMeasurement(EncoderMeasurement sample) {
     Tracer.traceFunc(
         "RecordOdometryMeasurement",
         () -> {
@@ -174,7 +184,7 @@ public class Odometry {
           Twist3d odoPoseTwist =
               GeometryUtil.toTwist3d(
                   mKinematics.toTwist2d(mPreviousSwerveModulePoses, sample.swerveModulePoses()));
-          mPreviousSwerveModulePoses = sample.swerveModulePoses;
+          mPreviousSwerveModulePoses = sample.swerveModulePoses();
           Pose3d lastOdometryPose = mOdoPose;
           mOdoPose = mOdoPose.exp(odoPoseTwist);
 
@@ -185,7 +195,7 @@ public class Odometry {
                       new Pose3d(mOdoPose.getTranslation(), r.plus(new Rotation3d(mGyroOffset))));
 
           // Add odometry sample of specified timestamp to odo buffer
-          mOdoPoseBuffer.addSample(sample.timestampSeconds, mOdoPose);
+          mOdoPoseBuffer.addSample(sample.timestampSeconds(), mOdoPose);
 
           // Calculate change in distance between odometry positions and apply to estimated pose
           Twist3d estPoseTwist = lastOdometryPose.log(mOdoPose);
@@ -201,12 +211,12 @@ public class Odometry {
             // exit if sample is too old or there are no recent odometry samples
             if (mOdoPoseBuffer.getInternalBuffer().isEmpty()
                 || mOdoPoseBuffer.getInternalBuffer().lastKey() - mEstimateBufferSize
-                    > measurement.timestampSeconds) {
+                    > measurement.timestampSeconds()) {
               return;
             }
 
             // Get odo sample at timestamp; exit if nonexistent
-            var odoSample = mOdoPoseBuffer.getSample(measurement.timestampSeconds);
+            var odoSample = mOdoPoseBuffer.getSample(measurement.timestampSeconds());
             if (odoSample.isEmpty()) {
               return;
             }
@@ -221,7 +231,7 @@ public class Odometry {
 
             // Solve for closed form Kalman gain for continuous Kalman filter with A = 0
             // and C = I. See WPIMath/algorithms.md.
-            for (int row = 0; row < 4; ++row) {
+            for (int row = 0; row < 4; row++) {
               if (mEstimateStdevs.get(row, 0) == 0.0) {
                 visionK.set(row, row, 0.0);
               } else {
@@ -266,7 +276,7 @@ public class Odometry {
                         transformTimesK.get(4, 0),
                         transformTimesK.get(5, 0)));
 
-            mEstPose = estPoseAtTimestamp.plus(scaledTransform).plus(transform);
+            mEstPose = estPoseAtTimestamp.plus(scaledTransform).plus(transform.inverse());
             mF2d.setRobotPose(mEstPose.toPose2d());
           });
     }

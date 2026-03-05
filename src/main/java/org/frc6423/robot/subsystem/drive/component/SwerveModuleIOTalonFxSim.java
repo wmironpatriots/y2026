@@ -13,7 +13,6 @@ import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.measure.Angle;
@@ -25,9 +24,6 @@ import org.frc6423.robot.subsystem.drive.constants.DriveConstants.ModuleConfig;
 
 public class SwerveModuleIOTalonFxSim extends SwerveModuleIOTalonFx {
   private final DCMotorSim mPivotModel, mDriveModel;
-
-  private final Rotation2d mPivotInitRotation = new Rotation2d(Math.random() * 2.0 * Math.PI);
-  private double mPivotAppliedVolts;
 
   private final PIDController mPivotFeedback = new PIDController(100.0, 0.0, 0.0);
 
@@ -63,7 +59,7 @@ public class SwerveModuleIOTalonFxSim extends SwerveModuleIOTalonFx {
     mPivot.getSimState().setSupplyVoltage(RobotController.getBatteryVoltage());
     mDrive.getSimState().setSupplyVoltage(RobotController.getBatteryVoltage());
 
-    mDriveModel.setInput(mDrive.getSimState().getMotorVoltage());
+    mDriveModel.setInputVoltage(mDrive.getSimState().getMotorVoltage());
 
     mPivotModel.update(0.02);
     mDriveModel.update(0.02);
