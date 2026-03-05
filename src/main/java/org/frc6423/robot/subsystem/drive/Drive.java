@@ -54,7 +54,7 @@ public class Drive extends SubsystemBase {
    *
    * @return {@link Drive}
    */
-  public static Drive createDriveSubsystem() {
+  public static Drive create() {
     return (Robot.isReal())
         ? new Drive(
             new GyroIOPigeon2(
@@ -161,7 +161,7 @@ public class Drive extends SubsystemBase {
 
     mPositionXController = new PIDController(5.0, 0.0, 0.0);
     mPositionYController = new PIDController(5.0, 0.0, 0.0);
-    mRotationController = new PIDController(8.0, 0.0, 0.0);
+    mRotationController = new PIDController(10.0, 0.0, 0.0);
     mRotationController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
@@ -188,6 +188,8 @@ public class Drive extends SubsystemBase {
             mPoseEstimator.addOdometryMeasurement(
                 new EncoderMeasurement(
                     Timer.getFPGATimestamp(), getSwerveModulePositions(), Optional.empty()));
+
+          mPoseEstimator.addVisionMeasurement(mVision.getUnreadMeasurements());
 
           mPoseEstimator.update();
         });

@@ -21,14 +21,13 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.subsystem.SubsystemFactory;
 import org.frc6423.robot.subsystem.drive.Drive;
 
 @Logged
 public class Robot extends CommandRobot {
   private final CommandXboxController mController;
 
-  private final Drive mDrive = SubsystemFactory.createDriveSubsystem();
+  private final Drive mDrive = Drive.create();
 
   public Robot() {
     // Initialize Devices
@@ -85,7 +84,7 @@ public class Robot extends CommandRobot {
   }
 
   public double modifyJoystick(double value) {
-    return MathUtil.applyDeadband(Math.abs(Math.pow(value, 2)) * Math.signum(value), 0.02);
+    return MathUtil.applyDeadband(Math.abs(Math.pow(value, 3)) * Math.signum(value), 0.02);
   }
 
   /** Define Driver & Operator controller bindings */

@@ -6,11 +6,12 @@
 
 package org.frc6423.robot.subsystem.drive.localization;
 
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.ArrayList;
 import org.frc6423.robot.Robot;
+import org.frc6423.robot.subsystem.drive.localization.CameraIO.VisionMeasurement;
 import org.frc6423.robot.subsystem.drive.localization.VisionConstants.CameraConfig;
 
-public class Vision extends SubsystemBase {
+public class Vision {
   public static Vision create() {
     CameraConfig[] configs = VisionConstants.kCameraConfigs;
     CameraIO[] ios = new CameraIO[configs.length];
@@ -31,5 +32,24 @@ public class Vision extends SubsystemBase {
    */
   public Vision(CameraIO... cameras) {
     mCameras = cameras;
+  }
+
+  // TODO some filtering
+  /**
+   * Get all valid unread vision measurements from cameras
+   *
+   * @return {@link Array} of {@link VisionMeasurements}
+   */
+  public VisionMeasurement[] getUnreadMeasurements() {
+    ArrayList<VisionMeasurement> allMeasurements = new ArrayList<>();
+    for (var camera : mCameras) {
+      var measurements = camera.getUnreadMeasurements();
+
+      for (var measurement : measurements) {
+        allMeasurements.add(measurement);
+      }
+    }
+
+    return allMeasurements.toArray(new VisionMeasurement[0]);
   }
 }
