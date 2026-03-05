@@ -269,6 +269,11 @@ public class Drive extends SubsystemBase {
     return MetersPerSecond.of(getVelocityMetersPerSecond().norm());
   }
 
+  /**
+   * Get estimated field-relative velocity of drivetrain as a vector (vx, vy, omega)
+   *
+   * @return {@link Vector} of Length {@link N3}
+   */
   public Vector<N3> getVelocityWrtFieldMetersPerSecond() {
     return VecBuilder.fill(
         getChassisSpeedsWrtField().vxMetersPerSecond,
@@ -276,6 +281,11 @@ public class Drive extends SubsystemBase {
         getChassisSpeedsWrtField().omegaRadiansPerSecond);
   }
 
+  /**
+   * Get setpoint velocity of drivetrain as a vector (vx, vy, omega)
+   *
+   * @return {@link Vector} of Length {@link N3}
+   */
   public Vector<N3> getSetpointVelocityMetersPerSecond() {
     return VecBuilder.fill(
         getSetpointChassisSpeeds().vxMetersPerSecond,
@@ -283,6 +293,11 @@ public class Drive extends SubsystemBase {
         getSetpointChassisSpeeds().omegaRadiansPerSecond);
   }
 
+  /**
+   * Get estimated velocity of drivetrain as a vector (vx, vy, omega)
+   *
+   * @return {@link Vector} of Length {@link N3}
+   */
   public Vector<N3> getVelocityMetersPerSecond() {
     return VecBuilder.fill(
         getChassisSpeeds().vxMetersPerSecond,
@@ -290,21 +305,41 @@ public class Drive extends SubsystemBase {
         getChassisSpeeds().omegaRadiansPerSecond);
   }
 
+  /**
+   * Get estimated field-relative speeds of drivetrain
+   *
+   * @return {@link ChassisSpeeds}
+   */
   @Logged(name = "Chassis Speeds (wrt field)", importance = Importance.INFO)
   public ChassisSpeeds getChassisSpeedsWrtField() {
     return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation2d());
   }
 
+  /**
+   * Get setpoint speeds of drivetrain
+   *
+   * @return {@link ChassisSpeeds}
+   */
   @Logged(name = "Setpoint Chassis Speeds", importance = Importance.INFO)
   public ChassisSpeeds getSetpointChassisSpeeds() {
     return mConstants.getKinematics().toChassisSpeeds(getSetpointSwerveModuleState());
   }
 
+  /**
+   * Get estimated speeds of drivetrain
+   *
+   * @return {@link ChassisSpeeds}
+   */
   @Logged(name = "Chassis Speeds", importance = Importance.INFO)
   public ChassisSpeeds getChassisSpeeds() {
     return mConstants.getKinematics().toChassisSpeeds(getSwerveModuleStates());
   }
 
+  /**
+   * Get estimated positions of swerve modules
+   *
+   * @return {@link Array} of {@link SwerveModulePosition}
+   */
   @Logged(name = "Swerve Module Positions", importance = Importance.INFO)
   public SwerveModulePosition[] getSwerveModulePositions() {
     SwerveModulePosition[] poses = new SwerveModulePosition[mModules.length];
@@ -315,11 +350,21 @@ public class Drive extends SubsystemBase {
     return poses;
   }
 
+  /**
+   * Get setpoint velocity states of swerve modules
+   *
+   * @return {@link Array} of {@link SwerveModuleState}
+   */
   @Logged(name = "Setpoint Swerve Module State", importance = Importance.INFO)
   public SwerveModuleState[] getSetpointSwerveModuleState() {
     return mSetpointStates;
   }
 
+  /**
+   * Get estimated vlocity states of swerve modules
+   *
+   * @return {@link Array} of {@link SwerveModuleState}
+   */
   @Logged(name = "Swerve Module States", importance = Importance.INFO)
   public SwerveModuleState[] getSwerveModuleStates() {
     SwerveModuleState[] states = new SwerveModuleState[mModules.length];
@@ -330,6 +375,11 @@ public class Drive extends SubsystemBase {
     return states;
   }
 
+  /**
+   * Get {@link SwerveSample} consumer (for Choreo)
+   *
+   * @return {@link Consumer} of {@link SwerveSample}
+   */
   public Consumer<SwerveSample> getSwerveSampleConsumer() {
     return (sample) -> {
       // Get sample velocities & feedback velocities
