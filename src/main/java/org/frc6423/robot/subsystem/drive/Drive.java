@@ -39,47 +39,15 @@ import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
 import org.frc6423.robot.subsystem.drive.PositionEstimator.EncoderMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
-import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
-import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFx;
-import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFxSim;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.localization.Vision;
 
-// TODO cleanup
+/** {@link SubsystemBase} The class controlling the swerve drivetrain subsystem */
 public class Drive extends SubsystemBase {
   private static final DriveConstants mConstants = Flags.kRobotType.mDriveConstants;
 
-  public static Drive create() {
-    return (Robot.isReal())
-        ? new Drive(
-            new GyroIOPigeon2(
-                mConstants.getGyroConfig().deviceId(),
-                mConstants.getGyroConfig().canBus(),
-                mConstants.getGyroConfig().config()),
-            new SwerveModuleIOTalonFx(
-                "Front Right", mConstants.getFrontRightModuleConfig(), mConstants),
-            new SwerveModuleIOTalonFx(
-                "Front Left", mConstants.getFrontLeftModuleConfig(), mConstants),
-            new SwerveModuleIOTalonFx(
-                "Back Left", mConstants.getBackLeftModuleConfig(), mConstants),
-            new SwerveModuleIOTalonFx(
-                "Back Right", mConstants.getBackRightModuleConfig(), mConstants))
-        : new Drive(
-            new GyroIOPigeon2(
-                mConstants.getGyroConfig().deviceId(),
-                mConstants.getGyroConfig().canBus(),
-                mConstants.getGyroConfig().config()),
-            new SwerveModuleIOTalonFxSim(
-                "Front Right", mConstants.getFrontRightModuleConfig(), mConstants),
-            new SwerveModuleIOTalonFxSim(
-                "Front Left", mConstants.getFrontLeftModuleConfig(), mConstants),
-            new SwerveModuleIOTalonFxSim(
-                "Back Left", mConstants.getBackLeftModuleConfig(), mConstants),
-            new SwerveModuleIOTalonFxSim(
-                "Back Right", mConstants.getBackRightModuleConfig(), mConstants));
-  }
-
+  // * HARDWARE MEMBERS
   @Logged private final SwerveModuleIO mFrModule;
   @Logged private final SwerveModuleIO mFlModule;
   @Logged private final SwerveModuleIO mBlModule;
@@ -90,6 +58,9 @@ public class Drive extends SubsystemBase {
 
   private final Vision mVision = Vision.create();
 
+  // * CONTROL MEMBERS
+  private final PositionEstimator mPoseEstimator;
+
   private SwerveModuleState[] mSetpointStates =
       new SwerveModuleState[] {
         new SwerveModuleState(),
@@ -98,10 +69,17 @@ public class Drive extends SubsystemBase {
         new SwerveModuleState()
       };
 
-  private final PositionEstimator mPoseEstimator;
-
   private final PIDController mPositionXController, mPositionYController, mRotationController;
 
+  /**
+   * Create new {@link Drive}
+   *
+   * @param gyro {@link GyroIO} Gyro subsystem should use
+   * @param frontRightModule {@link SwerveModuleIO} Front Right Swerve Module Hardware
+   * @param frontLeftModule {@link SwerveModuleIO} Front Left Swerve Module Hardware
+   * @param backLeftModule {@link SwerveModuleIO} Back Left Swerve Module Hardware
+   * @param backRightModule {@link SwerveModuleIO} Back Right Swerve Module Hardwaree
+   */
   public Drive(
       GyroIO gyro,
       SwerveModuleIO frontRightModule,

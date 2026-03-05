@@ -21,13 +21,14 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
+import org.frc6423.robot.subsystem.SubsystemFactory;
 import org.frc6423.robot.subsystem.drive.Drive;
 
 @Logged
 public class Robot extends CommandRobot {
   private final CommandXboxController mController;
 
-  private final Drive mDrive = Drive.create();
+  private final Drive mDrive = SubsystemFactory.createDriveSubsystem();
 
   public Robot() {
     // Initialize Devices
