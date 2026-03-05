@@ -12,29 +12,30 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.networktables.StructSubscriber;
+import org.frc6423.robot.subsystem.drive.localization.VisionConstants.CameraConfig;
 
 public class CameraIOIronSight extends CameraIO {
   private final StructSubscriber<Pose2d> mEstimateSubscriber;
   private final DoubleSubscriber mTimestampSubscriber;
 
   /**
-   * Create new {@link CameraIOIronSight}
+   * Create new {@link CameraIO}
    *
-   * @param name {@link String} An identifier for camera
+   * @param config {@link CameraConfig} Configuration for camera
    */
-  public CameraIOIronSight(String name) {
-    super(name);
+  public CameraIOIronSight(CameraConfig config) {
+    super(config);
 
     mEstimateSubscriber =
         NetworkTableInstance.getDefault()
-            .getTable("iron-sight/estimates/" + name)
+            .getTable("iron-sight/estimates/" + mConfig.name())
             .getStructTopic("Pose2d", Pose2d.struct)
             .subscribe(
                 new Pose2d(), PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
 
     mTimestampSubscriber =
         NetworkTableInstance.getDefault()
-            .getTable("iron-sight/estimates/" + name)
+            .getTable("iron-sight/estimates/" + mConfig.name())
             .getDoubleTopic("TimestampSeconds")
             .subscribe(0.0, PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
   }

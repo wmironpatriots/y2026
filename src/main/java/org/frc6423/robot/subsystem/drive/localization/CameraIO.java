@@ -10,18 +10,19 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import org.frc6423.robot.subsystem.drive.localization.VisionConstants.CameraConfig;
 
 /** Interface for interacting with a localization camera */
 public abstract class CameraIO {
-  public final String mName;
+  public final CameraConfig mConfig;
 
   /**
    * Create new {@link CameraIO}
    *
-   * @param name {@link String} An identifier for camera
+   * @param config {@link CameraConfig} Configuration for camera
    */
-  public CameraIO(String name) {
-    mName = name;
+  public CameraIO(CameraConfig config) {
+    mConfig = config;
   }
 
   /**
@@ -30,7 +31,7 @@ public abstract class CameraIO {
    * @return {@link String}
    */
   public String getName() {
-    return mName;
+    return mConfig.name();
   }
 
   /**

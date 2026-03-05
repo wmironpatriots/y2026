@@ -6,9 +6,11 @@
 
 package org.frc6423.robot.subsystem.drive.localization;
 
+import org.frc6423.robot.subsystem.drive.localization.VisionConstants.CameraConfig;
+
 public class CameraIONone extends CameraIO {
-  public CameraIONone(String name) {
-    super(name);
+  public CameraIONone(CameraConfig config) {
+    super(config);
   }
 
   @Override
