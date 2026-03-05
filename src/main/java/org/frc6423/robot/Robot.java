@@ -41,8 +41,7 @@ public class Robot extends CommandRobot {
   private final Hood mHood = Hood.create();
   private final Flywheel mFlywheel = Flywheel.create();
 
-  private final FireControlSystem mFcs =
-      new FireControlSystem(mDrive::getPose2d, mDrive::getChassisSpeeds);
+  private final FireControlSystem mFcs = new FireControlSystem();
 
   public Robot() {
     // Initialize Devices
@@ -97,7 +96,11 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
 
-    addPeriodic(() -> mFcs.getProjectileParameters(), 0.02);
+    addPeriodic(
+        () ->
+            FireControlSystem.getProjectileParameters(
+                mDrive.getPose2d(), mDrive.getChassisSpeedsWrtField()),
+        0.02);
 
     configureBindings();
     configureGameBehavior();

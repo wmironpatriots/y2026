@@ -6,9 +6,7 @@
 
 package org.frc6423.robot.subsystem.fcs;
 
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Radians;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
@@ -18,84 +16,76 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import java.util.function.Supplier;
+import edu.wpi.first.math.util.Units;
 import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.robot.Rebuilt;
 import org.frc6423.robot.subsystem.hood.Hood;
 
-/** System to calculating {@link ProjectileParameters} */
+/**
+ * Static system for calculating optimal {@link ProjectileParameters}
+ *
+ * <p>To calculate a shot, utilize {@link #getProjectileParameters(Pose2d, ChassisSpeeds)}
+ *
+ * <p>To log calculations, you must create an instance of this class
+ */
 public class FireControlSystem {
-  // * CONSTANTS
-  /** {@link Double} The estimated average latency to compensate for */
-  public static final double kLatencySeconds = 0.03; // TODO tune
+  /** Constants for the {@link FireControlSystem} */
+  public class Constants {
+    /** {@link Double} The estimated average latency to compensate for */
+    public static final double kLatencySeconds = 0.03; // TODO tune
 
-  /** {@link Transform3d} Displacement from center of chassis to projectile exit point */
-  public static final Transform3d kRobotToShooter = new Transform3d();
+    /** {@link Transform3d} Displacement from center of chassis to projectile exit point */
+    public static final Transform3d kRobotToShooter = new Transform3d();
 
-  /**
-   * {@link InterpolatingProjectileParametersTree} Interpolating Tree for calculating projectile
-   * parameters
-   */
-  public static final InterpolatingProjectileParametersTree kShotTree =
-      new InterpolatingProjectileParametersTree();
+    /**
+     * {@link InterpolatingProjectileParametersTree} Interpolating Tree for calculating projectile
+     * parameters
+     */
+    public static final InterpolatingProjectileParametersTree kShotTree =
+        new InterpolatingProjectileParametersTree();
 
-  static {
-    kShotTree.addSample(
-        Inches.of(24 + 17),
-        new ProjectileParameters(
-            new Rotation2d(Hood.Constants.kMinAngle), MetersPerSecond.of(40), 1.04));
+    static {
+      kShotTree.addSample(
+          Units.inchesToMeters(24 + 17),
+          new ProjectileParameters(Hood.Constants.kMinAngle.in(Radians), 9.43194079202, 1.04));
 
-    kShotTree.addSample(
-        Inches.of(24 * Math.sqrt(2) + 6 + 12),
-        new ProjectileParameters(Rotation2d.fromDegrees(25), MetersPerSecond.of(35), 1.14));
+      kShotTree.addSample(
+          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 12),
+          new ProjectileParameters(Units.degreesToRadians(25), 8.25294819302, 1.14));
 
-    kShotTree.addSample(
-        Inches.of(24 * Math.sqrt(2) + 6 + 3 * 12),
-        new ProjectileParameters(Rotation2d.fromDegrees(26), MetersPerSecond.of(37), 1.10));
+      kShotTree.addSample(
+          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 3 * 12),
+          new ProjectileParameters(Units.degreesToRadians(26), 8.72454523262, 1.10));
 
-    kShotTree.addSample(
-        Inches.of(24 * Math.sqrt(2) + 6 + 5 * 12),
-        new ProjectileParameters(Rotation2d.fromDegrees(30), MetersPerSecond.of(37), 1.09));
+      kShotTree.addSample(
+          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 5 * 12),
+          new ProjectileParameters(Units.degreesToRadians(30), 8.72454523262, 1.09));
 
-    kShotTree.addSample(
-        Inches.of(24 * Math.sqrt(2) + 6 + 7 * 12),
-        new ProjectileParameters(Rotation2d.fromDegrees(33), MetersPerSecond.of(37), 1.15));
+      kShotTree.addSample(
+          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 7 * 12),
+          new ProjectileParameters(Units.degreesToRadians(33), 8.72454523262, 1.15));
 
-    kShotTree.addSample(
-        Inches.of(24 * Math.sqrt(2) + 6 + 9 * 12),
-        new ProjectileParameters(Rotation2d.fromDegrees(36), MetersPerSecond.of(38), 1.23));
+      kShotTree.addSample(
+          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 9 * 12),
+          new ProjectileParameters(Units.degreesToRadians(36), 8.96034375242, 1.23));
 
-    kShotTree.addSample(
-        Inches.of(24 * Math.sqrt(2) + 6 + 11 * 12),
-        new ProjectileParameters(Rotation2d.fromDegrees(38), MetersPerSecond.of(38), 1.33));
-    kShotTree.addSample(
-        Inches.of(24 * Math.sqrt(2) + 6 + 13 * 12),
-        new ProjectileParameters(Rotation2d.fromDegrees(39), MetersPerSecond.of(38), 1.35));
-  } // TODO calculate & add shots
-
-  // * SUPPLIERS
-  private final Supplier<Pose2d> mEstimatedPositionSupplier;
-  private final Supplier<ChassisSpeeds> mFieldRelativeSpeedsSupplier;
-
-  private Pose2d mCurrentTarget = Rebuilt.kMidPose;
-
-  /**
-   * Create new {@link FireControlSystem}
-   *
-   * @param estimatedPositionSupplier {@link Supplier} of {@link Pose2d} Stream of estiamted field
-   *     positions in 2-Dimensional Space (x, y)
-   * @param fieldRelativeSpeedsSupplier {@link Supplier} of {@link ChassisSpeeds} Stream of measured
-   *     field relative velocities
-   */
-  public FireControlSystem(
-      Supplier<Pose2d> estimatedPositionSupplier,
-      Supplier<ChassisSpeeds> fieldRelativeSpeedsSupplier) {
-    mEstimatedPositionSupplier = estimatedPositionSupplier;
-    mFieldRelativeSpeedsSupplier = fieldRelativeSpeedsSupplier;
+      kShotTree.addSample(
+          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 11 * 12),
+          new ProjectileParameters(Units.degreesToRadians(38), 8.96034375242, 1.33));
+      kShotTree.addSample(
+          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 13 * 12),
+          new ProjectileParameters(Units.degreesToRadians(39), 8.96034375242, 1.35));
+    } // TODO calculate & add shots
   }
 
+  // * SUPPLIERS
+  private static Pose2d mCurrentTarget = Rebuilt.kMidPose;
+
+  /** Initialize logging */
+  public FireControlSystem() {}
+
   /**
-   * Get the current target system is locked onto
+   * Get the target position system is currently locked onto
    *
    * @return {@link Pose2d}
    */
@@ -104,62 +94,63 @@ public class FireControlSystem {
     return mCurrentTarget;
   }
 
-  // TODO
-  public void getChassisYaw() {
-    // // Get current position/velocity
-    // var estimatedPosition = mEstimatedPositionSupplier.get();
-    // var fieldRelativeSpeeds = mFieldRelativeSpeedsSupplier.get();
-
-    // var setpointYaw =
-  }
-
-  public ProjectileParameters getProjectileParameters() {
-    // Get current position/velocity
-    var estimatedPosition = mEstimatedPositionSupplier.get();
-    var fieldRelativeSpeeds = mFieldRelativeSpeedsSupplier.get();
-
+  /**
+   * Get the optimal {@ProjectileParameters} for the current target of the {@link FireControlSystem}
+   *
+   * @param estimatedPosition {@link Pose2d} Estimated position of robot
+   * @param fieldRelativeSpeeds {@link ChassisSpeeds} Estimated velocity of robot
+   * @return {@link ProjectileParameters}
+   */
+  public static ProjectileParameters getProjectileParameters(
+      Pose2d estimatedPosition, ChassisSpeeds fieldRelativeSpeeds) {
+    // Calculate predicted position using approximated latency
     var robotRelativeSpeeds =
         ChassisSpeeds.fromFieldRelativeSpeeds(fieldRelativeSpeeds, estimatedPosition.getRotation());
 
-    // Calculate predicted position using approximated latency
     var predictedPosition =
         estimatedPosition.exp(
             new Twist2d(
-                robotRelativeSpeeds.vxMetersPerSecond * kLatencySeconds,
-                robotRelativeSpeeds.vyMetersPerSecond * kLatencySeconds,
-                robotRelativeSpeeds.omegaRadiansPerSecond * kLatencySeconds));
+                robotRelativeSpeeds.vxMetersPerSecond * Constants.kLatencySeconds,
+                robotRelativeSpeeds.vyMetersPerSecond * Constants.kLatencySeconds,
+                robotRelativeSpeeds.omegaRadiansPerSecond * Constants.kLatencySeconds));
 
     // Calculate the target position
-    var targetPose = // TODO account for ferrying
+    var targetPose = // TODO account for different targets
         GeometryUtil.applyForAlliance(Rebuilt.kMidPose, Rebuilt.kHubPose2d);
 
-    return getProjectileParameters(
-        predictedPosition, targetPose.getTranslation(), fieldRelativeSpeeds);
-  }
-
-  private ProjectileParameters getProjectileParameters(
-      Pose2d robotPosition, Translation2d targetTranslation, ChassisSpeeds fieldRelativeSpeeds) {
     // Calculate unadjusted shot
-    ProjectileParameters parameters = kShotTree.calculateShot(robotPosition, targetTranslation);
+    ProjectileParameters parameters =
+        Constants.kShotTree.calculateShot(predictedPosition, targetPose.getTranslation());
 
     // Caclulate virtual target from field relative speeds & tof
     Translation2d virtualTarget =
-        getVirtualTarget(targetTranslation, fieldRelativeSpeeds, parameters.timeOfFlight());
+        getVirtualTarget(
+            targetPose.getTranslation(), fieldRelativeSpeeds, parameters.timeOfFlightSec());
 
     // Set target publisher
     mCurrentTarget = new Pose2d(virtualTarget, Rotation2d.kZero);
 
-    return kShotTree.get(Meters.of(robotPosition.getTranslation().getDistance(virtualTarget)));
+    // Calculate adjust shot for sotm
+    return Constants.kShotTree.get(predictedPosition.getTranslation().getDistance(virtualTarget));
   }
 
-  private Translation2d getVirtualTarget(
-      Translation2d target, ChassisSpeeds fieldRelativeSpeeds, double timeOfFlight) {
+  /**
+   * Calculate a 'virtual target' (a target compensating for the projectile launchers velocity)
+   * based on robot position/velocity
+   *
+   * @param target {@link Translation2d} Target to aim at
+   * @param fieldRelativeSpeeds {@link ChassisSpeeds} Current velocity of robot
+   * @param timeOfFlightSec {@link Double} Projectile time of flight in seconds
+   * @return {@link Translation2d}
+   */
+  private static Translation2d getVirtualTarget(
+      Translation2d target, ChassisSpeeds fieldRelativeSpeeds, double timeOfFlightSec) {
     // Calculate where the robot will be
     Translation2d virtual =
         target.minus(
             new Translation2d(
-                fieldRelativeSpeeds.vxMetersPerSecond * timeOfFlight,
-                fieldRelativeSpeeds.vyMetersPerSecond * timeOfFlight));
+                fieldRelativeSpeeds.vxMetersPerSecond * timeOfFlightSec,
+                fieldRelativeSpeeds.vyMetersPerSecond * timeOfFlightSec));
 
     return virtual;
   }

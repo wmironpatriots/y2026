@@ -6,10 +6,7 @@
 
 package org.frc6423.robot.subsystem.fcs;
 
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.units.measure.LinearVelocity;
-
 public record ProjectileParameters(
-    Rotation2d initialProjectileAngle,
-    LinearVelocity initialProjectileVelocity,
-    double timeOfFlight) {}
+    double initialProjectilePitchRads,
+    double initialProjectileVelocityMps,
+    double timeOfFlightSec) {}

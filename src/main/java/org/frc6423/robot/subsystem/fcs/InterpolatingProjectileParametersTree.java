@@ -6,48 +6,43 @@
 
 package org.frc6423.robot.subsystem.fcs;
 
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.units.measure.Distance;
 import java.util.TreeMap;
 
 // TODO doc
 public class InterpolatingProjectileParametersTree {
-  private final TreeMap<Distance, ProjectileParameters> map = new TreeMap<>();
+  private final TreeMap<Double, ProjectileParameters> map = new TreeMap<>();
 
   public InterpolatingProjectileParametersTree() {}
 
-  public void addSample(Distance r, ProjectileParameters sample) {
-    map.put(r, sample);
+  public void addSample(double rMeters, ProjectileParameters sample) {
+    map.put(rMeters, sample);
   }
 
   public void clear() {
     map.clear();
   }
 
-  public void remove(Distance r) {
-    map.remove(r);
+  public void remove(double rMeters) {
+    map.remove(rMeters);
   }
 
-  public Distance getMaxKey() {
+  public double getMaxKeyMeters() {
     return map.lastKey();
   }
 
   public ProjectileParameters calculateShot(Pose2d robot, Translation2d target) {
-    return get(Meters.of(robot.getTranslation().getDistance(target)));
+    return get(robot.getTranslation().getDistance(target));
   }
 
-  public ProjectileParameters get(Distance r) {
-    ProjectileParameters parameters = map.get(r);
+  public ProjectileParameters get(double rMeters) {
+    ProjectileParameters parameters = map.get(rMeters);
 
     if (parameters == null) {
-      Distance ceilingKey = map.ceilingKey(r);
-      Distance floorKey = map.floorKey(r);
+      Double ceilingKey = map.ceilingKey(rMeters);
+      Double floorKey = map.floorKey(rMeters);
 
       if (ceilingKey == null && floorKey == null) {
         return null;
@@ -63,7 +58,7 @@ public class InterpolatingProjectileParametersTree {
       return interpolate(
           floor,
           ceiling,
-          inverseInterpolate(ceilingKey.in(Meters), r.in(Meters), floorKey.in(Meters)));
+          inverseInterpolate(ceilingKey.doubleValue(), rMeters, floorKey.doubleValue()));
     }
 
     return parameters;
@@ -72,17 +67,16 @@ public class InterpolatingProjectileParametersTree {
   private ProjectileParameters interpolate(
       ProjectileParameters lowerParameters, ProjectileParameters higherParameters, double t) {
     return new ProjectileParameters(
-        Rotation2d.fromRadians(
-            MathUtil.interpolate(
-                lowerParameters.initialProjectileAngle().getRadians(),
-                higherParameters.initialProjectileAngle().getRadians(),
-                t)),
-        MetersPerSecond.of(
-            MathUtil.interpolate(
-                lowerParameters.initialProjectileVelocity().in(MetersPerSecond),
-                higherParameters.initialProjectileVelocity().in(MetersPerSecond),
-                t)),
-        MathUtil.interpolate(lowerParameters.timeOfFlight(), higherParameters.timeOfFlight(), t));
+        MathUtil.interpolate(
+            lowerParameters.initialProjectilePitchRads(),
+            higherParameters.initialProjectilePitchRads(),
+            t),
+        MathUtil.interpolate(
+            lowerParameters.initialProjectileVelocityMps(),
+            higherParameters.initialProjectileVelocityMps(),
+            t),
+        MathUtil.interpolate(
+            lowerParameters.timeOfFlightSec(), higherParameters.timeOfFlightSec(), t));
   }
 
   private double inverseInterpolate(double upper, double query, double lower) {
