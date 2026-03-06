@@ -40,6 +40,7 @@ import edu.wpi.first.units.measure.Velocity;
 import org.frc6423.robot.Constants.Matrix;
 
 /** Constant static members for the {@link Hood} Subsystem */
+@Deprecated
 public class HoodConstants {
   // * PHYSICAL CONSTANTS
   /** {@link Distance} 'Length' of Pivot System */

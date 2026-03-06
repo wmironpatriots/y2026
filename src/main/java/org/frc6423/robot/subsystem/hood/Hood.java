@@ -47,6 +47,7 @@ import org.frc6423.robot.Robot;
  *
  * <p>Subsystem is measured by one Throughbore CANcoder
  */
+@Deprecated
 public class Hood extends SubsystemBase {
 
   /**

@@ -45,6 +45,7 @@ import org.frc6423.robot.Robot;
  * <p>To accelerate flywheel to a velocity for ejecting projectiles at a desired linear velocity,
  * use the {@link #accelerateToMuzzleVelocity(LinearVelocity)} method
  */
+@Deprecated
 public class Flywheel extends SubsystemBase {
   /**
    * Create new {@link Flywheel}

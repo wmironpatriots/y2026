@@ -32,6 +32,7 @@ import edu.wpi.first.units.measure.Velocity;
 import org.frc6423.robot.Constants.Matrix;
 
 /** Static members for the {@link Flywheel} subsystem */
+@Deprecated
 public class FlywheelConstants {
   // * PHYSICAL CONSTANTS
   /** {@link Distance} Radius of combined flywheel drum */
