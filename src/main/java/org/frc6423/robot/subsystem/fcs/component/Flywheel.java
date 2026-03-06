@@ -48,7 +48,10 @@ import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
 public class Flywheel {
-  // * PHYSICAL CONSTANTS
+  // * ~~~~~~~~ STATIC CONSTANT MEMBERS ~~~~~~~~
+
+  // Physical Constants
+
   /** {@link Distance} Radius of combined flywheel drum */
   public static final Distance kRadius = Inches.of(2);
 
@@ -58,11 +61,13 @@ public class Flywheel {
 
   public static final double kEpsilonDebounceTime = 0.03;
 
-  // * CONTROL CONSTANTS
+  // Control Constants
+
   /** {@link Double} Max allowed error in subsystem angular velocity */
   public static final AngularVelocity kEpsilon = DegreesPerSecond.of(2);
 
-  // * HARDWARE CONSTANTS
+  // Hardware Constants
+
   /** {@link Integer} CAN ID of the left flywheel servo */
   public static final int kLeftCanDeviceId = Matrix.kFlywheelLeftId;
 
@@ -130,7 +135,8 @@ public class Flywheel {
   /** {@link CANBus} CAN bus devices are on */
   public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
 
-  // * CHARACTERIZATON
+  // Characterization Constants
+
   /** {@link Velocity} of {@link CurrentUnit} Rate at which current output ramps up at in Quasi */
   public static final Velocity<CurrentUnit> kCharacterizationRampRate = Amps.of(35.0).per(Second);
 
@@ -164,7 +170,8 @@ public class Flywheel {
                 kServoTalonConfig)); // We can get away with one sim
   }
 
-  // * HARDWARE MEMBERS
+  // * ~~~~~~~~ MEMBERS ~~~~~~~~
+
   @Logged private final ServoIO mLeft, mRight;
 
   private AngularVelocity mTargetVelocity = RevolutionsPerSecond.zero();
@@ -207,6 +214,8 @@ public class Flywheel {
     }
   }
 
+  // * ~~~~~~~~ GETTERS ~~~~~~~~
+
   @Logged(name = "Holding Setpoint (bool)", importance = Importance.INFO)
   public boolean isHoldingSetpoint() {
     return mIsAtSetpoint.calculate(
@@ -237,11 +246,13 @@ public class Flywheel {
     return mTargetVelocity;
   }
 
+  // * ~~~~~~~~ SETTERS ~~~~~~~~
+
   public void coast() {
     mLeft.stop();
   }
 
-  public void runTargetMuzzleVelocity(LinearVelocity velocity) {
+  public void setTargetMuzzleVelocity(LinearVelocity velocity) {
     runTargetMuzzleVelocity(() -> velocity);
   }
 

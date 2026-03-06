@@ -45,6 +45,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.MomentOfInertia;
 import edu.wpi.first.units.measure.Velocity;
+import java.util.function.Supplier;
 import org.frc6423.lib.io.EncoderIO;
 import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
@@ -54,7 +55,10 @@ import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
 public class Hood {
-  // * PHYSICAL CONSTANTS
+  // * ~~~~~~~~ STATIC CONSTANT MEMBERS ~~~~~~~~
+
+  // Physical Constants
+
   /** {@link Distance} 'Length' of Pivot System */
   public static final Distance kLength = Inches.of(7.510000);
 
@@ -62,7 +66,8 @@ public class Hood {
   public static final MomentOfInertia kRotationalInertia =
       KilogramSquareMeters.of(75.752248 * 0.0002926397);
 
-  // * CONTROL CONSTANTS
+  // Control Constants
+
   /** {@link Angle} Max allowed angular position error in subsystem */
   public static final Angle kEpsilon = Degrees.of(0.5);
 
@@ -80,7 +85,7 @@ public class Hood {
   /** {@link AngularAcceleration} The maximum allowed angular acceleration of subsystem */
   public static final AngularAcceleration kMaxAcceleration = DegreesPerSecondPerSecond.of(15.0);
 
-  // * HARDWARE CONSTANTS
+  // Hardware Constants
 
   /** {@link CANBus} CAN bus devices are on */
   public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
@@ -147,7 +152,8 @@ public class Hood {
                   .withKP(250.0)
                   .withKD(10.0)); // TODO Torque Current Control Gains (accelerating)
 
-  // * CHARACTERIZATON
+  // Characterization Constants
+
   /**
    * {@link Velocity} of {@link CurrentUnit} Rate at which current output ramps up at in Quasistatic
    * Characterization
@@ -185,6 +191,8 @@ public class Hood {
             new EncoderIOCanCoder(kEncoderCanDeviceId, kCanBus, kEncoderConfig));
   }
 
+  // * ~~~~~~~~ MEMBERS ~~~~~~~~
+
   @Logged private final ServoIO mServo;
   @Logged private final EncoderIO mEncoder;
 
@@ -209,6 +217,8 @@ public class Hood {
     mEncoder.periodic();
   }
 
+  // * ~~~~~~~~ GETTERS ~~~~~~~~
+
   @Logged(name = "Holding Setpoint (bool)", importance = Importance.INFO)
   public boolean isHoldingSetpoint() {
     return mIsAtSetpoint.calculate(
@@ -228,11 +238,17 @@ public class Hood {
     return mTargetRotation2d;
   }
 
+  // * ~~~~~~~~ SETTERS ~~~~~~~~
+
   public void stow() {
-    runTargetRotation2d(new Rotation2d(kMinAngle));
+    setTargetRotation2d(new Rotation2d(kMinAngle));
   }
 
-  public void runTargetRotation2d(Rotation2d angle) {
+  public void setTargetRotation2d(Rotation2d angle) {
+    runTargetRotation2d(() -> angle);
+  }
+
+  public void runTargetRotation2d(Supplier<Rotation2d> angle) {
     mTargetRotation2d =
         Rotation2d.fromRadians(
             MathUtil.clamp(
