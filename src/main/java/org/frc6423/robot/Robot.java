@@ -6,6 +6,9 @@
 
 package org.frc6423.robot;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Radians;
+
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.EpilogueConfiguration;
 import edu.wpi.first.epilogue.Logged;
@@ -20,7 +23,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.driver.CommandRobot;
-import org.frc6423.lib.util.GeometryUtil;
+import org.frc6423.lib.sim.SimulatedFuelManager;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.drive.Drive;
 import org.frc6423.robot.subsystem.fcs.FireControlSystem;
@@ -34,6 +37,7 @@ import org.frc6423.robot.subsystem.intake.Intake;
 public class Robot extends CommandRobot {
   private final CommandXboxController mController;
 
+  // * SUBSYSTEMS
   private final Drive mDrive = Drive.create();
   private final Intake mIntake = Intake.create();
   private final Indexer mIndexer = Indexer.create();
@@ -42,6 +46,8 @@ public class Robot extends CommandRobot {
   private final Flywheel mFlywheel = Flywheel.create();
 
   private final FireControlSystem mFcs = new FireControlSystem();
+
+  private final SimulatedFuelManager mFuelManager = new SimulatedFuelManager(0.02);
 
   public Robot() {
     // Initialize Devices
@@ -96,36 +102,48 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
 
-    addPeriodic(
-        () ->
-            FireControlSystem.getProjectileParameters(
-                mDrive.getPose2d(), mDrive.getChassisSpeedsWrtField()),
-        0.02);
-
-    configureBindings();
-    configureGameBehavior();
-  }
-
-  public double modifyJoystick(double value) {
-    return MathUtil.applyDeadband(Math.abs(Math.pow(value, 3)) * Math.signum(value), 0.02);
-  }
-
-  /** Define Driver & Operator controller bindings */
-  public void configureBindings() {
+    // Define Default Behavior
     mDrive.setDefaultCommand(
         mDrive.driveWhileFacing(
             () -> -modifyJoystick(mController.getLeftY()),
             () -> -modifyJoystick(mController.getLeftX()),
             () -> -modifyJoystick(mController.getRightX()),
-            () -> GeometryUtil.applyForAlliance(Rebuilt.kMidPose, Rebuilt.kHubPose2d)));
-    // mDrive.driveFromTeleoperatedInputs(
-    //     () -> -modifyJoystick(mController.getLeftY()),
-    //     () -> -modifyJoystick(mController.getLeftX()),
-    //     () -> -modifyJoystick(mController.getRightX())));
+            () ->
+                FireControlSystem.getRotation2d(
+                    mDrive.getPose2d(), mDrive.getChassisSpeedsWrtField())));
+
+    mIntake.setDefaultCommand(mIntake.stow());
+    mIndexer.setDefaultCommand(mIndexer.stop());
+    mFeeder.setDefaultCommand(mFeeder.stop());
+    mFlywheel.setDefaultCommand(mFlywheel.coast());
+    mHood.setDefaultCommand(
+        mHood.adjustToAngle(
+            Radians.of(
+                FireControlSystem.getProjectileParameters(
+                        mDrive.getPose2d(), mDrive.getChassisSpeedsWrtField())
+                    .initialProjectilePitchRads())));
+
+    // Define Controls
+    mController.leftBumper().whileTrue(mIntake.intake());
+
+    mController
+        .rightTrigger(0.1)
+        .whileTrue(
+            mFlywheel.accelerateToMuzzleVelocity(
+                MetersPerSecond.of(
+                    FireControlSystem.getProjectileParameters(
+                            mDrive.getPose2d(), mDrive.getChassisSpeedsWrtField())
+                        .initialProjectileVelocityMps())));
+
+    // mController
+    //   .rightBumper()
+    //     .whileTrue(
+    //       Commands.parallel(mIndexer.index(), mFeeder.feed()));
   }
 
-  /** Define behavior during different oppmodes */
-  public void configureGameBehavior() {}
+  public double modifyJoystick(double value) {
+    return MathUtil.applyDeadband(Math.abs(Math.pow(value, 3)) * Math.signum(value), 0.02);
+  }
 
   @Override
   protected Command getAutonCommand() {

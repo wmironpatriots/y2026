@@ -35,7 +35,7 @@ public class InterpolatingProjectileParametersTree {
    * @param rMeters {@link Double} Distance from target in meters (key)
    * @param sample {@link ProjectileParameters} Sample (entry)
    */
-  public void addSammple(double rMeters, ProjectileParameters sample) {
+  public void addSample(double rMeters, ProjectileParameters sample) {
     map.put(rMeters, sample);
   }
 
