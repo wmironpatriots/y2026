@@ -165,6 +165,16 @@ public class Flywheel extends SubsystemBase {
   }
 
   /**
+   * Get muzzle velocity (aka approximated projectile velocity) of flywheel
+   *
+   * @return {@link LinearVelocity}
+   */
+  @Logged(name = "Muzzle Velocity (meters per second)", importance = Importance.INFO)
+  public LinearVelocity getMuzzleVelocity() {
+    return MetersPerSecond.of(mTargetVelocity.in(RadiansPerSecond) * kRadius.in(Meters) * 0.5);
+  }
+
+  /**
    * Check if subsystem is nearly at setpoint angular velocity
    *
    * @return {@link Boolean}
