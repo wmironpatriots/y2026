@@ -20,7 +20,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.robot.Rebuilt;
-import org.frc6423.robot.subsystem.hood.Hood;
+import org.frc6423.robot.subsystem.hood.HoodConstants;
 
 /**
  * Static system for calculating optimal {@link ProjectileParameters}
@@ -48,7 +48,7 @@ public class FireControlSystem {
     static {
       kShotTree.addSample(
           Units.inchesToMeters(24 + 17),
-          new ProjectileParameters(Hood.Constants.kMinAngle.in(Radians), 9.43194079202, 1.04));
+          new ProjectileParameters(HoodConstants.kMinAngle.in(Radians), 9.43194079202, 1.04));
 
       kShotTree.addSample(
           Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 12),
