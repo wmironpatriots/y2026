@@ -7,36 +7,23 @@
 package org.frc6423.robot.subsystem.flywheel;
 
 import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.DegreesPerSecond;
-import static edu.wpi.first.units.Units.KilogramSquareMeters;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RevolutionsPerSecond;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
+import static org.frc6423.robot.subsystem.flywheel.FlywheelConstants.*;
 
-import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.configs.AudioConfigs;
-import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.Slot1Configs;
-import com.ctre.phoenix6.configs.Slot2Configs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.units.CurrentUnit;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.MomentOfInertia;
-import edu.wpi.first.units.measure.Velocity;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -48,106 +35,17 @@ import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.lib.io.ServoIOTalonFxFlywheelSim;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
 /**
- * {@link SubsystemBase} Flywheel Subsystem
+ * {@link SubsystemBase} Interface for controlling the velocity of robot flywheel
  *
- * <p>Subsystem is powered by two Kraken x60s
+ * <p>Subsystem constants can be found in {@link FlywheelConstants}
+ *
+ * <p>To accelerate flywheel to a velocity for ejecting projectiles at a desired linear velocity,
+ * use the {@link #accelerateToMuzzleVelocity(LinearVelocity)} method
  */
 public class Flywheel extends SubsystemBase {
-  /** Constants for the {@link Flywheel} */
-  public class Constants {
-    // * PHYSICAL CONSTANTS
-    /** {@link MomentOfInertia} Rotational Inertia of flywheel system */
-    public static final MomentOfInertia kRotationalInertia =
-        KilogramSquareMeters.of(10.491008 * 0.0002926397);
-
-    // * CONTROL CONSTANTS
-    /** {@link Double} Max allowed error in subsystem angular velocity */
-    public static final AngularVelocity kEpsilon = DegreesPerSecond.of(2);
-
-    // * HARDWARE CONSTANTS
-    /** {@link Integer} CAN ID of the left flywheel servo */
-    public static final int kLeftCanDeviceId = Matrix.kFlywheelLeftId;
-
-    /** {@link Integer} CAN ID of the right flywheel servo */
-    public static final int kRightCanDeviceId = Matrix.kFlywheelLeftId;
-
-    /** {@link Current} Stator current limit of servos */
-    public static final Current kServoStatorCurrentLimit = Amps.of(120);
-
-    /** {@link Current} Supply current limit of servos */
-    public static final Current kServoSupplyCurrentLimit = Amps.of(40.0);
-
-    /** {@link Double} Gear ratio between the servo rotor and the flywheel shaft */
-    public static final double kSensorToMechanismRatio = (28.0 / 16.0);
-
-    /** {@link Integer} Gains slot used for accelerating flywheel */
-    public static final int kGainSlotAccel = 0;
-
-    /** {@link Integer} Gains slot used for maintaing flywheel velocity */
-    public static final int kGainSlotMaintain = 1;
-
-    /** {@link Integer} Gains slot used for deaccelerating flywheel */
-    public static final int kGainSlotDeaccel = 2;
-
-    /** {@link TalonFXConfiguration} Hardware config of the flywheel servos */
-    private static final TalonFXConfiguration kServoTalonConfig =
-        new TalonFXConfiguration()
-            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
-            .withMotorOutput(
-                new MotorOutputConfigs()
-                    .withInverted(InvertedValue.Clockwise_Positive)
-                    .withNeutralMode(NeutralModeValue.Coast))
-            .withCurrentLimits(
-                new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(kServoStatorCurrentLimit)
-                    .withStatorCurrentLimitEnable(true)
-                    .withSupplyCurrentLimit(kServoSupplyCurrentLimit)
-                    .withSupplyCurrentLimitEnable(true))
-            .withMotionMagic(new MotionMagicConfigs().withMotionMagicAcceleration(9999.0))
-            .withSlot0(new Slot0Configs().withKP(10.0).withKD(0.1))
-            .withSlot1(new Slot1Configs().withKP(10.0).withKD(0.1))
-            .withSlot2(new Slot2Configs().withKP(10.0).withKD(0.1));
-
-    // .withSlot0(
-    //     new Slot0Configs()
-    //         .withKS(4.8691)
-    //         .withKV(0.10515)
-    //         .withKA(1.729)
-    //         .withKG(0.52863)
-    //         .withKP(0.26322)
-    //         .withKD(0.0)) // Torque Current Control Gains (accelerating)
-    // .withSlot1(
-    //     new Slot1Configs()
-    //         .withKS(4.8691)
-    //         .withKV(0.10515)
-    //         .withKA(1.729)
-    //         .withKG(0.52863)
-    //         .withKP(0.26322)
-    //         .withKD(0.0)) // TODO Torque Current Control Gains (maintaing)
-    // .withSlot2(
-    //     new Slot2Configs()
-    //         .withKS(4.8691)
-    //         .withKV(0.10515)
-    //         .withKA(1.729)
-    //         .withKG(0.52863)
-    //         .withKP(0.26322)
-    //         .withKD(0.0)); // TODO Torque Current Control Gains (deaccelerating)
-
-    /** {@link CANBus} CAN bus devices are on */
-    public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
-
-    // * CHARACTERIZATON
-    /** {@link Velocity} of {@link CurrentUnit} Rate at which current output ramps up at in Quasi */
-    public static final Velocity<CurrentUnit> kCharacterizationRampRate = Amps.of(35.0).per(Second);
-
-    /** {@link Current} Current step size for Dyna */
-    public static final Current kCharacterizationStepSize = Amps.of(15.0);
-  }
-
   /**
    * Create new {@link Flywheel}
    *
@@ -156,57 +54,53 @@ public class Flywheel extends SubsystemBase {
   public static Flywheel create() {
     return (Robot.isReal())
         ? new Flywheel(
-            new ServoIOTalonFx(
-                "Left", Constants.kCanBus, Constants.kLeftCanDeviceId, Constants.kServoTalonConfig),
-            new ServoIOTalonFx(
-                "Right",
-                Constants.kCanBus,
-                Constants.kRightCanDeviceId,
-                Constants.kServoTalonConfig))
+            new ServoIOTalonFx("Left", kCanBus, kLeftCanDeviceId, kServoTalonConfig),
+            new ServoIOTalonFx("Right", kCanBus, kRightCanDeviceId, kServoTalonConfig))
         : new Flywheel(
             new ServoIOTalonFxFlywheelSim(
                 "Left",
-                Constants.kCanBus,
-                Constants.kLeftCanDeviceId,
-                Constants.kServoTalonConfig,
-                Constants.kRotationalInertia,
+                kCanBus,
+                kLeftCanDeviceId,
+                kServoTalonConfig,
+                kRotationalInertia,
                 MotorType.KrakenX60,
                 DCMotor.getKrakenX60Foc(2),
-                Constants.kSensorToMechanismRatio),
+                kSensorToMechanismRatio),
             new ServoIOTalonFx(
                 "Right",
-                Constants.kCanBus,
-                Constants.kRightCanDeviceId,
-                Constants.kServoTalonConfig)); // We can get away with one sim
+                kCanBus,
+                kRightCanDeviceId,
+                kServoTalonConfig)); // We can get away with one sim
   }
 
+  // * HARDWARE MEMBERS
   @Logged private final ServoIO mLeft, mRight;
 
+  // * CHARACTERIZATION/MEASUREMENT
   private final SysIdRoutine mSysIdRoutine;
-
-  private final LinearFilter mCurrentFilter;
 
   private AngularVelocity mTargetVelocity = RevolutionsPerSecond.zero();
 
   /**
    * Create new {@link Flywheel}
    *
-   * @param left {@link ServoIO} Left flywheel servo
-   * @param right {@link ServoIO} Right flywheel servo
+   * @param left {@link ServoIO} Left servo connected to flywheel
+   * @param right {@link ServoIO} Right servo connected to flywheel
    */
-  public Flywheel(ServoIO left, ServoIO right) {
+  private Flywheel(ServoIO left, ServoIO right) {
     // Init Hardware
     mLeft = left;
     mRight = right;
 
+    // Set left servo as leader
     mRight.setLeader(mLeft, true);
 
     // Init SysId
     mSysIdRoutine =
         new SysIdRoutine(
             new SysIdRoutine.Config(
-                Volts.of(Constants.kCharacterizationRampRate.in(Amps.per(Second))).per(Second),
-                Volts.of(Constants.kCharacterizationStepSize.in(Amps)),
+                Volts.of(kCharacterizationRampRate.in(Amps.per(Second))).per(Second),
+                Volts.of(kCharacterizationStepSize.in(Amps)),
                 null,
                 (state) ->
                     Epilogue.getConfig()
@@ -221,11 +115,6 @@ public class Flywheel extends SubsystemBase {
     if (Flags.kTuningModeEnabled) {
       SmartDashboard.putData("Run Flywheel SysId Characterization", runCharacterizationSequence());
     }
-
-    // TODO idk if high pass is the correct filter to use here tbh, should test with moving avg as
-    // well
-    // Init current filter
-    mCurrentFilter = LinearFilter.highPass(0.1, 0.02);
   }
 
   @Override
@@ -234,34 +123,19 @@ public class Flywheel extends SubsystemBase {
     mLeft.periodic();
     mRight.periodic();
 
-    // Update Current Filter
-    mCurrentFilter.calculate(mLeft.getSupplyCurrent().in(Amps));
-
     // Switch between gain slots
     if (mTargetVelocity.gt(getAngularVelocity())) {
-      mLeft.setGainsSlot(Constants.kGainSlotAccel);
+      mLeft.setGainsSlot(kGainSlotAccel);
     } else if (isNearSetpoint()) {
-      mLeft.setGainsSlot(Constants.kGainSlotMaintain);
+      mLeft.setGainsSlot(kGainSlotMaintain);
     } else if (mTargetVelocity.lt(getAngularVelocity())) {
-      mLeft.setGainsSlot(Constants.kGainSlotDeaccel);
+      mLeft.setGainsSlot(kGainSlotDeaccel);
     }
   }
 
   // * GETTERS
   /**
-   * Get the supply current of left flywheel servo with linear filter applied (High Pass)
-   *
-   * <p>TODO docs if filter type changes
-   *
-   * @return {@link Current}
-   */
-  @Logged(name = "Filtered Supply Current (amps)", importance = Importance.INFO)
-  public Current getFilteredCurrent() {
-    return Amps.of(mCurrentFilter.calculate(mLeft.getSupplyCurrent().in(Amps)));
-  }
-
-  /**
-   * Get Angular Position of subsystem
+   * Get angular position of flywheel
    *
    * @return {@link Angle}
    */
@@ -271,7 +145,7 @@ public class Flywheel extends SubsystemBase {
   }
 
   /**
-   * Get Angular Velocity of subsystem
+   * Get Angular Velocity of flywheel
    *
    * @return {@link AngularVelocity}
    */
@@ -281,7 +155,7 @@ public class Flywheel extends SubsystemBase {
   }
 
   /**
-   * Get Setpoint Angular Velocity of subsystem
+   * Get Angular Velocity Setpoint of flywheel
    *
    * @return {@link AngularVelocity}
    */
@@ -300,7 +174,7 @@ public class Flywheel extends SubsystemBase {
     return MathUtil.isNear(
         mTargetVelocity.in(RevolutionsPerSecond),
         getAngularVelocity().in(RevolutionsPerSecond),
-        Constants.kEpsilon.in(RevolutionsPerSecond));
+        kEpsilon.in(RevolutionsPerSecond));
   }
 
   // * COMMANDS
@@ -327,7 +201,7 @@ public class Flywheel extends SubsystemBase {
   }
 
   /**
-   * Request subsystem to coast
+   * Request flywheel to coast
    *
    * <p>When coast, flywheel servos will not apply any output; flywheel will be allowed to spin down
    *
@@ -338,43 +212,31 @@ public class Flywheel extends SubsystemBase {
   }
 
   /**
-   * TODO wip storage command
+   * Accelerate flywheel to angular velocity where projectiles will be ejcted at a desired linear
+   * velocity
    *
-   * <p>This command should store surplus supply current
-   *
-   * <p>Make command public once finished
-   *
+   * @param velocity {@link LinearVelocity} Muzzle velocity setpoint
    * @return {@link Command}
    */
-  protected Command store() {
-    return this.startRun(
-        () -> mLeft.stop(),
-        () -> {
-          if (getFilteredCurrent().gt(Amps.zero())) {}
-        });
+  public Command accelerateToMuzzleVelocity(LinearVelocity velocity) {
+    return accelerateToMuzzleVelocity(() -> velocity);
   }
 
   /**
-   * Request subsystem to accelerate to desired angular velocity
+   * Accelerate flywheel to angular velocity where projectiles will be ejcted at a desired linear
+   * velocity
    *
-   * @param velocity {@link AngularVelocity} Angular Velocity setpoint for subsystem to accelerate
-   *     to
+   * @param velocity {@link Supplier} of {@link LinearVelocity} Stream of muzzle velocity setpoints
    * @return {@link Command}
    */
-  public Command accelerateToVelocity(AngularVelocity velocity) {
-    return accelerateToVelocity(() -> velocity).withName("Flywheel Accelerate to");
-  }
-
-  /**
-   * Request subsystem to continiously accelerate to a stream of angular velocity setpoints
-   *
-   * @param velocity {@link Supplier}<{@link AngularVelocity}> Stream of angular velocity setpoints
-   * @return {@link Command}
-   */
-  public Command accelerateToVelocity(Supplier<AngularVelocity> velocity) {
+  public Command accelerateToMuzzleVelocity(Supplier<LinearVelocity> velocity) {
     return this.run(
             () -> {
-              mTargetVelocity = velocity.get();
+              // Projectile Velocity = (Flywheel Velocity) * Radius * 0.5
+              mTargetVelocity =
+                  RadiansPerSecond.of(
+                      velocity.get().in(MetersPerSecond) / kRadius.in(Meters) * 2.0);
+
               mLeft.setTorqueMotionProfiledVelocitySetpoint(mTargetVelocity);
             })
         .withName("Flywheel Accelerate to Continously");
