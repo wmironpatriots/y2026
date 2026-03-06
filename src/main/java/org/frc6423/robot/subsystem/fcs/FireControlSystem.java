@@ -6,8 +6,6 @@
 
 package org.frc6423.robot.subsystem.fcs;
 
-import static edu.wpi.first.units.Units.Radians;
-
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -16,10 +14,8 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.util.Units;
 import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.robot.Rebuilt;
-import org.frc6423.robot.subsystem.hood.Hood;
 
 /**
  * Static system for calculating optimal {@link ProjectileParameters}
@@ -32,7 +28,7 @@ public class FireControlSystem {
   /** Constants for the {@link FireControlSystem} */
   public class Constants {
     /** {@link Double} The estimated average latency to compensate for */
-    public static final double kLatencySeconds = 0.03; // TODO tune
+    public static final double kLatencySeconds = 0.03;
 
     /** {@link Transform3d} Displacement from center of chassis to projectile exit point */
     public static final Transform3d kRobotToShooter = new Transform3d();
@@ -45,36 +41,6 @@ public class FireControlSystem {
         new InterpolatingProjectileParametersTree();
 
     static {
-      kShotTree.addSample(
-          Units.inchesToMeters(24 + 17),
-          new ProjectileParameters(Hood.Constants.kMinAngle.in(Radians), 9.43194079202, 1.04));
-
-      kShotTree.addSample(
-          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 12),
-          new ProjectileParameters(Units.degreesToRadians(25), 8.25294819302, 1.14));
-
-      kShotTree.addSample(
-          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 3 * 12),
-          new ProjectileParameters(Units.degreesToRadians(26), 8.72454523262, 1.10));
-
-      kShotTree.addSample(
-          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 5 * 12),
-          new ProjectileParameters(Units.degreesToRadians(30), 8.72454523262, 1.09));
-
-      kShotTree.addSample(
-          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 7 * 12),
-          new ProjectileParameters(Units.degreesToRadians(33), 8.72454523262, 1.15));
-
-      kShotTree.addSample(
-          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 9 * 12),
-          new ProjectileParameters(Units.degreesToRadians(36), 8.96034375242, 1.23));
-
-      kShotTree.addSample(
-          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 11 * 12),
-          new ProjectileParameters(Units.degreesToRadians(38), 8.96034375242, 1.33));
-      kShotTree.addSample(
-          Units.inchesToMeters(24 * Math.sqrt(2) + 6 + 13 * 12),
-          new ProjectileParameters(Units.degreesToRadians(39), 8.96034375242, 1.35));
     } // TODO calculate & add shots
   }
 
@@ -120,7 +86,8 @@ public class FireControlSystem {
 
     // Calculate unadjusted shot
     ProjectileParameters parameters =
-        Constants.kShotTree.calculateShot(predictedPosition, targetPose.getTranslation());
+        Constants.kShotTree.calculateProjectileParameters(
+            predictedPosition, targetPose.getTranslation());
 
     // Caclulate virtual target from field relative speeds & tof
     Translation2d virtualTarget =
