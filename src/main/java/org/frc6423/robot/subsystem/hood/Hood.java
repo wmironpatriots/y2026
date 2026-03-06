@@ -49,7 +49,6 @@ import org.frc6423.robot.Robot;
  */
 @Deprecated
 public class Hood extends SubsystemBase {
-
   /**
    * Create new {@link Hood}
    *
