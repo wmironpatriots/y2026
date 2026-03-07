@@ -13,6 +13,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
@@ -22,9 +23,12 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
+import org.frc6423.lib.io.ServoIONone;
+import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.lib.util.NetworkTableUtil;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
+import org.frc6423.robot.Robot;
 
 /**
  * {@link SubsystemBase} Controller for the indexing subsystem
@@ -33,15 +37,30 @@ import org.frc6423.robot.Constants.Matrix;
  *
  * <p>The purpose of {@link Indexer} is to push balls towards the {@link Feeder}
  *
- * <p>The indexer has three actions: stop, pulse, and run. Each of these actions will be run
+ * <p>{@link Indexer} has three actions: neutral, pulse, and run. Each of these actions will be run
  * pointing towards the feeder
  */
 @Logged(name = "Indexer")
 public class Indexer extends SubsystemBase {
+  /**
+   * Create new {@link Indexer}
+   *
+   * @return {@link Indexer}
+   */
+  public Indexer create() {
+    return (Robot.isReal())
+        ? new Indexer(
+            new ServoIOTalonFx("Servo", MotorType.KrakenX60, kCanBus, kCanDeviceId, kServoConfig))
+        : new Indexer(new ServoIONone("Servo"));
+  }
+
   // * ~~~~~~~~ CONSTANTS ~~~~~~~~
 
   /** {@link CANBus} CAN bus servo is on */
   public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+
+  /** {@link Integer} Unique CAN device identifier for the indexer servo */
+  public static final int kCanDeviceId = Matrix.kIndexerId;
 
   /** {@link TalonFXConfiguration} Hardware config of servo */
   public static final TalonFXConfiguration kServoConfig =
@@ -51,7 +70,10 @@ public class Indexer extends SubsystemBase {
               new MotorOutputConfigs()
                   .withInverted(InvertedValue.CounterClockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Brake))
-          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(40.0));
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimit(40.0)
+                  .withStatorCurrentLimitEnable(true));
 
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
@@ -89,7 +111,7 @@ public class Indexer extends SubsystemBase {
   // * ~~~~~~~~ GETTERS ~~~~~~~~
 
   /**
-   * Check if indexer is trying to move but is unable to
+   * Check if subsystem is trying to move but is unable to
    *
    * @return {@link Boolean}
    */

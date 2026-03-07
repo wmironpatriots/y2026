@@ -6,11 +6,6 @@
 
 package org.frc6423.robot.subsystem.feeder;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
-
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -18,182 +13,145 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Time;
-import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import org.frc6423.lib.io.DIO;
-import org.frc6423.lib.io.DIONone;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
+import org.frc6423.lib.util.NetworkTableUtil;
+import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
-/** {@link SubsystemBase} Feeder Subsystem */
+// TODO beambreak
+/**
+ * {@link SubsystemBase} Controller for the feeder subsystem
+ *
+ * <p>{@link Feeder} is a roller drivebn by a single Kraken x60
+ *
+ * <p>The purpose of {@link Feeder} is to hold/provide fuel to the shooter when required
+ *
+ * <p>{@link Feeder} has three actions: neutral, load, feed
+ *
+ * <p>Neutral is where {@link Feeder} is stopped completely
+ *
+ * <p>Loading is where {@link Feeder} will get fuel ready for feed
+ *
+ * <p>Feeding is where {@link Feeder} will supply fuel for shooter
+ */
 public class Feeder extends SubsystemBase {
-  /** Constants for the {@link Feeder} */
-  public class Constants {
-    // * CONTROL CONSTANTS
-    /** {@link Voltage} Voltage speed for loading */
-    public static final Voltage kLoadingSpeed = Volts.of(3.0);
-
-    /** {@link Voltage} Voltage speed for feeding */
-    public static final Voltage kFeedingSpeed = Volts.of(9.0);
-
-    // * SIMULATION CONSTANTS
-    /** {@link Time} Time for loading in sim */
-    public static final Time kLoadTime = Seconds.of(1);
-
-    // * HARDWARE CONSTANTS
-    /** {@link Integer} CAN ID of servo */
-    public static final int kServoCanDeviceId = Matrix.kFeederId;
-
-    /** {@link Current} Stator current limit of servo */
-    public static final Current kServoStatorCurrentLimit = Amps.of(40.0);
-
-    /** {@link TalonFXConfiguration} Hardware config of servo */
-    public static final TalonFXConfiguration kServoTalonConfig =
-        new TalonFXConfiguration()
-            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
-            .withMotorOutput(
-                new MotorOutputConfigs()
-                    .withInverted(InvertedValue.CounterClockwise_Positive)
-                    .withNeutralMode(NeutralModeValue.Brake))
-            .withCurrentLimits(
-                new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(kServoStatorCurrentLimit)
-                    .withStatorCurrentLimitEnable(true));
-
-    /** {@link CANBus} CAN bus devices are on */
-    public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
-
-    /** {@link Integer} The DIO port beambreak is plugged into */
-    public static final int kBeamBreakDioPort = Matrix.kFeederBeamBreakDio;
-  }
-
   /**
    * Create new {@link Feeder}
    *
    * @return {@link Feeder}
    */
-  public static Feeder create() {
+  public Feeder create() {
     return (Robot.isReal())
         ? new Feeder(
-            new ServoIOTalonFx(
-                "Servo",
-                Constants.kCanBus,
-                Constants.kServoCanDeviceId,
-                Constants.kServoTalonConfig),
-            new DIONone())
-        : new Feeder(new ServoIONone("Servo"), new DIONone());
+            new ServoIOTalonFx("Servo", MotorType.KrakenX60, kCanBus, kCanDeviceId, kServoConfig))
+        : new Feeder(new ServoIONone("Servo"));
   }
 
+  // * ~~~~~~~~ CONSTANTS ~~~~~~~~
+
+  /** {@link CANBus} CAN bus servo is on */
+  public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+
+  /** {@link Integer} Unique CAN device identifier for the feeder servo */
+  public static final int kCanDeviceId = Matrix.kFeederId;
+
+  /** {@link TalonFXConfiguration} Hardware config of servo */
+  public static final TalonFXConfiguration kServoConfig =
+      new TalonFXConfiguration()
+          .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withInverted(InvertedValue.CounterClockwise_Positive)
+                  .withNeutralMode(NeutralModeValue.Brake))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimit(40.0)
+                  .withStatorCurrentLimitEnable(true));
+
+  /** {@link Double} Time in seconds for loading to take in simulation */
+  public static final double kSimLoadingTimeSec = 1.0;
+
+  // * ~~~~~~~~ TUNABLES ~~~~~~~~
+
+  private double mLoadingSpeedVolts = 3.0;
+  private double mFeedingSpeedVolts = 9.0;
+  private final DoubleEntry mLoadingSpeedTunable =
+      NetworkTableUtil.createEntry("Tunables/Feeder/Loading Speed (volts)", mLoadingSpeedVolts);
+  private final DoubleEntry mFeedingSpeedTunable =
+      NetworkTableUtil.createEntry("Tunables/Feeder/Feeding Speed (volts)", mLoadingSpeedVolts);
+
+  // * ~~~~~~~~ MEMBERS ~~~~~~~~
+
   @Logged private final ServoIO mServo;
-  @Logged private final DIO mDIO;
 
   private boolean mIsRunning = false;
+  private final Debouncer mIsStuck = new Debouncer(0.1);
 
-  private Timer mSimTimer = new Timer();
-
-  /**
-   * Create new {@link Feeder}
-   *
-   * @param servo {@link ServoIO} Servo powering subsystem
-   * @param dio {@link DIO} Beambreak digital signal
-   */
-  protected Feeder(ServoIO servo, DIO dio) {
+  protected Feeder(ServoIO servo) {
     mServo = servo;
-    mDIO = dio;
   }
 
   @Override
   public void periodic() {
-    // Update All Hardware
     mServo.periodic();
-    mDIO.periodic();
+
+    mIsStuck.calculate(
+        mIsRunning && MathUtil.isNear(0.0, mServo.getAngularVelocityRevsPerSec(), 0.1));
+
+    if (Flags.kTuningModeEnabled) {
+      mLoadingSpeedVolts = mLoadingSpeedTunable.get();
+      mFeedingSpeedVolts = mFeedingSpeedTunable.get();
+    }
   }
 
-  // * GETTERS
-  /**
-   * Check if roller subsystem is running
-   *
-   * @return {@link Boolean}
-   */
-  @Logged(name = "Is Running (bool)", importance = Importance.INFO)
-  public boolean isRunning() {
-    return mIsRunning;
-  }
+  // * ~~~~~~~~ GETTERS ~~~~~~~~
 
   /**
-   * Check if roller subsystem is stuck
+   * Check if subsystem is trying to move but is unable to
    *
    * @return {@link Boolean}
    */
   @Logged(name = "Is Stuck (bool)", importance = Importance.INFO)
   public boolean isStuck() {
-    return !mIsRunning && !(Math.abs(mServo.getAngularVelocity().in(RadiansPerSecond)) > 0.0);
+    return mIsStuck.calculate(
+        mIsRunning && MathUtil.isNear(0.0, mServo.getAngularVelocityRevsPerSec(), 0.1));
   }
 
+  // * ~~~~~~~~ COMMANDS ~~~~~~~~
   /**
-   * Check if subsystem is loaded
-   *
-   * <p>If beambreak is broken, returns true
-   *
-   * @return {@link Boolean}
-   */
-  @Logged(name = "Is Loaded (bool)", importance = Importance.INFO)
-  public boolean isLoaded() {
-    return !mDIO.getState();
-  }
-
-  // * COMMANDS
-  /**
-   * Request subsystem to stop
+   * Constructs a sequence where subsystem stops completely
    *
    * @return {@link Command}
    */
-  public Command stop() {
+  public Command getNeutralCmd() {
     return this.run(
-            () -> {
-              mIsRunning = false;
-              mServo.stop();
-            })
-        .withName("Feeder Stop");
+        () -> {
+          mServo.setNeutral();
+          mIsRunning = false;
+        });
   }
 
   /**
-   * Request subsystem to load a fuel for shooting
+   * Constructs a sequence where subsystem continiously runs at feeding speed
    *
    * @return {@link Command}
    */
-  public Command load() {
+  public Command getFeedCmd() {
     return this.run(
-            () -> {
-              mSimTimer.restart();
-              mServo.setVoltageSetpoint(Constants.kLoadingSpeed, true);
-              mIsRunning = true;
-            })
-        .until(() -> (Robot.isReal()) ? isLoaded() : mSimTimer.hasElapsed(Constants.kLoadTime))
-        .andThen(stop())
-        .withName("Feeder Load");
-  }
-
-  /**
-   * Request subsystem to start feeding fuel to shooter
-   *
-   * @return {@link Command}
-   */
-  public Command feed() {
-    return this.run(
-            () -> {
-              mServo.setVoltageSetpoint(Constants.kFeedingSpeed, true);
-              mIsRunning = true;
-            })
-        .withName("Feeder Feed");
+        () -> {
+          mServo.setVoltageOutput(mFeedingSpeedVolts, true);
+          mIsRunning = true;
+        });
   }
 }
