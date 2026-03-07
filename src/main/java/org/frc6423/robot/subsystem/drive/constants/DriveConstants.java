@@ -120,10 +120,10 @@ public abstract class DriveConstants {
   public Translation2d[] getModuleDisplacements() {
     var coord = getTrackWidth().div(2);
     return new Translation2d[] {
-      new Translation2d(coord, coord),
-      new Translation2d(coord.times(-1), coord),
       new Translation2d(coord, coord).times(-1),
-      new Translation2d(coord, coord.times(-1))
+      new Translation2d(coord, coord.times(-1)),
+      new Translation2d(coord.times(-1), coord),
+      new Translation2d(coord, coord),
     };
   }
 

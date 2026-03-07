@@ -7,7 +7,6 @@
 package org.frc6423.robot.subsystem.drive.constants;
 
 import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.FeetPerSecond;
 import static edu.wpi.first.units.Units.FeetPerSecondPerSecond;
@@ -16,6 +15,7 @@ import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Revolutions;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
@@ -178,7 +178,7 @@ public class RebuiltL2 extends DriveConstants {
         .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
         .withMotorOutput(
             new MotorOutputConfigs()
-                .withInverted(InvertedValue.CounterClockwise_Positive)
+                .withInverted(InvertedValue.Clockwise_Positive)
                 .withNeutralMode(NeutralModeValue.Brake))
         .withCurrentLimits(
             new CurrentLimitsConfigs()
@@ -222,27 +222,14 @@ public class RebuiltL2 extends DriveConstants {
             new MagnetSensorConfigs()
                 .withSensorDirection(
                     getPivotInverted()
-                        ? SensorDirectionValue.CounterClockwise_Positive
-                        : SensorDirectionValue.Clockwise_Positive)
+                        ? SensorDirectionValue.Clockwise_Positive
+                        : SensorDirectionValue.CounterClockwise_Positive)
                 .withMagnetOffset(offset));
   }
 
   @Override
   public GyroConfig getGyroConfig() {
     return new GyroConfig(getCANBus(), Matrix.kDriveGyroId, getPigeon2Config());
-  }
-
-  @Override
-  public ModuleConfig getFrontRightModuleConfig() {
-    return new ModuleConfig(
-        "FR",
-        getCANBus(),
-        Matrix.kDriveFrPivotId,
-        Matrix.kDriveFrDriveId,
-        Matrix.kDriveFrEncoderId,
-        getPivotServoConfig(Matrix.kDriveFrEncoderId),
-        getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.363037109375)));
   }
 
   @Override
@@ -255,7 +242,20 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveFlEncoderId,
         getPivotServoConfig(Matrix.kDriveFlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(-0.226318359375)));
+        getCANcoderConfig(Revolutions.of(-0.224609375)));
+  }
+
+  @Override
+  public ModuleConfig getFrontRightModuleConfig() {
+    return new ModuleConfig(
+        "FR",
+        getCANBus(),
+        Matrix.kDriveFrPivotId,
+        Matrix.kDriveFrDriveId,
+        Matrix.kDriveFrEncoderId,
+        getPivotServoConfig(Matrix.kDriveFrEncoderId),
+        getDriveServoConfig(),
+        getCANcoderConfig(Revolutions.of(0.36328125).plus(Revolutions.of(0.5))));
   }
 
   @Override
@@ -268,7 +268,7 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveBlEncoderId,
         getPivotServoConfig(Matrix.kDriveBlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(-0.129638671875)));
+        getCANcoderConfig(Revolutions.of(-0.133544921875)));
   }
 
   @Override
@@ -281,6 +281,6 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveBrEncoderId,
         getPivotServoConfig(Matrix.kDriveBrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Degrees.of(0.385986328125)));
+        getCANcoderConfig(Revolutions.of(0.385986328125).plus(Revolutions.of(0.5))));
   }
 }

@@ -62,20 +62,20 @@ public class Drive extends SubsystemBase {
                 Flags.kRobotType.mDriveConstants.getGyroConfig().canBus(),
                 Flags.kRobotType.mDriveConstants.getGyroConfig().config()),
             new SwerveModuleIOTalonFx(
-                "Front Right",
-                Flags.kRobotType.mDriveConstants.getFrontRightModuleConfig(),
-                Flags.kRobotType.mDriveConstants),
-            new SwerveModuleIOTalonFx(
                 "Front Left",
                 Flags.kRobotType.mDriveConstants.getFrontLeftModuleConfig(),
                 Flags.kRobotType.mDriveConstants),
             new SwerveModuleIOTalonFx(
+                "Front Right",
+                Flags.kRobotType.mDriveConstants.getFrontRightModuleConfig(),
+                Flags.kRobotType.mDriveConstants),
+            new SwerveModuleIOTalonFx(
                 "Back Left",
-                Flags.kRobotType.mDriveConstants.getBackLeftModuleConfig(),
+                Flags.kRobotType.mDriveConstants.getBackRightModuleConfig(),
                 Flags.kRobotType.mDriveConstants),
             new SwerveModuleIOTalonFx(
                 "Back Right",
-                Flags.kRobotType.mDriveConstants.getBackRightModuleConfig(),
+                Flags.kRobotType.mDriveConstants.getBackLeftModuleConfig(),
                 Flags.kRobotType.mDriveConstants))
         : new Drive(
             new GyroIOPigeon2(
@@ -83,12 +83,12 @@ public class Drive extends SubsystemBase {
                 Flags.kRobotType.mDriveConstants.getGyroConfig().canBus(),
                 Flags.kRobotType.mDriveConstants.getGyroConfig().config()),
             new SwerveModuleIOTalonFxSim(
-                "Front Right",
-                Flags.kRobotType.mDriveConstants.getFrontRightModuleConfig(),
-                Flags.kRobotType.mDriveConstants),
-            new SwerveModuleIOTalonFxSim(
                 "Front Left",
                 Flags.kRobotType.mDriveConstants.getFrontLeftModuleConfig(),
+                Flags.kRobotType.mDriveConstants),
+            new SwerveModuleIOTalonFxSim(
+                "Front Right",
+                Flags.kRobotType.mDriveConstants.getFrontRightModuleConfig(),
                 Flags.kRobotType.mDriveConstants),
             new SwerveModuleIOTalonFxSim(
                 "Back Left",
@@ -103,8 +103,8 @@ public class Drive extends SubsystemBase {
   private static final DriveConstants mConstants = Flags.kRobotType.mDriveConstants;
 
   // * HARDWARE MEMBERS
-  @Logged private final SwerveModuleIO mFrModule;
   @Logged private final SwerveModuleIO mFlModule;
+  @Logged private final SwerveModuleIO mFrModule;
   @Logged private final SwerveModuleIO mBlModule;
   @Logged private final SwerveModuleIO mBrModule;
 
@@ -148,10 +148,7 @@ public class Drive extends SubsystemBase {
     mBlModule = backLeftModule;
     mBrModule = backRightModule;
 
-    mModules =
-        new SwerveModuleIO[] {
-          mFrModule, mFlModule, mBlModule, mBrModule,
-        };
+    mModules = new SwerveModuleIO[] {mBlModule, mFlModule, mBrModule, mFrModule};
     mGyro = gyro;
 
     // Init controls

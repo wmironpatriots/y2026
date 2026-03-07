@@ -45,6 +45,7 @@ import org.frc6423.robot.Robot;
  *
  * <p>Feeding is where {@link Feeder} will supply fuel for shooter
  */
+@Logged(name = "Feeder")
 public class Feeder extends SubsystemBase {
   /**
    * Create new {@link Feeder}

@@ -66,7 +66,7 @@ public class SwerveModuleIOTalonFx extends SwerveModuleIO {
 
     // Init hardware
     mEncoder = new CANcoder(config.cancoderId(), config.canBus());
-    mPivot = new TalonFX(config.driveDeviceId(), config.canBus());
+    mPivot = new TalonFX(config.pivotDeviceId(), config.canBus());
     mDrive = new TalonFX(config.driveDeviceId(), config.canBus());
 
     // Configure Hardware

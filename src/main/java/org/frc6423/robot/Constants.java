@@ -43,21 +43,21 @@ public final class Constants {
   public static final class Matrix {
     public static final CANBus kDriveCanBus = new CANBus("DRIVE");
 
-    public static final int kDriveBrPivotId = 1;
-    public static final int kDriveBrEncoderId = 2;
-    public static final int kDriveBrDriveId = 3;
+    public static final int kDriveFrPivotId = 1;
+    public static final int kDriveFrEncoderId = 9;
+    public static final int kDriveFrDriveId = 2;
 
-    public static final int kDriveFrPivotId = 4;
-    public static final int kDriveFrEncoderId = 5;
-    public static final int kDriveFrDriveId = 6;
+    public static final int kDriveBrPivotId = 7;
+    public static final int kDriveBrEncoderId = 12;
+    public static final int kDriveBrDriveId = 8;
 
-    public static final int kDriveFlPivotId = 7;
-    public static final int kDriveFlEncoderId = 8;
-    public static final int kDriveFlDriveId = 9;
+    public static final int kDriveFlPivotId = 3;
+    public static final int kDriveFlEncoderId = 10;
+    public static final int kDriveFlDriveId = 4;
 
-    public static final int kDriveBlPivotId = 10;
+    public static final int kDriveBlPivotId = 5;
     public static final int kDriveBlEncoderId = 11;
-    public static final int kDriveBlDriveId = 12;
+    public static final int kDriveBlDriveId = 6;
 
     public static final int kDriveGyroId = 13;
 

@@ -17,7 +17,7 @@ public abstract class ServoIO {
 
   public TalonFXConfiguration mTalonConfig;
 
-  public SetpointType mSetpointType;
+  public SetpointType mSetpointType = SetpointType.NEUTRAL;
   public double mSetpointValue;
 
   protected ServoIO(String name, int canDeviceId, TalonFXConfiguration config) {
@@ -133,6 +133,7 @@ public abstract class ServoIO {
   public abstract void setProfiledVelocitySetpoint(double velocityRevsPerSec, double feedforward);
 
   /** Type of {@link ServoIO} setpoint */
+  @Logged
   public enum SetpointType {
     NEUTRAL,
     VOLTAGE,
