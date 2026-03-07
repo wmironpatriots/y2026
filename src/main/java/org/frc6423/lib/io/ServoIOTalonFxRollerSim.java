@@ -28,7 +28,7 @@ public class ServoIOTalonFxRollerSim extends ServoIOTalonFx {
   private double mPreviousTimestamp;
   private final Notifier mNotifier;
 
-  protected ServoIOTalonFxRollerSim(
+  public ServoIOTalonFxRollerSim(
       String name,
       MotorType type,
       CANBus canBus,

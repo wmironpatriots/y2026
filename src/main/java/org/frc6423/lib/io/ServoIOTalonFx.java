@@ -49,7 +49,7 @@ public class ServoIOTalonFx extends ServoIO {
   private final MotionMagicVelocityTorqueCurrentFOC mProfiledVelocityRequest =
       new MotionMagicVelocityTorqueCurrentFOC(0.0);
 
-  protected ServoIOTalonFx(
+  public ServoIOTalonFx(
       String name, MotorType type, CANBus canBus, int canDeviceId, TalonFXConfiguration config) {
     super(name, canDeviceId, config);
 

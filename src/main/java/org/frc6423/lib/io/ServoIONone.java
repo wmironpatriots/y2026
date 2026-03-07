@@ -9,7 +9,7 @@ package org.frc6423.lib.io;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 
 public class ServoIONone extends ServoIO {
-  protected ServoIONone(String name) {
+  public ServoIONone(String name) {
     super(name, 0, new TalonFXConfiguration());
   }
 

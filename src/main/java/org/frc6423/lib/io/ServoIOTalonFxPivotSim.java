@@ -29,7 +29,7 @@ public class ServoIOTalonFxPivotSim extends ServoIOTalonFx {
   private double mPreviousTimestamp;
   private final Notifier mNotifier;
 
-  protected ServoIOTalonFxPivotSim(
+  public ServoIOTalonFxPivotSim(
       String name,
       MotorType type,
       CANBus canBus,
