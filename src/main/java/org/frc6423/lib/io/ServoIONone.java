@@ -74,6 +74,9 @@ public class ServoIONone extends ServoIO {
   public void setNeutral() {}
 
   @Override
+  public void setVoltageOutput(double volts, boolean focEnabled) {}
+
+  @Override
   public void setTorqueCurrentOutput(double torqueNewtonMeters) {}
 
   @Override

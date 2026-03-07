@@ -105,6 +105,8 @@ public abstract class ServoIO {
 
   public abstract void setNeutral();
 
+  public abstract void setVoltageOutput(double volts, boolean focEnabled);
+
   public abstract void setTorqueCurrentOutput(double torqueNewtonMeters);
 
   public abstract void setPositionSetpoint(double positionRevs);
@@ -126,6 +128,7 @@ public abstract class ServoIO {
   /** Type of {@link ServoIO} setpoint */
   public enum SetpointType {
     NEUTRAL,
+    VOLTAGE,
     TORQUE_CURRENT,
     POSITION,
     VELOCITY,

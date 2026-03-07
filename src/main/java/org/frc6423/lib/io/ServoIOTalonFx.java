@@ -15,6 +15,7 @@ import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -37,6 +38,7 @@ public class ServoIOTalonFx extends ServoIO {
       mRevsPerSecSignal,
       mRevsPerSecPerSecSignal;
 
+  private final VoltageOut mVoltageRequest = new VoltageOut(0.0);
   private final TorqueCurrentFOC mTorqueCurrentRequest = new TorqueCurrentFOC(0.0);
 
   private final PositionTorqueCurrentFOC mPositionRequest = new PositionTorqueCurrentFOC(0.0);
@@ -169,54 +171,69 @@ public class ServoIOTalonFx extends ServoIO {
   @Override
   public void setNeutral() {
     mServo.stopMotor();
-    ;
+    mSetpointType = SetpointType.NEUTRAL;
+  }
+
+  @Override
+  public void setVoltageOutput(double volts, boolean focEnabled) {
+    mServo.setControl(mVoltageRequest.withOutput(volts).withEnableFOC(focEnabled));
+    mSetpointType = SetpointType.VOLTAGE;
   }
 
   @Override
   public void setTorqueCurrentOutput(double torqueNewtonMeters) {
     mServo.setControl(mTorqueCurrentRequest.withOutput(torqueNewtonMeters));
+    mSetpointType = SetpointType.TORQUE_CURRENT;
   }
 
   @Override
   public void setPositionSetpoint(double positionRevs) {
     mServo.setControl(mPositionRequest.withPosition(positionRevs));
+    mSetpointType = SetpointType.POSITION;
   }
 
   @Override
   public void setPositionSetpoint(double positionRevs, double feedforward) {
     mServo.setControl(mPositionRequest.withPosition(positionRevs).withFeedForward(feedforward));
+    mSetpointType = SetpointType.POSITION;
   }
 
   @Override
   public void setVelocitySetpoint(double velocityRevsPerSec) {
     mServo.setControl(mVelocityRequest.withVelocity(velocityRevsPerSec));
+    mSetpointType = SetpointType.VELOCITY;
   }
 
   @Override
   public void setVelocitySetpoint(double velocityRevsPerSec, double feedforward) {
     mServo.setControl(
         mVelocityRequest.withVelocity(velocityRevsPerSec).withFeedForward(feedforward));
+    mSetpointType = SetpointType.VELOCITY;
   }
 
   @Override
   public void setProfiledPositionSetpoint(double positionRevs) {
     mServo.setControl(mProfiledPositionRequest.withPosition(positionRevs));
+    mSetpointType = SetpointType.PROFILED_POSITION;
   }
 
   @Override
   public void setProfiledPositionSetpoint(double positionRevs, double feedforward) {
     mServo.setControl(
         mProfiledPositionRequest.withPosition(positionRevs).withFeedForward(feedforward));
+    mSetpointType = SetpointType.PROFILED_POSITION;
   }
 
   @Override
   public void setProfiledVelocitySetpoint(double velocityRevsPerSec) {
     mServo.setControl(mProfiledVelocityRequest.withVelocity(velocityRevsPerSec));
+    mSetpointType = SetpointType.PROFILED_VELOCITY;
   }
 
   @Override
   public void setProfiledVelocitySetpoint(double velocityRevsPerSec, double feedforward) {
     mServo.setControl(
         mProfiledVelocityRequest.withVelocity(velocityRevsPerSec).withFeedForward(feedforward));
+    mSetpointType = SetpointType.PROFILED_VELOCITY;
   }
 }
