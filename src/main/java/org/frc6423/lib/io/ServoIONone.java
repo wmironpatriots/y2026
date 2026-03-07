@@ -68,6 +68,16 @@ public class ServoIONone extends ServoIO {
   public void setBrakeModeStatus(boolean brakeEnabled) {}
 
   @Override
+  public void setFeedforwardGains(double kS, double kG, double kV, double kA) {}
+
+  @Override
+  public void setFeedbackGains(double kP, double kD) {}
+
+  @Override
+  public void setProfilingConstraints(
+      double angularVelocityLimitRevsPerSec, double angularAccelerationLimitRevsPerSecPerSec) {}
+
+  @Override
   public void resetRelativeEncoder(double positionRevs) {}
 
   @Override
