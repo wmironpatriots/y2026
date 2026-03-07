@@ -6,10 +6,6 @@
 
 package org.frc6423.robot.subsystem.indexer;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.RadiansPerSecond;
-import static edu.wpi.first.units.Units.Volts;
-
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -19,140 +15,127 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.ServoIO;
-import org.frc6423.lib.io.ServoIOTalonFx;
+import org.frc6423.lib.util.NetworkTableUtil;
+import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
 
-/** {@link SubsystemBase} Indexer (Belt) Subsystem */
+/**
+ * {@link SubsystemBase} Controller for the indexing subsystem
+ *
+ * <p>{@link Indexer} is a belt system drien by a single Kraken x60
+ *
+ * <p>The purpose of {@link Indexer} is to push balls towards the {@link Feeder}
+ *
+ * <p>The indexer has three actions: stop, pulse, and run. Each of these actions will be run
+ * pointing towards the feeder
+ */
+@Logged(name = "Indexer")
 public class Indexer extends SubsystemBase {
-  /** Constants for the {@link Indexer} */
-  public class Constants {
-    // * CONTROL CONSTANTS
-    /** {@link Voltage} Voltage speed for indexing */
-    public static final Voltage kIndexingSpeed = Volts.of(2.0);
+  // * ~~~~~~~~ CONSTANTS ~~~~~~~~
 
-    /** {@link Voltage} Voltage speed for outdexing */
-    public static final Voltage kOutdexingSpeed = kIndexingSpeed.times(-1);
+  /** {@link CANBus} CAN bus servo is on */
+  public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
 
-    // * HARDWARE CONSTANTS
-    /** {@link Integer} CAN ID of servo */
-    public static final int kServoCanDeviceId = Matrix.kIndexerId;
+  /** {@link TalonFXConfiguration} Hardware config of servo */
+  public static final TalonFXConfiguration kServoConfig =
+      new TalonFXConfiguration()
+          .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withInverted(InvertedValue.CounterClockwise_Positive)
+                  .withNeutralMode(NeutralModeValue.Brake))
+          .withCurrentLimits(new CurrentLimitsConfigs().withStatorCurrentLimit(40.0));
 
-    /** {@link Current} Stator current limit of servo */
-    public static final Current kServoStatorCurrentLimit = Amps.of(40.0);
+  // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
-    /** {@link TalonFXConfiguration} Hardware config of servo */
-    public static final TalonFXConfiguration kServoTalonConfig =
-        new TalonFXConfiguration()
-            .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
-            .withMotorOutput(
-                new MotorOutputConfigs()
-                    .withInverted(InvertedValue.CounterClockwise_Positive)
-                    .withNeutralMode(NeutralModeValue.Brake))
-            .withCurrentLimits(
-                new CurrentLimitsConfigs()
-                    .withStatorCurrentLimit(kServoStatorCurrentLimit)
-                    .withStatorCurrentLimitEnable(true));
+  private double mIndexingSpeedVolts = 6.5;
+  private double mPulsePeriodSec = 0.5;
+  private final DoubleEntry mIndexingSpeedTunable =
+      NetworkTableUtil.createEntry("Tunables/Indexer/Indexing Speed (volts)", mIndexingSpeedVolts);
+  private final DoubleEntry mPulsePeriodTunable =
+      NetworkTableUtil.createEntry("Tunables/Indexer/Pulse Period (sec)", mPulsePeriodSec);
 
-    /** {@link CANBus} CAN bus devices are on */
-    public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
-  }
-
-  /**
-   * Create new {@link Indexer}
-   *
-   * @return {@link Indexer}
-   */
-  public static Indexer create() {
-    return new Indexer(
-        new ServoIOTalonFx(
-            "Servo", Constants.kCanBus, Constants.kServoCanDeviceId, Constants.kServoTalonConfig));
-  }
+  // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
   @Logged private final ServoIO mServo;
 
   private boolean mIsRunning = false;
+  private final Debouncer mIsStuck = new Debouncer(0.1);
 
-  /**
-   * Create new {@link Indexer}
-   *
-   * @param servo {@link ServoIO} Servo powering subsystem
-   */
   protected Indexer(ServoIO servo) {
     mServo = servo;
   }
 
   @Override
   public void periodic() {
-    // Update Hardware
     mServo.periodic();
+
+    mIsStuck.calculate(
+        mIsRunning && MathUtil.isNear(0.0, mServo.getAngularVelocityRevsPerSec(), 0.1));
+
+    if (Flags.kTuningModeEnabled) {
+      mIndexingSpeedVolts = mIndexingSpeedTunable.get();
+      mPulsePeriodSec = mPulsePeriodTunable.get();
+    }
   }
 
-  // * GETTERS
-  /**
-   * Check if roller subsystem is running
-   *
-   * @return
-   */
-  @Logged(name = "Is Running (bool)", importance = Importance.INFO)
-  public boolean isRunning() {
-    return mIsRunning;
-  }
+  // * ~~~~~~~~ GETTERS ~~~~~~~~
 
   /**
-   * Check if roller subsystem is stuck
+   * Check if indexer is trying to move but is unable to
    *
    * @return {@link Boolean}
    */
   @Logged(name = "Is Stuck (bool)", importance = Importance.INFO)
   public boolean isStuck() {
-    return !mIsRunning && !(Math.abs(mServo.getAngularVelocity().in(RadiansPerSecond)) > 0.0);
+    return mIsStuck.calculate(
+        mIsRunning && MathUtil.isNear(0.0, mServo.getAngularVelocityRevsPerSec(), 0.1));
   }
 
-  // * COMMANDS
+  // * ~~~~~~~~ COMMANDS ~~~~~~~~
+
   /**
-   * Request subsystem to stop
+   * Constructs a sequence where subsystem stops completely
    *
    * @return {@link Command}
    */
-  public Command stop() {
+  public Command getNeutralCmd() {
     return this.run(
-            () -> {
-              mIsRunning = false;
-              mServo.stop();
-            })
-        .withName("Indexer Stop");
+        () -> {
+          mServo.setNeutral();
+          mIsRunning = false;
+        });
   }
 
   /**
-   * Request subsystem to run inwards and 'index'
+   * Constructs a sequence where subsystem continiously runs at indexing speed
    *
    * @return {@link Command}
    */
-  public Command index() {
+  public Command getIndexCmd() {
     return this.run(
-            () -> {
-              mServo.setVoltageSetpoint(Constants.kIndexingSpeed, false);
-              mIsRunning = true;
-            })
-        .withName("Indexer Index");
+        () -> {
+          mServo.setVoltageOutput(mIndexingSpeedVolts, true);
+          mIsRunning = true;
+        });
   }
 
   /**
-   * Request subsystem to run outwards and 'outdex' (aka eject)
+   * Constructs a sequence where subsystem periodically uns at indexing speed
    *
    * @return {@link Command}
    */
-  public Command outdex() {
-    return this.run(
-            () -> {
-              mIsRunning = true;
-              mServo.setVoltageSetpoint(Constants.kOutdexingSpeed, true);
-            })
-        .withName("Indexer Outdex");
+  public Command getPulseCmd() {
+    return Commands.waitSeconds(mPulsePeriodSec)
+        .andThen(getIndexCmd())
+        .withTimeout(mPulsePeriodSec)
+        .repeatedly();
   }
 }
