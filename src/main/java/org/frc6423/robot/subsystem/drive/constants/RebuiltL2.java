@@ -165,10 +165,10 @@ public class RebuiltL2 extends DriveConstants {
         // TODO tune; current values stolen from cascade
         .withSlot0(
             new Slot0Configs()
-                .withKS(0.0)
-                .withKV(0.0)
+                .withKS(0.014)
+                .withKV(10.0)
                 .withKA(0.0)
-                .withKP(4000.0)
+                .withKP(600.0)
                 .withKD(50.0)); // Torque Based Motion Magic Position Controls
   }
 
@@ -194,7 +194,6 @@ public class RebuiltL2 extends DriveConstants {
                     getMaxLinearAcceleration()
                         .div(getWheelRadius().in(Feet))
                         .in(FeetPerSecondPerSecond)))
-        // TODO tune; current values stolen from cascade
         .withSlot0(
             new Slot0Configs() // Torque Based Motion Magic Velocity Controls
                 .withKS(5.0)
@@ -202,7 +201,6 @@ public class RebuiltL2 extends DriveConstants {
                 .withKA(0.0)
                 .withKP(35.0)
                 .withKD(0.0))
-        // TODO tune;
         .withSlot1(
             new Slot1Configs() // Voltage Based Motion Magic Velocity Controls
                 .withKS(10.0)
