@@ -6,84 +6,84 @@
 
 package org.frc6423.lib.io;
 
-import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.RotationsPerSecond;
-
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.units.measure.MomentOfInertia;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 
-/** {@link ServoIOTalon} extension for flywheel system simulation */
 public class ServoIOTalonFxFlywheelSim extends ServoIOTalonFx {
-  private final FlywheelSim mPhysicsModel;
+  private final FlywheelSim mModel;
 
-  private double previousTimestamp;
+  private final double mRatio;
+
+  private double mPreviousTimestamp;
   private final Notifier mNotifier;
 
-  /**
-   * Create new {@link ServoIOTalonFxRollerSim}
-   *
-   * @param name {@link String} representing servo nickname
-   * @param canBus {@link CANBus} representing CAN bus loop device is in
-   * @param canDeviceId {@link Integer} representing the id of CAN device
-   * @param talonConfig {@link TalonFXConfiguration} representing the servo config
-   * @param rotationalInertia {@link MomentOfInertia} representing the rotational inertia of system
-   * @param motorType {@link MotorType} representing the type of motors used for gearbox input
-   * @param gearbox {@link DCMotor} representing the gearbox input
-   * @param sensorToMechanismRatio {@link Double} representing the gear ratio between the encoder
-   *     and mechanism output
-   */
-  public ServoIOTalonFxFlywheelSim(
+  protected ServoIOTalonFxFlywheelSim(
       String name,
+      MotorType type,
       CANBus canBus,
-      int deviceId,
-      TalonFXConfiguration talonConfig,
-      MomentOfInertia rotationalInertia,
-      MotorType motorType,
+      int canDeviceId,
+      TalonFXConfiguration config,
+      double rotationalInertiaKgSquaredMeters,
       DCMotor gearbox,
-      double sensorToMechanismRatio) {
-    super(name, canBus, deviceId, talonConfig);
+      double rotorToMechRatio) {
+    super(name, type, canBus, canDeviceId, config);
 
-    mPhysicsModel =
+    mRatio = rotorToMechRatio;
+
+    // Define Physics Model
+    mModel =
         new FlywheelSim(
             LinearSystemId.createFlywheelSystem(
-                gearbox, rotationalInertia.in(KilogramSquareMeters), sensorToMechanismRatio),
+                gearbox, rotationalInertiaKgSquaredMeters, rotorToMechRatio),
             gearbox);
 
-    mServo.getSimState().setMotorType(motorType);
+    // Configure Phoneix 6 Sim
+    mTalonConfig =
+        mTalonConfig.withFeedback(
+            new FeedbackConfigs()
+                .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
+                .withRotorToSensorRatio(1.0)
+                .withSensorToMechanismRatio(mRatio));
+
+    mServo.getConfigurator().apply(mTalonConfig);
+
+    mServo.getSimState().setMotorType(type);
     mServo.getSimState().Orientation =
         mTalonConfig.MotorOutput.Inverted == InvertedValue.CounterClockwise_Positive
             ? ChassisReference.CounterClockwise_Positive
             : ChassisReference.Clockwise_Positive;
 
+    // Start loop
     mNotifier =
         new Notifier(
             () -> {
               final double timestamp = Timer.getFPGATimestamp();
-              final double deltaTime = timestamp - previousTimestamp;
-              previousTimestamp = timestamp;
+              final double deltaTime = timestamp - mPreviousTimestamp;
+              mPreviousTimestamp = timestamp;
 
               mServo.getSimState().setSupplyVoltage(RobotController.getBatteryVoltage());
 
-              mPhysicsModel.setInputVoltage(mServo.getSimState().getMotorVoltage());
-              mPhysicsModel.update(deltaTime);
+              mModel.setInputVoltage(mServo.getSimState().getMotorVoltage());
+              mModel.update(deltaTime);
 
-              // ! Not going to add something for setRawRotorPosition cuz flywheel sim doesn't have
-              // a way to return it
+              // mServo
+              //     .getSimState()
+              //     .setRawRotorPosition((mModel.getAngleRads() / (Math.PI * 2)) * mRatio);
               mServo
                   .getSimState()
                   .setRotorVelocity(
-                      mPhysicsModel.getAngularVelocity().in(RotationsPerSecond)
-                          * sensorToMechanismRatio);
+                      (mModel.getAngularVelocityRadPerSec() / (Math.PI * 2)) * mRatio);
             });
 
     mNotifier.startPeriodic(0.002);
