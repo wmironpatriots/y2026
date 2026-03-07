@@ -16,6 +16,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.networktables.DoubleEntry;
@@ -79,8 +80,12 @@ public class Indexer extends SubsystemBase {
 
   private double mIndexingSpeedVolts = 6.5;
   private double mPulsePeriodSec = 0.5;
+
+  @NotLogged
   private final DoubleEntry mIndexingSpeedTunable =
       NetworkTableUtil.createEntry("Tunables/Indexer/Indexing Speed (volts)", mIndexingSpeedVolts);
+
+  @NotLogged
   private final DoubleEntry mPulsePeriodTunable =
       NetworkTableUtil.createEntry("Tunables/Indexer/Pulse Period (sec)", mPulsePeriodSec);
 
@@ -93,6 +98,8 @@ public class Indexer extends SubsystemBase {
 
   protected Indexer(ServoIO servo) {
     mServo = servo;
+
+    setDefaultCommand(neutral());
   }
 
   @Override
@@ -128,7 +135,7 @@ public class Indexer extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command getNeutralCmd() {
+  public Command neutral() {
     return this.run(
         () -> {
           mServo.setNeutral();
@@ -141,7 +148,7 @@ public class Indexer extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command getIndexCmd() {
+  public Command index() {
     return this.run(
         () -> {
           mServo.setVoltageOutput(mIndexingSpeedVolts, true);
@@ -154,9 +161,9 @@ public class Indexer extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command getPulseCmd() {
+  public Command pulse() {
     return Commands.waitSeconds(mPulsePeriodSec)
-        .andThen(getIndexCmd())
+        .andThen(index())
         .withTimeout(mPulsePeriodSec)
         .repeatedly();
   }

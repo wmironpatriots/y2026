@@ -100,6 +100,8 @@ public class Feeder extends SubsystemBase {
 
   protected Feeder(ServoIO servo) {
     mServo = servo;
+
+    setDefaultCommand(neutral());
   }
 
   @Override
@@ -134,7 +136,7 @@ public class Feeder extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command getNeutralCmd() {
+  public Command neutral() {
     return this.run(
         () -> {
           mServo.setNeutral();
@@ -147,7 +149,7 @@ public class Feeder extends SubsystemBase {
    *
    * @return {@link Command}
    */
-  public Command getFeedCmd() {
+  public Command feed() {
     return this.run(
         () -> {
           mServo.setVoltageOutput(mFeedingSpeedVolts, true);
