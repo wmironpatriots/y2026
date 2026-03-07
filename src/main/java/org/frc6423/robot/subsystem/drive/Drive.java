@@ -38,14 +38,15 @@ import java.util.function.DoubleSupplier;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
-import org.frc6423.robot.subsystem.drive.PositionEstimator.EncoderMeasurement;
+import org.frc6423.robot.subsystem.PositionEstimator;
+import org.frc6423.robot.subsystem.PositionEstimator.EncoderMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
 import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFx;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOTalonFxSim;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
-import org.frc6423.robot.subsystem.drive.localization.Vision;
+import org.frc6423.robot.subsystem.vision.Vision;
 
 /** {@link SubsystemBase} The class controlling the swerve drivetrain subsystem */
 public class Drive extends SubsystemBase {

@@ -4,29 +4,29 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.robot.subsystem.drive.localization;
+package org.frc6423.robot.subsystem.vision;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import org.frc6423.robot.subsystem.drive.localization.VisionConstants.CameraConfig;
+import org.frc6423.robot.subsystem.vision.Vision.CameraConfig;
 
-/** Interface for interacting with a localization camera */
+/** An abstract hardware interface for interacting with camera hardware */
 public abstract class CameraIO {
   public final CameraConfig mConfig;
 
   /**
    * Create new {@link CameraIO}
    *
-   * @param config {@link CameraConfig} Configuration for camera
+   * @param config {@link CameraConfig} Hardware Configuration for camera
    */
   public CameraIO(CameraConfig config) {
     mConfig = config;
   }
 
   /**
-   * Get the identifier of camera
+   * Get nickname of camera
    *
    * @return {@link String}
    */
@@ -35,27 +35,27 @@ public abstract class CameraIO {
   }
 
   /**
-   * Check status of camera connection
+   * Get status of camera
    *
    * @return {@link Boolean}
    */
   public abstract boolean isConnected();
 
   /**
-   * Get all new camera position measurements
+   * Get array of unread {@link VisionMeasurement}
    *
-   * @return {@Array} of {@link VisionMeasurements}
+   * @return {@link Array} of {@link VisionMeasurement}
    */
   public abstract VisionMeasurement[] getUnreadMeasurements();
 
   /**
-   * Represents a camera estimated position
+   * An estimation of the robots position with a variance
    *
-   * @param timestampSeconds {@link Double} When the camera thinks robot was at estimated position
-   *     (in seconds)
-   * @param positionEstimate {@link Pose2d} Estimated position in 2-Dimensional Space
-   * @param stDevs {@link Matrix} of length {@link N3} Standard deviations of the vision pose
-   *     measurement (x position in meters, y position in meters, and heading in radians).
+   * @param timestampSeconds {@link Double} FPAG timestamp of when the camera estimates the robot
+   *     was in this position
+   * @param positionEstimate {@link Pose2d} Estimated position derived by camera
+   * @param stDevs {@link Matrix} of Length {@link N3} Standard Deviations of measurement in the x,
+   *     y, & z directions
    */
   public record VisionMeasurement(
       double timestampSeconds, Pose2d positionEstimate, Matrix<N3, N1> stDevs) {}

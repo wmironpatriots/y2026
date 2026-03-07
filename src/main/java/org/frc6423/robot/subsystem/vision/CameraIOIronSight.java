@@ -4,7 +4,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.robot.subsystem.drive.localization;
+package org.frc6423.robot.subsystem.vision;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -12,17 +12,12 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.networktables.StructSubscriber;
-import org.frc6423.robot.subsystem.drive.localization.VisionConstants.CameraConfig;
+import org.frc6423.robot.subsystem.vision.Vision.CameraConfig;
 
 public class CameraIOIronSight extends CameraIO {
   private final StructSubscriber<Pose2d> mEstimateSubscriber;
   private final DoubleSubscriber mTimestampSubscriber;
 
-  /**
-   * Create new {@link CameraIO}
-   *
-   * @param config {@link CameraConfig} Configuration for camera
-   */
   public CameraIOIronSight(CameraConfig config) {
     super(config);
 

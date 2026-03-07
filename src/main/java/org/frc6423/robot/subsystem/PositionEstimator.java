@@ -4,7 +4,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.robot.subsystem.drive;
+package org.frc6423.robot.subsystem;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
@@ -29,7 +29,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.Optional;
 import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.lib.util.Tracer;
-import org.frc6423.robot.subsystem.drive.localization.CameraIO.VisionMeasurement;
+import org.frc6423.robot.subsystem.vision.CameraIO.VisionMeasurement;
 
 // TODO cleanup
 /**
