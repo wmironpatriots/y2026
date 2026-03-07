@@ -6,176 +6,134 @@
 
 package org.frc6423.lib.io;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.NewtonMeters;
-
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.VelocityVoltage;
-import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import edu.wpi.first.units.CurrentUnit;
-import edu.wpi.first.units.TorqueUnit;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularAcceleration;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Per;
-import edu.wpi.first.units.measure.Temperature;
-import edu.wpi.first.units.measure.Torque;
-import edu.wpi.first.units.measure.Voltage;
+import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
+import edu.wpi.first.math.system.plant.DCMotor;
 import org.frc6423.lib.util.PhoneixUtils;
 
-// TODO Javadoc
 public class ServoIOTalonFx extends ServoIO {
   protected final TalonFX mServo;
+  protected final MotorType mTalonType;
 
-  public final StatusSignal<Voltage> mSupplyVoltageSignal, mStatorVoltageSignal;
-  public final StatusSignal<Current> mSupplyCurrentSignal,
-      mStatorCurrentSignal,
-      mTorqueCurrentSignal;
-  public final StatusSignal<Angle> mPositionSignal, mRawPositionSignal;
-  public final StatusSignal<AngularVelocity> mVelocitySignal;
-  public final StatusSignal<AngularAcceleration> mAccelerationSignal;
-  public final StatusSignal<Temperature> mTemperatureSignal;
+  private int mGainsSlot = 0;
 
-  protected final VoltageOut mVoltageOut = new VoltageOut(0.0);
-  protected final TorqueCurrentFOC mTorqueCurrentOut = new TorqueCurrentFOC(0.0);
+  public final BaseStatusSignal mVoltsSignal,
+      mSupplyAmpsSignal,
+      mStatorAmpsSignal,
+      mTorqueAmpsSignal,
+      mCelsiusSignal,
+      mRevsSignal,
+      mRevsPerSecSignal,
+      mRevsPerSecPerSecSignal;
 
-  protected final PositionVoltage mVoltagePositionOut = new PositionVoltage(0.0);
-  protected final PositionTorqueCurrentFOC mTorquePositionOut = new PositionTorqueCurrentFOC(0.0);
+  private final TorqueCurrentFOC mTorqueCurrentRequest = new TorqueCurrentFOC(0.0);
 
-  protected final VelocityVoltage mVoltageVelocityOut = new VelocityVoltage(0.0);
-  protected final VelocityTorqueCurrentFOC mTorqueVelocityOut = new VelocityTorqueCurrentFOC(0.0);
+  private final PositionTorqueCurrentFOC mPositionRequest = new PositionTorqueCurrentFOC(0.0);
+  private final VelocityTorqueCurrentFOC mVelocityRequest = new VelocityTorqueCurrentFOC(0.0);
 
-  protected final MotionMagicVoltage mVoltageMotionMagicOut = new MotionMagicVoltage(0.0);
-  protected final MotionMagicTorqueCurrentFOC mTorqueMotionMagicOut =
+  private final MotionMagicTorqueCurrentFOC mProfiledPositionRequest =
       new MotionMagicTorqueCurrentFOC(0.0);
-
-  protected final MotionMagicVelocityVoltage mVoltageMotionMagicVelOut =
-      new MotionMagicVelocityVoltage(0.0);
-  protected final MotionMagicVelocityTorqueCurrentFOC mTorqueMotionMagicVelOut =
+  private final MotionMagicVelocityTorqueCurrentFOC mProfiledVelocityRequest =
       new MotionMagicVelocityTorqueCurrentFOC(0.0);
 
-  private int mSlot = 0;
+  protected ServoIOTalonFx(
+      String name, MotorType type, CANBus canBus, int canDeviceId, TalonFXConfiguration config) {
+    super(name, canDeviceId, config);
 
-  public ServoIOTalonFx(
-      String name, CANBus canBus, int deviceId, TalonFXConfiguration talonConfig) {
-    super(name, canBus, deviceId, talonConfig);
-
-    mServo = new TalonFX(deviceId, canBus);
+    mServo = new TalonFX(canDeviceId, canBus);
     mServo.getConfigurator().apply(mTalonConfig);
 
-    mSupplyVoltageSignal = mServo.getSupplyVoltage();
-    mStatorVoltageSignal = mServo.getMotorVoltage();
+    mTalonType = type;
 
-    mSupplyCurrentSignal = mServo.getSupplyCurrent();
-    mStatorCurrentSignal = mServo.getStatorCurrent();
-    mTorqueCurrentSignal = mServo.getTorqueCurrent();
-
-    mPositionSignal = mServo.getPosition();
-    mRawPositionSignal = mServo.getRotorPosition();
-
-    mVelocitySignal = mServo.getVelocity();
-    mAccelerationSignal = mServo.getAcceleration();
-
-    mTemperatureSignal = mServo.getDeviceTemp();
+    mVoltsSignal = mServo.getMotorVoltage(true);
+    mSupplyAmpsSignal = mServo.getSupplyCurrent(true);
+    mStatorAmpsSignal = mServo.getStatorCurrent(true);
+    mTorqueAmpsSignal = mServo.getTorqueCurrent(true);
+    mCelsiusSignal = mServo.getDeviceTemp(true);
+    mRevsSignal = mServo.getPosition(true);
+    mRevsPerSecSignal = mServo.getVelocity(true);
+    mRevsPerSecPerSecSignal = mServo.getAcceleration(true);
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0,
-        mSupplyVoltageSignal,
-        mStatorVoltageSignal,
-        mSupplyCurrentSignal,
-        mStatorCurrentSignal,
-        mTorqueCurrentSignal,
-        mPositionSignal,
-        mRawPositionSignal,
-        mVelocitySignal,
-        mAccelerationSignal,
-        mTemperatureSignal);
+        mVoltsSignal,
+        mSupplyAmpsSignal,
+        mStatorAmpsSignal,
+        mTorqueAmpsSignal,
+        mCelsiusSignal,
+        mRevsSignal,
+        mRevsPerSecSignal,
+        mRevsPerSecPerSecSignal);
   }
 
   @Override
   public void periodic() {
     BaseStatusSignal.refreshAll(
-        mSupplyVoltageSignal,
-        mStatorVoltageSignal,
-        mSupplyCurrentSignal,
-        mStatorCurrentSignal,
-        mTorqueCurrentSignal,
-        mPositionSignal,
-        mRawPositionSignal,
-        mVelocitySignal,
-        mAccelerationSignal,
-        mTemperatureSignal);
+        mVoltsSignal,
+        mSupplyAmpsSignal,
+        mStatorAmpsSignal,
+        mTorqueAmpsSignal,
+        mCelsiusSignal,
+        mRevsSignal,
+        mRevsPerSecSignal,
+        mRevsPerSecPerSecSignal);
   }
 
   @Override
-  public Per<TorqueUnit, CurrentUnit> getMotorKt() {
-    return mServo.getMotorKT().getValue();
+  public double getMotorKtNewtonMetersPerAmps() {
+    if (mTalonType == MotorType.KrakenX44) return DCMotor.getKrakenX44Foc(1).KtNMPerAmp;
+    else return DCMotor.getKrakenX60Foc(1).KtNMPerAmp;
   }
 
   @Override
-  public Voltage getSupplyVoltage() {
-    return mSupplyVoltageSignal.getValue();
+  public double getAppliedVolts() {
+    return mVoltsSignal.getValueAsDouble();
   }
 
   @Override
-  public Voltage getStatorVoltage() {
-    return mStatorVoltageSignal.getValue();
+  public double getSupplyCurrentAmps() {
+    return mSupplyAmpsSignal.getValueAsDouble();
   }
 
   @Override
-  public Current getSupplyCurrent() {
-    return mSupplyCurrentSignal.getValue();
+  public double getStatorCurrentAmps() {
+    return mStatorAmpsSignal.getValueAsDouble();
   }
 
   @Override
-  public Current getStatorCurrent() {
-    return mStatorCurrentSignal.getValue();
+  public double getTorqueCurrentAmps() {
+    return mTorqueAmpsSignal.getValueAsDouble();
   }
 
   @Override
-  public Current getTorqueCurrent() {
-    return mTorqueCurrentSignal.getValue();
+  public double getTemperatureCelsius() {
+    return mCelsiusSignal.getValueAsDouble();
   }
 
   @Override
-  public Angle getRawAngle() {
-    return mRawPositionSignal.getValue();
+  public double getAngularPositionRevs() {
+    return mRevsSignal.getValueAsDouble();
   }
 
   @Override
-  public Angle getAngle() {
-    return mPositionSignal.getValue();
+  public double getAngularVelocityRevsPerSec() {
+    return mRevsPerSecSignal.getValueAsDouble();
   }
 
   @Override
-  public AngularVelocity getAngularVelocity() {
-    return mVelocitySignal.getValue();
-  }
-
-  @Override
-  public AngularAcceleration getAngularAcceleration() {
-    return mAccelerationSignal.getValue();
-  }
-
-  @Override
-  public Temperature getTemperature() {
-    return mTemperatureSignal.getValue();
+  public double getAngularAccelerationRevsPerSecPerSec() {
+    return mRevsPerSecPerSecSignal.getValueAsDouble();
   }
 
   @Override
@@ -183,207 +141,82 @@ public class ServoIOTalonFx extends ServoIO {
     mServo.setControl(
         new Follower(
             leader.mCanDeviceId,
-            flipped ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned));
+            (flipped) ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned));
   }
 
   @Override
-  public void setGainsSlot(int slot) {
-    mSlot = slot;
-  }
-
-  @Override
-  public void setBrakeStatus(boolean active) {
-    if ((active && mTalonConfig.MotorOutput.NeutralMode == NeutralModeValue.Brake)
-        || (!active && mTalonConfig.MotorOutput.NeutralMode == NeutralModeValue.Coast)) {
+  public void setBrakeModeStatus(boolean brakeEnabled) {
+    if ((brakeEnabled && mTalonConfig.MotorOutput.NeutralMode == NeutralModeValue.Brake)
+        || (!brakeEnabled && mTalonConfig.MotorOutput.NeutralMode == NeutralModeValue.Coast)) {
       return;
     }
 
     new Thread(
             () -> {
               mTalonConfig.MotorOutput.NeutralMode =
-                  active ? NeutralModeValue.Brake : NeutralModeValue.Coast;
+                  brakeEnabled ? NeutralModeValue.Brake : NeutralModeValue.Coast;
 
               PhoneixUtils.tryUntilOk(5, () -> mServo.getConfigurator().apply(mTalonConfig));
             })
         .start();
+  }
+
+  @Override
+  public void resetRelativeEncoder(double positionRevs) {
+    mServo.setPosition(positionRevs);
+  }
+
+  @Override
+  public void setNeutral() {
+    mServo.stopMotor();
     ;
   }
 
   @Override
-  public void resetEncoder(Angle angle) {
-    mServo.setPosition(angle);
+  public void setTorqueCurrentOutput(double torqueNewtonMeters) {
+    mServo.setControl(mTorqueCurrentRequest.withOutput(torqueNewtonMeters));
   }
 
   @Override
-  public void stop() {
-    mServo.stopMotor();
+  public void setPositionSetpoint(double positionRevs) {
+    mServo.setControl(mPositionRequest.withPosition(positionRevs));
   }
 
   @Override
-  public void setVoltageSetpoint(Voltage voltage, boolean withFoc) {
-    mServo.setControl(mVoltageOut.withOutput(voltage).withEnableFOC(withFoc));
+  public void setPositionSetpoint(double positionRevs, double feedforward) {
+    mServo.setControl(mPositionRequest.withPosition(positionRevs).withFeedForward(feedforward));
   }
 
   @Override
-  public void setVoltagePositionSetpoint(Angle angle, boolean withFoc) {
+  public void setVelocitySetpoint(double velocityRevsPerSec) {
+    mServo.setControl(mVelocityRequest.withVelocity(velocityRevsPerSec));
+  }
+
+  @Override
+  public void setVelocitySetpoint(double velocityRevsPerSec, double feedforward) {
     mServo.setControl(
-        mVoltagePositionOut.withPosition(angle).withEnableFOC(withFoc).withSlot(mSlot));
+        mVelocityRequest.withVelocity(velocityRevsPerSec).withFeedForward(feedforward));
   }
 
   @Override
-  public void setVoltagePositionSetpoint(Angle angle, Voltage feedforward, boolean withFoc) {
+  public void setProfiledPositionSetpoint(double positionRevs) {
+    mServo.setControl(mProfiledPositionRequest.withPosition(positionRevs));
+  }
+
+  @Override
+  public void setProfiledPositionSetpoint(double positionRevs, double feedforward) {
     mServo.setControl(
-        mVoltagePositionOut
-            .withPosition(angle)
-            .withFeedForward(feedforward)
-            .withEnableFOC(withFoc)
-            .withSlot(mSlot));
+        mProfiledPositionRequest.withPosition(positionRevs).withFeedForward(feedforward));
   }
 
   @Override
-  public void setVoltageVelocitySetpoint(AngularVelocity velocity, boolean withFoc) {
+  public void setProfiledVelocitySetpoint(double velocityRevsPerSec) {
+    mServo.setControl(mProfiledVelocityRequest.withVelocity(velocityRevsPerSec));
+  }
+
+  @Override
+  public void setProfiledVelocitySetpoint(double velocityRevsPerSec, double feedforward) {
     mServo.setControl(
-        mVoltageVelocityOut.withVelocity(velocity).withEnableFOC(withFoc).withSlot(mSlot));
-  }
-
-  @Override
-  public void setVoltageVelocitySetpoint(
-      AngularVelocity velocity, Voltage feedforward, boolean withFoc) {
-    mServo.setControl(
-        mVoltageVelocityOut
-            .withVelocity(velocity)
-            .withAcceleration(getAngularAcceleration())
-            .withFeedForward(feedforward)
-            .withEnableFOC(withFoc)
-            .withSlot(mSlot));
-  }
-
-  @Override
-  public void setVoltageMotionProfiledPositionSetpoint(Angle angle, boolean withFoc) {
-    mServo.setControl(
-        mVoltageMotionMagicOut.withPosition(angle).withEnableFOC(withFoc).withSlot(mSlot));
-  }
-
-  @Override
-  public void setVoltageMotionProfiledPositionSetpoint(
-      Angle angle, Voltage feedforward, boolean withFoc) {
-    mServo.setControl(
-        mVoltageMotionMagicOut
-            .withPosition(angle)
-            .withFeedForward(feedforward)
-            .withEnableFOC(withFoc)
-            .withSlot(mSlot));
-  }
-
-  @Override
-  public void setVoltageMotionProfiledVelocitySetpoint(AngularVelocity velocity, boolean withFoc) {
-    mServo.setControl(
-        mVoltageMotionMagicVelOut.withVelocity(velocity).withEnableFOC(withFoc).withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueCurrentSetpoint(Current current) {
-    mServo.setControl(mTorqueCurrentOut.withOutput(current));
-  }
-
-  @Override
-  public void setTorquePositionSetpoint(Angle angle) {
-    mServo.setControl(mTorquePositionOut.withPosition(angle).withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorquePositionSetpoint(Angle angle, Torque torque) {
-    mServo.setControl(
-        mTorquePositionOut
-            .withPosition(angle)
-            .withFeedForward(getSystemKt().in(NewtonMeters.per(Amps)) / torque.in(NewtonMeters))
-            .withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorquePositionSetpoint(Angle angle, Current feedforward) {
-    mServo.setControl(
-        mTorquePositionOut.withPosition(angle).withFeedForward(feedforward).withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueVelocitySetpoint(AngularVelocity velocity) {
-    mServo.setControl(mTorqueVelocityOut.withVelocity(velocity).withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueVelocitySetpoint(AngularVelocity velocity, Torque torque) {
-    mServo.setControl(
-        mTorqueVelocityOut
-            .withVelocity(velocity)
-            .withFeedForward(getSystemKt().in(NewtonMeters.per(Amps)) / torque.in(NewtonMeters))
-            .withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueVelocitySetpoint(AngularVelocity velocity, Current feedforward) {
-    mServo.setControl(
-        mTorqueVelocityOut.withVelocity(velocity).withFeedForward(feedforward).withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueVelocitySetpoint(
-      AngularVelocity velocity, AngularAcceleration acceleration) {
-    mServo.setControl(
-        mTorqueVelocityOut.withVelocity(velocity).withAcceleration(acceleration).withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueMotionProfiledPositionSetpoint(Angle angle) {
-    mServo.setControl(mTorqueMotionMagicOut.withPosition(angle).withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueMotionProfiledPositionSetpoint(Angle angle, Torque torque) {
-    mServo.setControl(
-        mTorqueMotionMagicOut
-            .withPosition(angle)
-            .withFeedForward(getSystemKt().in(NewtonMeters.per(Amps)) / torque.in(NewtonMeters))
-            .withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueMotionProfiledPositionSetpoint(Angle angle, Current feedforward) {
-    mServo.setControl(
-        mTorqueMotionMagicOut.withPosition(angle).withFeedForward(feedforward).withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueMotionProfiledVelocitySetpoint(AngularVelocity velocity) {
-    mServo.setControl(mTorqueMotionMagicVelOut.withVelocity(velocity).withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueMotionProfiledVelocitySetpoint(AngularVelocity velocity, Torque torque) {
-    mServo.setControl(
-        mTorqueMotionMagicVelOut
-            .withVelocity(velocity)
-            .withFeedForward(getSystemKt().in(NewtonMeters.per(Amps)) / torque.in(NewtonMeters))
-            .withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueMotionProfiledVelocitySetpoint(
-      AngularVelocity velocity, Current feedforward) {
-    mServo.setControl(
-        mTorqueMotionMagicVelOut
-            .withVelocity(velocity)
-            .withFeedForward(feedforward)
-            .withSlot(mSlot));
-  }
-
-  @Override
-  public void setTorqueMotionProfiledVelocitySetpoint(
-      AngularVelocity velocity, AngularAcceleration acceleration) {
-    mServo.setControl(
-        mTorqueMotionMagicVelOut
-            .withVelocity(velocity)
-            .withAcceleration(acceleration)
-            .withSlot(mSlot));
+        mProfiledVelocityRequest.withVelocity(velocityRevsPerSec).withFeedForward(feedforward));
   }
 }
