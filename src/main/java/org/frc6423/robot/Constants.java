@@ -8,8 +8,8 @@ package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.epilogue.Logged.Importance;
-import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
+import org.frc6423.robot.subsystem.drive.constants.SwerveConstants;
 
 /**
  * This is a globally accessible class for storing immutable values.
@@ -22,8 +22,8 @@ import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
 public final class Constants {
   /** Runtime flags determining the robots initialization */
   public static final class Flags {
-    /** {@link DriveConstants} Drivetrain characterization */
-    public static final DriveConstants kDriveConstants = new RebuiltL2();
+    /** {@link SwerveConstants} Drivetrain characterization */
+    public static final SwerveConstants kDriveConstants = new RebuiltL2();
 
     /** When true, subsystems will not be initialized */
     public static final boolean kSubsystemDisabled = false;

@@ -6,17 +6,6 @@
 
 package org.frc6423.robot.subsystem.drive.constants;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Feet;
-import static edu.wpi.first.units.Units.FeetPerSecond;
-import static edu.wpi.first.units.Units.FeetPerSecondPerSecond;
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
-import static edu.wpi.first.units.Units.Pounds;
-import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
-import static edu.wpi.first.units.Units.Revolutions;
-
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -36,18 +25,11 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularAcceleration;
-import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.measure.LinearAcceleration;
-import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.units.measure.Mass;
-import edu.wpi.first.units.measure.MomentOfInertia;
+import edu.wpi.first.math.util.Units;
 import org.frc6423.robot.Constants.Matrix;
 
 /**
- * {@link DriveConstants} extension that represents the configs for FRC 6423's 2026 Robot:
- * <ROBOT-NAME>
+ * {@link SwerveConstants} extension for artifactor's configs (L2 ratio)
  *
  * <p>https://cad.onshape.com/documents?nodeId=e1e360f455a945b4649bb992&resourceType=folder
  *
@@ -55,48 +37,53 @@ import org.frc6423.robot.Constants.Matrix;
  *
  * <p>Kraken x60 for pivot & drive, CANcoder for encoder
  */
-public class RebuiltL2 extends DriveConstants {
+public class RebuiltL2 extends SwerveConstants {
   @Override
-  public Distance getTrackWidth() {
-    return Inches.of(23.000);
+  public double getTrackWidthMeters() {
+    return Units.inchesToMeters(23.000);
   }
 
   @Override
-  public Distance getBumperThickness() {
-    return Inches.of(5.25);
+  public double getBumperThicknessInches() {
+    return Units.inchesToMeters(5.25);
   }
 
   @Override
-  public LinearVelocity getMaxLinearVelocity() {
+  public double getMaxLinearVelocityMetersPerSecond() {
     // https://www.swervedrivespecialties.com/products/mk5i-swerve-module
-    return FeetPerSecond.of(17.4);
+    return Units.feetToMeters(17.4);
+  }
+
+  @Override
+  public double getMaxLinearAccelerationMetersPerSecondPerSecond() {
+    return 17.594;
   }
 
   @Override
   public double getFocAutoToggleMagnitude() {
-    return 0.9; // TODO test irl
+    return 0.9;
   }
 
   @Override
-  public LinearAcceleration getMaxLinearAcceleration() {
-    return MetersPerSecondPerSecond.of(17.594);
+  public double getAngularAccelerationRadsPerSecPerSec() {
+    return 84.759;
   }
 
   @Override
-  public AngularAcceleration getAngularAcceleration() {
-    return RadiansPerSecondPerSecond.of(84.759);
-  }
-
-  @Override
-  public Mass getMass() {
+  public double getMassKg() {
     // TODO measure value irl; Values from CAD
-    return Pounds.of(113);
+    return Units.lbsToKilograms(113);
   }
 
   @Override
-  public MomentOfInertia getRotationalInertia() {
+  public double getRotationalInertiaKgSquaredMeters() {
     // TODO measure value irl; Values from CAD
-    return KilogramSquareMeters.of(14075.351 * 0.0002926397);
+    return 14075.351 * 0.0002926397;
+  }
+
+  @Override
+  public double getWheelRadiusMeters() {
+    return Units.inchesToMeters(2.0);
   }
 
   @Override
@@ -106,7 +93,7 @@ public class RebuiltL2 extends DriveConstants {
 
   @Override
   public double getPivotSensorToMechanismRatio() {
-    return 1.0;
+    return (1.0 / 1.0);
   }
 
   @Override
@@ -121,18 +108,13 @@ public class RebuiltL2 extends DriveConstants {
   }
 
   @Override
-  public Distance getWheelRadius() {
-    return Inches.of(2.0);
-  }
-
-  @Override
   public CANBus getCANBus() {
     return Matrix.kDriveCanBus;
   }
 
   @Override
   public Pigeon2Configuration getPigeon2Config() {
-    return new Pigeon2Configuration(); // TODO define configs if needed
+    return new Pigeon2Configuration();
   }
 
   @Override
@@ -148,9 +130,9 @@ public class RebuiltL2 extends DriveConstants {
                 .withNeutralMode(NeutralModeValue.Brake))
         .withCurrentLimits(
             new CurrentLimitsConfigs()
-                .withSupplyCurrentLimit(Amps.of(40.0))
+                .withSupplyCurrentLimit(40.0)
                 .withSupplyCurrentLimitEnable(true)
-                .withStatorCurrentLimit(Amps.of(120.0))
+                .withStatorCurrentLimit(120.0)
                 .withStatorCurrentLimitEnable(true))
         .withFeedback(
             new FeedbackConfigs()
@@ -162,7 +144,6 @@ public class RebuiltL2 extends DriveConstants {
             new MotionMagicConfigs()
                 .withMotionMagicCruiseVelocity((5800 / 60) / getPivotRotorToSensorRatio())
                 .withMotionMagicAcceleration((5800 / 60) / getPivotRotorToSensorRatio() * 0.005))
-        // TODO tune; current values stolen from cascade
         .withSlot0(
             new Slot0Configs()
                 .withKS(0.014)
@@ -182,18 +163,16 @@ public class RebuiltL2 extends DriveConstants {
                 .withNeutralMode(NeutralModeValue.Brake))
         .withCurrentLimits(
             new CurrentLimitsConfigs()
-                .withStatorCurrentLimit(Amps.of(20.0))
+                .withStatorCurrentLimit(120.0)
                 .withStatorCurrentLimitEnable(true))
-        .withTorqueCurrent(new TorqueCurrentConfigs().withTorqueNeutralDeadband(Amps.of(10.0)))
+        .withTorqueCurrent(new TorqueCurrentConfigs().withTorqueNeutralDeadband(10.0))
         .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(getDriveRotorToMechRatio()))
         .withMotionMagic(
             new MotionMagicConfigs()
                 .withMotionMagicCruiseVelocity(
-                    getMaxLinearVelocity().div(getWheelRadius().in(Feet)).in(FeetPerSecond))
+                    getMaxLinearVelocityMetersPerSecond() / getWheelRadiusMeters())
                 .withMotionMagicAcceleration(
-                    getMaxLinearAcceleration()
-                        .div(getWheelRadius().in(Feet))
-                        .in(FeetPerSecondPerSecond)))
+                    getMaxLinearAccelerationMetersPerSecondPerSecond() / getWheelRadiusMeters()))
         .withSlot0(
             new Slot0Configs() // Torque Based Motion Magic Velocity Controls
                 .withKS(5.0)
@@ -216,7 +195,7 @@ public class RebuiltL2 extends DriveConstants {
   }
 
   @Override
-  public CANcoderConfiguration getCANcoderConfig(Angle offset) {
+  public CANcoderConfiguration getCANcoderConfig(double angularOffsetRevs) {
     return new CANcoderConfiguration()
         .withMagnetSensor(
             new MagnetSensorConfigs()
@@ -224,7 +203,7 @@ public class RebuiltL2 extends DriveConstants {
                     getPivotInverted()
                         ? SensorDirectionValue.Clockwise_Positive
                         : SensorDirectionValue.CounterClockwise_Positive)
-                .withMagnetOffset(offset));
+                .withMagnetOffset(angularOffsetRevs));
   }
 
   @Override
@@ -232,18 +211,7 @@ public class RebuiltL2 extends DriveConstants {
     return new GyroConfig(getCANBus(), Matrix.kDriveGyroId, getPigeon2Config());
   }
 
-  @Override
-  public ModuleConfig getFrontLeftModuleConfig() {
-    return new ModuleConfig(
-        "FL",
-        getCANBus(),
-        Matrix.kDriveFlPivotId,
-        Matrix.kDriveFlDriveId,
-        Matrix.kDriveFlEncoderId,
-        getPivotServoConfig(Matrix.kDriveFlEncoderId),
-        getDriveServoConfig(),
-        getCANcoderConfig(Revolutions.of(-0.224609375)));
-  }
+  // TODO offsets
 
   @Override
   public ModuleConfig getFrontRightModuleConfig() {
@@ -255,20 +223,8 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveFrEncoderId,
         getPivotServoConfig(Matrix.kDriveFrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Revolutions.of(0.36328125).plus(Revolutions.of(0.5))));
-  }
-
-  @Override
-  public ModuleConfig getBackLeftModuleConfig() {
-    return new ModuleConfig(
-        "BL",
-        getCANBus(),
-        Matrix.kDriveBlPivotId,
-        Matrix.kDriveBlDriveId,
-        Matrix.kDriveBlEncoderId,
-        getPivotServoConfig(Matrix.kDriveBlEncoderId),
-        getDriveServoConfig(),
-        getCANcoderConfig(Revolutions.of(-0.133544921875)));
+        getCANcoderConfig(0.0),
+        getWheelRadiusMeters());
   }
 
   @Override
@@ -281,6 +237,35 @@ public class RebuiltL2 extends DriveConstants {
         Matrix.kDriveBrEncoderId,
         getPivotServoConfig(Matrix.kDriveBrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(Revolutions.of(0.385986328125).plus(Revolutions.of(0.5))));
+        getCANcoderConfig(0.0),
+        getWheelRadiusMeters());
+  }
+
+  @Override
+  public ModuleConfig getFrontLeftModuleConfig() {
+    return new ModuleConfig(
+        "FL",
+        getCANBus(),
+        Matrix.kDriveFlPivotId,
+        Matrix.kDriveFlDriveId,
+        Matrix.kDriveFlEncoderId,
+        getPivotServoConfig(Matrix.kDriveFlEncoderId),
+        getDriveServoConfig(),
+        getCANcoderConfig(0.0),
+        getWheelRadiusMeters());
+  }
+
+  @Override
+  public ModuleConfig getBackLeftModuleConfig() {
+    return new ModuleConfig(
+        "BL",
+        getCANBus(),
+        Matrix.kDriveBlPivotId,
+        Matrix.kDriveBlDriveId,
+        Matrix.kDriveBlEncoderId,
+        getPivotServoConfig(Matrix.kDriveBlEncoderId),
+        getDriveServoConfig(),
+        getCANcoderConfig(0.0),
+        getWheelRadiusMeters());
   }
 }

@@ -8,12 +8,12 @@ package org.frc6423.robot.subsystem.drive.constants;
 
 import edu.wpi.first.math.util.Units;
 
-/** {@link RebuiltL2_old} but for L2 drive ratio */
-public class RebuiltL1 extends RebuiltL2 {
+/** {@link RebuiltL2} but for MK5i /w L3 ratio */
+public class RebuiltL3 extends RebuiltL2 {
   @Override
   public double getMaxLinearVelocityMetersPerSecond() {
     // https://www.swervedrivespecialties.com/products/mk5i-swerve-module
-    return Units.feetToMeters(14.9);
+    return Units.feetToMeters(12.624);
   }
 
   @Override
@@ -29,6 +29,6 @@ public class RebuiltL1 extends RebuiltL2 {
 
   @Override
   public double getDriveRotorToMechRatio() {
-    return (54.0 / 14.0) * (25.0 / 32.0) * (30.0 / 15.0);
+    return (54.0 / 16.0) * (25.0 / 32.0) * (30.0 / 15.0);
   }
 }
