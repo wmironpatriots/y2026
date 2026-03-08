@@ -11,4 +11,8 @@ import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
 /** Interface for interacting with gyro hardware */
 public abstract class SwerveModuleIO {
   protected ModuleConfig mConfig;
+
+  public abstract void odoPeriodic();
+
+  public abstract void periodic();
 }

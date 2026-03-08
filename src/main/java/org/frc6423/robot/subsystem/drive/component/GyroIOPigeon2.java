@@ -8,51 +8,53 @@ package org.frc6423.robot.subsystem.drive.component;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.units.measure.LinearAcceleration;
+import java.util.Queue;
+import org.frc6423.robot.subsystem.drive.PhoneixOdometryThread;
 
 /** Interface for interacting with {@link Pigeon2} gyro hardware */
 public class GyroIOPigeon2 extends GyroIO {
   private final Pigeon2 mPigeon;
 
-  private final StatusSignal<LinearAcceleration> mAccelXSig, mAccelYSig, mAccelZSig;
+  private final BaseStatusSignal mYawSignal;
+
+  private final Queue<Double> mYawPositionQueue;
+  private final Queue<Double> mYawTimestampQueue;
 
   public GyroIOPigeon2(int canDeviceId, CANBus canBus, Pigeon2Configuration config) {
     mPigeon = new Pigeon2(canDeviceId, canBus);
     mPigeon.getConfigurator().apply(config);
+    mPigeon.getConfigurator().setYaw(0.0);
 
-    mAccelXSig = mPigeon.getAccelerationX();
-    mAccelYSig = mPigeon.getAccelerationY();
-    mAccelZSig = mPigeon.getAccelerationZ();
+    mYawSignal = mPigeon.getYaw();
+    mYawSignal.setUpdateFrequency(PhoneixOdometryThread.kFrequencyHz);
 
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, mAccelXSig, mAccelYSig, mAccelZSig);
+    // TODO do we need to specify the freq?
+    mPigeon.optimizeBusUtilization();
+
+    mYawTimestampQueue = PhoneixOdometryThread.getInstance().makeTimestampQueue();
+    mYawPositionQueue = PhoneixOdometryThread.getInstance().registerSignal(mPigeon.getYaw());
   }
 
   @Override
   public void periodic() {
-    BaseStatusSignal.refreshAll(mAccelXSig, mAccelYSig, mAccelZSig);
+    BaseStatusSignal.refreshAll(mYawSignal);
   }
 
   @Override
-  public Rotation3d getRotation3d() {
-    return mPigeon.getRotation3d();
+  public double[] getYawRotationsRads() {
+    var result = mYawPositionQueue.stream().mapToDouble((Double value) -> value).toArray();
+    mYawPositionQueue.clear();
+
+    return result;
   }
 
   @Override
-  public LinearAcceleration getAccelerationX() {
-    return mAccelXSig.getValue();
-  }
+  public double[] getYawTimestampsSec() {
+    var result = mYawTimestampQueue.stream().mapToDouble((Double value) -> value).toArray();
+    mYawTimestampQueue.clear();
 
-  @Override
-  public LinearAcceleration getAccelerationY() {
-    return mAccelYSig.getValue();
-  }
-
-  @Override
-  public LinearAcceleration getAccelerationZ() {
-    return mAccelZSig.getValue();
+    return result;
   }
 }
