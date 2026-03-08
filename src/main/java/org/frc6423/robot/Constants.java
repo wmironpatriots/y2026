@@ -9,7 +9,6 @@ package org.frc6423.robot;
 import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.epilogue.Logged.Importance;
 import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
-import org.frc6423.robot.subsystem.drive.constants.RebuiltL1;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
 
 /**
@@ -23,8 +22,8 @@ import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
 public final class Constants {
   /** Runtime flags determining the robots initialization */
   public static final class Flags {
-    /** {@link RobotType} representing the robot chassis being used */
-    public static final RobotType kRobotType = RobotType.Y2026_L2;
+    /** {@link DriveConstants} Drivetrain characterization */
+    public static final DriveConstants kDriveConstants = new RebuiltL2();
 
     /** When true, subsystems will not be initialized */
     public static final boolean kSubsystemDisabled = false;
@@ -79,21 +78,5 @@ public final class Constants {
 
     public static final int kIntakeBeamBreakDio = 0;
     public static final int kFeederBeamBreakDio = 1;
-  }
-
-  /** Represents the type of robot codebase is running on */
-  public static enum RobotType {
-    /** {@link RobotType} representing the 2026 competition robot chassis /w L1 Ratio */
-    Y2026_L1(new RebuiltL1()),
-    /** {@link RobotType} representing the 2026 competition robot chassis /w L2 Ratio */
-    Y2026_L2(new RebuiltL2()),
-    /** {@link RobotType} representing the 2026 competition robot chassis /w L3 Ratio */
-    Y2026_L3(new RebuiltL2());
-
-    public final DriveConstants mDriveConstants;
-
-    private RobotType(DriveConstants drivetrainConstants) {
-      this.mDriveConstants = drivetrainConstants;
-    }
   }
 }

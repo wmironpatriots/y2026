@@ -12,7 +12,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import org.frc6423.robot.subsystem.vision.CameraIO.VisionMeasurement;
+import org.frc6423.robot.subsystem.RobotState.VisionEstimate;
 
 /** {@link SubsystemBase} Manager subsystem for camera hardware */
 public class Vision extends SubsystemBase {
@@ -58,8 +58,8 @@ public class Vision extends SubsystemBase {
     // TODO upload to {@link PositionEstimator}
   }
 
-  public VisionMeasurement[] getUnreadMeasurements() {
-    ArrayList<VisionMeasurement> allMeasurements = new ArrayList<>();
+  public VisionEstimate[] getUnreadMeasurements() {
+    ArrayList<VisionEstimate> allMeasurements = new ArrayList<>();
     for (var camera : mCameras) {
       var measurements = camera.getUnreadMeasurements();
 
@@ -68,7 +68,7 @@ public class Vision extends SubsystemBase {
       }
     }
 
-    return allMeasurements.toArray(new VisionMeasurement[0]);
+    return allMeasurements.toArray(new VisionEstimate[0]);
   }
 
   public record CameraConfig(String name, Transform3d displacementWrtRobot) {}

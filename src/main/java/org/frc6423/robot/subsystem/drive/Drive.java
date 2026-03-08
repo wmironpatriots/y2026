@@ -38,8 +38,8 @@ import java.util.function.DoubleSupplier;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
-import org.frc6423.robot.subsystem.PositionEstimator;
-import org.frc6423.robot.subsystem.PositionEstimator.EncoderMeasurement;
+import org.frc6423.robot.subsystem.RobotState;
+import org.frc6423.robot.subsystem.RobotState.EncoderMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
 import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
@@ -115,7 +115,7 @@ public class Drive extends SubsystemBase {
   private final Vision mVision = Vision.create();
 
   // * CONTROL MEMBERS
-  private final PositionEstimator mPoseEstimator;
+  private final RobotState mPoseEstimator;
 
   private SwerveModuleState[] mSetpointStates =
       new SwerveModuleState[] {
@@ -154,8 +154,7 @@ public class Drive extends SubsystemBase {
 
     // Init controls
     mPoseEstimator =
-        new PositionEstimator(
-            mConstants.getKinematics(), VecBuilder.fill(0.6, 0.6, 0.6, 0.07), 0.0);
+        new RobotState(mConstants.getKinematics(), VecBuilder.fill(0.6, 0.6, 0.6, 0.07), 0.0);
 
     mPositionXController = new PIDController(5.0, 0.0, 0.0);
     mPositionYController = new PIDController(5.0, 0.0, 0.0);

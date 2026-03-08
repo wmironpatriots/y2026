@@ -12,6 +12,7 @@ import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.networktables.StructSubscriber;
+import org.frc6423.robot.subsystem.RobotState.VisionEstimate;
 import org.frc6423.robot.subsystem.vision.Vision.CameraConfig;
 
 public class CameraIOIronSight extends CameraIO {
@@ -42,10 +43,9 @@ public class CameraIOIronSight extends CameraIO {
   }
 
   @Override
-  public VisionMeasurement[] getUnreadMeasurements() {
-    // TODO get multiple when support is added
-    return new VisionMeasurement[] {
-      new VisionMeasurement(
+  public VisionEstimate[] getUnreadMeasurements() {
+    return new VisionEstimate[] {
+      new VisionEstimate(
           mTimestampSubscriber.get(), mEstimateSubscriber.get(), VecBuilder.fill(0.0, 0.0, 0.0))
     };
   }
