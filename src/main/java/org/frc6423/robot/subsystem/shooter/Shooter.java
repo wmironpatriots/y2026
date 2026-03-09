@@ -352,7 +352,8 @@ public class Shooter extends SubsystemBase {
       SmartDashboard.putData(runCharacterizationSequence());
     }
 
-    setDefaultCommand(runCurrentHoming().onlyIf(() -> !isHomed()));
+    setDefaultCommand(
+        Commands.sequence(runCurrentHoming().onlyIf(() -> !isHomed()), stowAndStop()));
   }
 
   @Override

@@ -8,18 +8,14 @@ package org.frc6423.robot.subsystem.intake;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
@@ -28,17 +24,14 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import org.frc6423.lib.io.EncoderIO;
-import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.lib.io.ServoIOTalonFxPivotSim;
-import org.frc6423.lib.util.NetworkTableUtil;
-import org.frc6423.robot.Constants.Flags;
+import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
@@ -62,13 +55,11 @@ public class Intake extends SubsystemBase {
   public static Intake create() {
     return (Robot.isReal())
         ? new Intake(
-            new EncoderIOCanCoder(kEncoderCanDeviceId, kCanBus, kEncoderConfig),
             new ServoIOTalonFx(
                 "Pivot", MotorType.KrakenX60, kCanBus, kPivotCanDeviceId, kPivotConfig),
             new ServoIOTalonFx(
                 "Roller", MotorType.KrakenX60, kCanBus, kRollerCanDeviceId, kRollerConfig))
         : new Intake(
-            new EncoderIOCanCoder(kEncoderCanDeviceId, kCanBus, kEncoderConfig),
             new ServoIOTalonFxPivotSim(
                 "Pivot",
                 MotorType.KrakenX60,
@@ -82,7 +73,7 @@ public class Intake extends SubsystemBase {
                 kMinAngleRevs,
                 true,
                 DCMotor.getKrakenX60Foc(1),
-                kPivotRotorToSensorRatio * kPivotSensorToMechRatio),
+                kPivotSensorToMechRatio * kPivotSensorToMechRatio),
             new ServoIONone("Roller"));
   }
 
@@ -90,9 +81,6 @@ public class Intake extends SubsystemBase {
 
   /** {@link CANBus} CAN bus devices are on */
   public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
-
-  /** {@link Integer} Unique CAN device indentifier for the abs encoder */
-  public static final int kEncoderCanDeviceId = Matrix.kIntakeEncoderId;
 
   /** {@link Integer} Unique CAN device indentifier for the pivot servo */
   public static final int kPivotCanDeviceId = Matrix.kIntakePivotId;
@@ -110,32 +98,8 @@ public class Intake extends SubsystemBase {
   public static final double kMaxAngleRevs = Units.radiansToDegrees(2.16);
 
   /** {@link Double} Gear ratio between pivot servo rotor and the abs encoder shaft */
-  public static final double kPivotRotorToSensorRatio = (5.0 / 1.0) * (3.0 / 1.0) * (1.0 / 1.0);
-
-  /** {@link Double} Gear ratio between the abs encoder shaft and the mechanism pivot */
-  public static final double kPivotSensorToMechRatio = (36.0 / 16.0);
-
-  /** {@link Double} Angular Position offset to the stowed angle of abs encoder */
-  public static final double kEncoderAngularOffsetRevs = 0.6555; // TODO
-
-  /** {@link Double} Angular Position in the middle of the 'unreachable' area of pivot */
-  public static final double kEncoderSensorDiscontinuityPointRevs = 0.0;
-
-  //   (kMinAngleRevs + kMaxAngleRevs) / 2.0 + 0.5;
-
-  //   MathUtil.inputModulus(kMaxAngleRevs + kMinAngleRevs, 0.0, 1.0) / 2;
-  // 360
-  // - (kMaxAngleRevs - kMinAngleRevs) / 2
-  // + kMaxAngleRevs; // TODO we might have to add to encoder offset to zero
-
-  /** {@link CANcoderConfiguration} Hardware config of abs encoder */
-  public static final CANcoderConfiguration kEncoderConfig =
-      new CANcoderConfiguration()
-          .withMagnetSensor(
-              new MagnetSensorConfigs()
-                  .withSensorDirection(SensorDirectionValue.Clockwise_Positive)
-                  .withMagnetOffset(kEncoderAngularOffsetRevs)
-                  .withAbsoluteSensorDiscontinuityPoint(kEncoderSensorDiscontinuityPointRevs));
+  public static final double kPivotSensorToMechRatio =
+      (5.0 / 1.0) * (3.0 / 1.0) * (1.0 / 1.0) * (36.0 / 16.0);
 
   /** {@link TalonFXConfiguration} Hardware config of pivot servo */
   public static final TalonFXConfiguration kPivotConfig =
@@ -152,20 +116,11 @@ public class Intake extends SubsystemBase {
           .withFeedback(
               new FeedbackConfigs()
                   .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
-                  .withSensorToMechanismRatio(kPivotSensorToMechRatio * kPivotRotorToSensorRatio))
-          //   .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-          //   .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
-          //   .withRotorToSensorRatio(kPivotRotorToSensorRatio)
-          //   .withSensorToMechanismRatio(kPivotSensorToMechRatio))
+                  .withSensorToMechanismRatio(kPivotSensorToMechRatio))
           .withMotionMagic(
               new MotionMagicConfigs()
                   .withMotionMagicCruiseVelocity(2)
-                  .withMotionMagicAcceleration(3))
-          .withSlot0(
-              new Slot0Configs()
-                  .withKS(1)
-                  .withKP(350.0)
-                  .withKD(50.0)); // Torque Current Control Gains (accelerating)
+                  .withMotionMagicAcceleration(3));
 
   /** {@link TalonFXConfiguration} Hardware config of roller servo */
   public static final TalonFXConfiguration kRollerConfig =
@@ -186,57 +141,72 @@ public class Intake extends SubsystemBase {
   /** {@link Double} Length of pivot arm in meters */
   public static final double kArmLengthMeters = 0.5;
 
+  public static final String kTunablesPrefix = "/Intake";
+
+  public static final double kPivotHomingVolts = -3.5;
+
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
-  private double mPivotKs = 1.0;
-  private double mPivotKp = 350.0;
-  private double mPivotKd = 50.0;
+  public static TunableNumber kPivotZeroingVelocityThreshold =
+      new TunableNumber(kTunablesPrefix + "/Zeroing Velocity Threshold (deg per sec)");
 
-  private final DoubleEntry mPivotKsTunable =
-      NetworkTableUtil.createEntry("Tunables/Intake/Ks", mPivotKs);
-  private final DoubleEntry mPivotKpTunable =
-      NetworkTableUtil.createEntry("Tunables/Intake/Kp", mPivotKp);
-  private final DoubleEntry mPivotKdTunable =
-      NetworkTableUtil.createEntry("Tunables/Intake/Kd", mPivotKd);
+  public static TunableNumber kPivotEpsilonDeg =
+      new TunableNumber(kTunablesPrefix + "/Epsilon (degrees)");
 
-  private double mPivotMaxAngularVelocityRevsPerSec = 2;
-  private double mPivotMaxAngularAccelerationRevsPerSecPerSec = 3;
+  public static TunableNumber kPivotKs = new TunableNumber(kTunablesPrefix + "/Ks");
+  public static TunableNumber kPivotKg = new TunableNumber(kTunablesPrefix + "/Kg");
+  public static TunableNumber kPivotKv = new TunableNumber(kTunablesPrefix + "/Kv");
+  public static TunableNumber kPivotKa = new TunableNumber(kTunablesPrefix + "/Ka");
+  public static TunableNumber kPivotKp = new TunableNumber(kTunablesPrefix + "/Kp");
+  public static TunableNumber kPivotKd = new TunableNumber(kTunablesPrefix + "/Kd");
 
-  private final DoubleEntry mPivotMaxAngularVelocityTunable =
-      NetworkTableUtil.createEntry(
-          "Tunables/Intake/Max Velocity (revs per second)", mPivotMaxAngularVelocityRevsPerSec);
-  private final DoubleEntry mPivotMaxAngularAccelerationTunable =
-      NetworkTableUtil.createEntry(
-          "Tunables/Intake/Max Acceleration (revs per second per second)",
-          mPivotMaxAngularAccelerationRevsPerSecPerSec);
+  public static TunableNumber kPivotMaxVelocityRevsPerSec =
+      new TunableNumber(kTunablesPrefix + "/Max Velocity (revs per sec)");
+  public static TunableNumber kPivotMaxAccelerationRevsPerSecPerSec =
+      new TunableNumber(kTunablesPrefix + "/Max Acceleration (revs per sec per sec)");
 
-  private double mStowedPositionRevs = kMinAngleRevs;
-  private double mDeployedPositionRevs = kMaxAngleRevs;
+  public static TunableNumber kPivotStowedPositionDeg =
+      new TunableNumber(kTunablesPrefix + "/Stowed Position (degrees)");
+  public static TunableNumber kPivotDeployedPositionDeg =
+      new TunableNumber(kTunablesPrefix + "/Deployed Position (degrees)");
 
-  private final DoubleEntry mStowedPositionTunable =
-      NetworkTableUtil.createEntry("Tunables/Intake/Stowed Position (revs)", mStowedPositionRevs);
-  private final DoubleEntry mDeployedPositionTunable =
-      NetworkTableUtil.createEntry(
-          "Tunables/Intake/Deployed Position (revs)", mDeployedPositionRevs);
+  public static TunableNumber kStowedSpeedVolts =
+      new TunableNumber(kTunablesPrefix + "/Stowed Speed (volts)");
+  public static TunableNumber kStowingSpeedVolts =
+      new TunableNumber(kTunablesPrefix + "/Stowing Speed (volts)");
+  public static TunableNumber kIntakingSpeedVolts =
+      new TunableNumber(kTunablesPrefix + "/Intaking Speed (volts)");
+  public static TunableNumber kOutakingSpeedVolts =
+      new TunableNumber(kTunablesPrefix + "/Outaking Speed (volts)");
 
-  private double mStowingSpeedVolts = 3.0;
-  private double mStowedSpeedVolts = 0.0;
-  private double mIntakingSpeedVolts = 9.0;
+  static {
+    kPivotZeroingVelocityThreshold.initDefault(0.1);
+    kPivotEpsilonDeg.initDefault(1.5);
 
-  private final DoubleEntry mStowingSpeedTunable =
-      NetworkTableUtil.createEntry(
-          "Tunables/Intake/Stowing Speed (revs per second)", mStowingSpeedVolts);
-  private final DoubleEntry mStowedSpeedTunable =
-      NetworkTableUtil.createEntry(
-          "Tunables/Intake/Stowed Speed (revs per second)", mStowedSpeedVolts);
-  private final DoubleEntry mIntakingSpeedTunable =
-      NetworkTableUtil.createEntry(
-          "Tunables/Intake/Intaking Speed (revs per second)", mIntakingSpeedVolts);
+    kPivotKs.initDefault(0.0);
+    kPivotKg.initDefault(0.0);
+    kPivotKv.initDefault(0.0);
+    kPivotKa.initDefault(0.0);
+    kPivotKp.initDefault(0.0);
+    kPivotKd.initDefault(0.0);
+
+    kPivotMaxVelocityRevsPerSec.initDefault(0.0);
+    kPivotMaxAccelerationRevsPerSecPerSec.initDefault(0.0);
+
+    kPivotStowedPositionDeg.initDefault(Units.rotationsToDegrees(kMinAngleRevs));
+    kPivotDeployedPositionDeg.initDefault(Units.rotationsToDegrees(kMaxAngleRevs));
+
+    kStowedSpeedVolts.initDefault(0.0);
+    kStowingSpeedVolts.initDefault(4.5);
+    kIntakingSpeedVolts.initDefault(8.3);
+    kOutakingSpeedVolts.initDefault(-9.0);
+  }
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
-  @Logged private final EncoderIO mEncoder;
   @Logged private final ServoIO mPivot, mRoller;
+
+  private boolean mIsHomed = false;
 
   private double mTargetAngleRevs = kMinAngleRevs;
 
@@ -244,20 +214,16 @@ public class Intake extends SubsystemBase {
   private final Debouncer mIsStuck = new Debouncer(0.1);
   private final Debouncer mIsAtSetpoint = new Debouncer(0.1);
 
-  protected Intake(EncoderIO encoder, ServoIO pivot, ServoIO roller) {
-    mEncoder = encoder;
+  protected Intake(ServoIO pivot, ServoIO roller) {
     mPivot = pivot;
     mRoller = roller;
 
-    mPivot.resetRelativeEncoder(kMinAngleRevs);
-
-    setDefaultCommand(stow());
+    setDefaultCommand(Commands.sequence(runCurrentHoming().unless(() -> mIsHomed), stow()));
   }
 
   @Override
   public void periodic() {
     // Update all hardware
-    mEncoder.periodic();
     mPivot.periodic();
     mRoller.periodic();
 
@@ -267,30 +233,25 @@ public class Intake extends SubsystemBase {
         MathUtil.isNear(
             getRotation2d().getRotations(), getTargetRotation2d().getRotations(), kEpsilonRevs));
 
-    if (Flags.kTuningModeEnabled) {
-      if (mPivotKpTunable.get() != mPivotKp
-          || mPivotKdTunable.get() != mPivotKd
-          || mPivotKsTunable.get() != mPivotKs) {
-        mPivotKp = mPivotKpTunable.get();
-        mPivotKd = mPivotKdTunable.get();
-        mPivotKs = mPivotKsTunable.get();
-      }
-      if (mPivotMaxAngularVelocityTunable.get() != mPivotMaxAngularVelocityRevsPerSec
-          || mPivotMaxAngularAccelerationTunable.get()
-              != mPivotMaxAngularAccelerationRevsPerSecPerSec) {
-        mPivotMaxAngularVelocityRevsPerSec = mPivotMaxAngularVelocityTunable.get();
-        mPivotMaxAngularAccelerationRevsPerSecPerSec = mPivotMaxAngularAccelerationTunable.get();
+    if (kPivotKs.hasChanged(hashCode())
+        && kPivotKg.hasChanged(hashCode())
+        && kPivotKv.hasChanged(hashCode())
+        && kPivotKa.hasChanged(hashCode())
+        && kPivotKp.hasChanged(hashCode())
+        && kPivotKd.hasChanged(hashCode())) {
+      mPivot.setGains(
+          kPivotKp.get(),
+          kPivotKd.get(),
+          kPivotKs.get(),
+          kPivotKg.get(),
+          kPivotKv.get(),
+          kPivotKa.get());
+    }
 
-        mPivot.setProfilingConstraints(
-            mPivotMaxAngularVelocityRevsPerSec, mPivotMaxAngularAccelerationRevsPerSecPerSec);
-      }
-
-      mStowedPositionRevs = mStowedPositionTunable.get();
-      mDeployedPositionRevs = mDeployedPositionTunable.get();
-
-      mStowingSpeedVolts = mStowingSpeedTunable.get();
-      mStowedSpeedVolts = mStowedSpeedTunable.get();
-      mIntakingSpeedVolts = mIntakingSpeedTunable.get();
+    if (kPivotMaxVelocityRevsPerSec.hasChanged(hashCode())
+        || kPivotMaxAccelerationRevsPerSecPerSec.hasChanged(hashCode())) {
+      mPivot.setProfilingConstraints(
+          kPivotMaxVelocityRevsPerSec.get(), kPivotMaxAccelerationRevsPerSecPerSec.get());
     }
   }
 
@@ -342,53 +303,61 @@ public class Intake extends SubsystemBase {
   // * ~~~~~~~~ COMMANDS ~~~~~~~~
 
   /**
-   * Constructs a sequence where subsystem stops completely
+   * Run pivot backwards at a constant voltage until it stops moving
+   *
+   * <p>Then, set current position as pivot home angle, aka its minimum angle
    *
    * @return {@link Command}
    */
-  public Command neutral() {
-    return this.run(
+  public Command runCurrentHoming() {
+    return this.run(() -> mPivot.setVoltageOutput(kPivotHomingVolts, true))
+        .until(
+            () ->
+                MathUtil.isNear(
+                    0.0,
+                    mPivot.getAngularVelocityRevsPerSec(),
+                    kPivotZeroingVelocityThreshold.get()))
+        .andThen(Commands.print("Intake Homed").alongWith(homePivot()));
+  }
+
+  /**
+   * Reset pivot relative encoder to minimum angle
+   *
+   * @return {@link Command}
+   */
+  protected Command homePivot() {
+    return this.runOnce(
         () -> {
-          mPivot.setNeutral();
-          mRoller.setNeutral();
-          mIsRunning = false;
+          mPivot.setPositionSetpoint(kMinAngleRevs);
+          mIsHomed = true;
         });
   }
 
-  /**
-   * Constructs a sequence where subsystem stows away
-   *
-   * @return {@link Command}
-   */
   public Command stow() {
-    return runSetpoint(mStowedPositionRevs, mStowingSpeedVolts)
-        .until(() -> hasReachedSetpoint())
-        .andThen(runSetpoint(mStowedPositionRevs, mStowedSpeedVolts));
+    return runSetpoints(
+            Units.degreesToRotations(kPivotStowedPositionDeg.get()), kStowingSpeedVolts.get())
+        .until(this::hasReachedSetpoint)
+        .andThen(
+            runSetpoints(
+                Units.degreesToRotations(kPivotStowedPositionDeg.get()), kStowedSpeedVolts.get()));
   }
 
-  /**
-   * Constructs a sequence where subsystem deploys and starts intaking
-   *
-   * @return {@link Command}
-   */
   public Command intake() {
-    return runSetpoint(mDeployedPositionRevs, mIntakingSpeedVolts);
+    return runSetpoints(
+        Units.degreesToRotations(kPivotDeployedPositionDeg.get()), kIntakingSpeedVolts.get());
   }
 
-  /**
-   * Constructs a sequence where subsystem runs intake at specified setpoints
-   *
-   * @param targetAngleRevs {@link Double} Desired angle in revolutions
-   * @param targetSpeedVolts {@link Double} Desired voltage speed in volts
-   * @return {@link Command}
-   */
-  public Command runSetpoint(double targetAngleRevs, double targetSpeedVolts) {
+  public Command outake() {
+    return runSetpoints(
+        Units.degreesToRotations(kPivotDeployedPositionDeg.get()), kOutakingSpeedVolts.get());
+  }
+
+  protected Command runSetpoints(double angleRevs, double speedVolts) {
     return this.run(
         () -> {
-          mTargetAngleRevs = MathUtil.clamp(targetAngleRevs, kMinAngleRevs, kMaxAngleRevs);
-
+          mTargetAngleRevs = MathUtil.clamp(angleRevs, kMinAngleRevs, kMaxAngleRevs);
           mPivot.setProfiledPositionSetpoint(mTargetAngleRevs);
-          mRoller.setVoltageOutput(targetSpeedVolts, true);
+          mRoller.setVoltageOutput(speedVolts, true);
         });
   }
 }
