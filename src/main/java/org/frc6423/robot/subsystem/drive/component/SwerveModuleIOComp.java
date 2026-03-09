@@ -13,6 +13,7 @@ import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
@@ -115,6 +116,8 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
         mDriveTemp,
         mDriveAngle,
         mDriveSpeed);
+
+    ParentDevice.optimizeBusUtilizationForAll(mEncoder, mPivot, mDrive);
   }
 
   @Override

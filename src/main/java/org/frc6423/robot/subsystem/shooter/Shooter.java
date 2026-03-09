@@ -6,28 +6,34 @@
 
 package org.frc6423.robot.subsystem.shooter;
 
-import static edu.wpi.first.units.Units.Rotation;
+import static edu.wpi.first.units.Units.Second;
+import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.frc6423.lib.io.ServoIO;
@@ -36,8 +42,11 @@ import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.lib.io.ServoIOTalonFxFlywheelSim;
 import org.frc6423.lib.io.ServoIOTalonFxPivotSim;
 import org.frc6423.lib.util.TunableNumber;
+import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Constants.Matrix;
+import org.frc6423.robot.Rebuilt;
 import org.frc6423.robot.Robot;
+import org.frc6423.robot.subsystem.RobotState;
 
 public class Shooter extends SubsystemBase {
   /**
@@ -51,9 +60,13 @@ public class Shooter extends SubsystemBase {
             new ServoIOTalonFx(
                 "Pivot", MotorType.KrakenX44, kCanBus, kPivotCanDeviceId, kPivotConfig),
             new ServoIOTalonFx(
-                "Left", MotorType.KrakenX60, kCanBus, kFlywheelLeftCanDeviceId, kPivotConfig),
+                "Left", MotorType.KrakenX60, kCanBus, kFlywheelLeftCanDeviceId, kServoTalonConfig),
             new ServoIOTalonFx(
-                "Right", MotorType.KrakenX60, kCanBus, kFlywheelRightCanDeviceId, kPivotConfig))
+                "Right",
+                MotorType.KrakenX60,
+                kCanBus,
+                kFlywheelRightCanDeviceId,
+                kServoTalonConfig))
         : new Shooter(
             new ServoIOTalonFxPivotSim(
                 "Pivot",
@@ -63,12 +76,12 @@ public class Shooter extends SubsystemBase {
                 kPivotConfig,
                 kPivotRotationalInertiaKgSquaredMeters,
                 kPivotArmLengthMeters,
-                kMinAngleRevs,
-                kMaxAngleRevs,
-                kMinAngleRevs,
+                Units.rotationsToDegrees(kMinAngleRevs),
+                Units.rotationsToDegrees(kMaxAngleRevs),
+                Units.rotationsToDegrees(kMinAngleRevs),
                 true,
                 DCMotor.getKrakenX60Foc(1),
-                kPivotSensorToMechRatio * kPivotRotorToSensorRatio),
+                kPivotGearRatio),
             new ServoIOTalonFxFlywheelSim(
                 "Left",
                 MotorType.KrakenX60,
@@ -101,14 +114,11 @@ public class Shooter extends SubsystemBase {
   /** {@link Double} Upper limit on pivot angular position */
   public static final double kMaxAngleRevs = Units.degreesToRotations(45.812);
 
-  /** {@link Double} Gear ratio between pivot servo rotor and the abs encoder shaft */
-  public static final double kPivotRotorToSensorRatio = 2.57142857143;
-
-  /** {@link Double} Gear ratio between pivot servo rotor and the abs encoder shaft */
-  public static final double kPivotSensorToMechRatio = 10.83;
+  /** {@link Double} Gear ratio between pivot servo rotor and the mech output */
+  public static final double kPivotGearRatio = 2.57142857143 * 10.83;
 
   /** {@link Double} Gear ratio between flywheel servos to mechanism */
-  public static final double kFlywheelRotorToMechRatio = (28.0 / 16.0);
+  public static final double kFlywheelRotorToMechRatio = (24.0 / 20.0);
 
   /** {@link TalonFXConfiguration} Hardware config of pivot servo */
   public static final TalonFXConfiguration kPivotConfig =
@@ -122,10 +132,8 @@ public class Shooter extends SubsystemBase {
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimit(40.0)
                   .withStatorCurrentLimitEnable(true))
-          .withFeedback(
-              new FeedbackConfigs()
-                  .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
-                  .withSensorToMechanismRatio(kPivotRotorToSensorRatio * kPivotSensorToMechRatio));
+          .withMotionMagic(new MotionMagicConfigs().withMotionMagicAcceleration(100.0))
+          .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(kPivotGearRatio));
 
   /** {@link TalonFXConfiguration} Hardware config of flywheel servos */
   public static final TalonFXConfiguration kServoTalonConfig =
@@ -137,14 +145,12 @@ public class Shooter extends SubsystemBase {
                   .withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(120.0)
+                  .withStatorCurrentLimit(70.0)
                   .withStatorCurrentLimitEnable(true)
-                  .withSupplyCurrentLimit(120.0)
+                  .withSupplyCurrentLimit(40.0)
                   .withSupplyCurrentLimitEnable(true))
           .withFeedback(
-              new FeedbackConfigs()
-                  .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
-                  .withSensorToMechanismRatio(kFlywheelRotorToMechRatio));
+              new FeedbackConfigs().withSensorToMechanismRatio(kFlywheelRotorToMechRatio));
 
   /** {@link Double} Moment of Inertia of pivot system */
   public static final double kPivotRotationalInertiaKgSquaredMeters = 402.290096 * 0.0002926397;
@@ -152,7 +158,7 @@ public class Shooter extends SubsystemBase {
   /** {@link Double} Length of pivot arm in meters */
   public static final double kPivotArmLengthMeters = 0.5;
 
-  public static final double kPivotHomingVolts = 2.5;
+  public static final double kPivotHomingVolts = -2.5;
 
   /** {@link Double} Moment of Inertia of flywheel */
   public static final double kFlywheelRotationalInertiaKgSquaredMeters = 10.491008 * 0.0002926397;
@@ -160,8 +166,60 @@ public class Shooter extends SubsystemBase {
   /** {@link Double} Radius of flywheel */
   public static final double kFlywheelRadiusMeters = Units.inchesToMeters(2);
 
+  public static final Transform2d kRobotToShooter = new Transform2d(0.0, 0.0, Rotation2d.kZero);
+
   /** {@link String} Nt directory to store tunables in */
   public static final String kTunablesPrefix = "/Shooter";
+
+  /**
+   * {@link InterpolatingProjectileParametersTree} Interpolation table to use for calculating hub
+   * shots
+   */
+  public static final InterpolatingProjectileParametersTree kHubShotTree =
+      new InterpolatingProjectileParametersTree();
+
+  /**
+   * {@link InterpolatingProjectileParametersTree} Interpolation table to use for calculating
+   * ferrying
+   */
+  public static final InterpolatingProjectileParametersTree kFerryShotTree =
+      new InterpolatingProjectileParametersTree();
+
+  // TODO fill from irl testing
+  static {
+    kHubShotTree.addSample(Units.feetToMeters(4), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(6), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(8), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(10), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(12), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(14), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(16), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(18), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(20), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(22), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(24), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(26), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(28), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(Units.feetToMeters(30), new ProjectileParameters(0.0, 0.0, 0.0));
+  }
+
+  // TODO fill from irl testing
+  static {
+    kFerryShotTree.addSample(Units.feetToMeters(2), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(4), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(8), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(10), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(12), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(14), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(16), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(18), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(20), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(22), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(24), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(26), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(28), new ProjectileParameters(0.0, 0.0, 0.0));
+    kFerryShotTree.addSample(Units.feetToMeters(30), new ProjectileParameters(0.0, 0.0, 0.0));
+  }
 
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
@@ -187,6 +245,9 @@ public class Shooter extends SubsystemBase {
   /** {@link TunableNumber} Pivot control gain for driving angular velocity error to 0 */
   public static TunableNumber kPivotKd = new TunableNumber(kTunablesPrefix + "/Pivot/Kd");
 
+  public static TunableNumber kPivotTuningAngleDeg =
+      new TunableNumber(kTunablesPrefix + "/Pivot/TuningAngleDegrees");
+
   /** {@link TunableNumber} Maximum allowed angular velocity error for flywheel */
   public static TunableNumber kFlywheelEpsilonDegPerSec =
       new TunableNumber(kTunablesPrefix + "/Flywheel/Epsilon (degrees per second)");
@@ -208,36 +269,50 @@ public class Shooter extends SubsystemBase {
   /** {@link TunableNumber} Flywheel control gain for driving angular velocity error to 0 */
   public static TunableNumber kFlywheelKd = new TunableNumber(kTunablesPrefix + "/Flywheel/Kd");
 
+  public static TunableNumber kFlywheelTuningSpeedRevsPerSec =
+      new TunableNumber(kTunablesPrefix + "/Flywheel/TuningSpeedRevsPerSec");
+
+  public static TunableNumber kLatencyCompensationSec =
+      new TunableNumber(kTunablesPrefix + "/LatencyCompensationSec");
+
   static {
     if (Robot.isReal()) {
       kPivotZeroingVelocityThreshold.initDefault(0.1);
-      kPivotEpsilonDeg.initDefault(0.0);
+      kPivotEpsilonDeg.initDefault(1.0);
       kPivotKs.initDefault(0.0);
       kPivotKv.initDefault(0.0);
       kPivotKa.initDefault(0.0);
       kPivotKp.initDefault(0.0);
       kPivotKd.initDefault(0.0);
+      kPivotTuningAngleDeg.initDefault(-1.0);
 
-      kFlywheelEpsilonDegPerSec.initDefault(0.0);
-      kFlywheelKs.initDefault(4.8691);
-      kFlywheelKv.initDefault(0.10515);
-      kFlywheelKa.initDefault(1.729);
-      kFlywheelKp.initDefault(0.26322);
+      kFlywheelEpsilonDegPerSec.initDefault(1.0);
+      kFlywheelKs.initDefault(0.11203);
+      kFlywheelKv.initDefault(15.596);
+      kFlywheelKa.initDefault(161.84);
+      kFlywheelKp.initDefault(14.749);
       kFlywheelKd.initDefault(0.0);
+      kFlywheelTuningSpeedRevsPerSec.initDefault(-1.0);
+
+      kLatencyCompensationSec.initDefault(0.3);
     } else {
-      kPivotEpsilonDeg.initDefault(0.0);
+      kPivotEpsilonDeg.initDefault(1.0);
       kPivotKs.initDefault(0.0);
       kPivotKv.initDefault(0.0);
       kPivotKa.initDefault(0.0);
       kPivotKp.initDefault(0.0);
       kPivotKd.initDefault(0.0);
+      kPivotTuningAngleDeg.initDefault(-1.0);
 
-      kFlywheelEpsilonDegPerSec.initDefault(0.0);
+      kFlywheelEpsilonDegPerSec.initDefault(1.0);
       kFlywheelKs.initDefault(4.8691);
       kFlywheelKv.initDefault(0.10515);
       kFlywheelKa.initDefault(1.729);
       kFlywheelKp.initDefault(0.26322);
       kFlywheelKd.initDefault(0.0);
+      kFlywheelTuningSpeedRevsPerSec.initDefault(-1.0);
+
+      kLatencyCompensationSec.initDefault(0.3);
     }
   }
 
@@ -250,8 +325,9 @@ public class Shooter extends SubsystemBase {
   private Rotation2d mTargetRotation2d = Rotation2d.fromRotations(kMinAngleRevs);
   private double mTargetFlywheelVelocityRevsPerSec = 0.0;
 
-  private final Debouncer mIsPivotHoldingTarget = new Debouncer(0.1);
-  private final Debouncer mIsFlywheelHoldingTarget = new Debouncer(0.03);
+  private Translation2d mVirtualTarget = Translation2d.kZero;
+
+  private final SysIdRoutine mSysIdRoutine;
 
   protected Shooter(ServoIO pivot, ServoIO left, ServoIO right) {
     mPivot = pivot;
@@ -259,6 +335,24 @@ public class Shooter extends SubsystemBase {
     mRight = right;
 
     mRight.setLeader(mLeft, true);
+
+    mLeft.resetRelativeEncoder();
+
+    mSysIdRoutine =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                Volts.of(25).per(Second),
+                Volts.of(15),
+                null,
+                (state) -> SmartDashboard.putString("FlywheelSysIdState", state.toString())),
+            new SysIdRoutine.Mechanism(
+                (voltage) -> mLeft.setTorqueCurrentOutput(voltage.in(Volts)), null, this));
+
+    if (Flags.kTuningModeEnabled) {
+      SmartDashboard.putData(runCharacterizationSequence());
+    }
+
+    setDefaultCommand(runCurrentHoming().onlyIf(() -> !isHomed()));
   }
 
   @Override
@@ -267,18 +361,6 @@ public class Shooter extends SubsystemBase {
     mPivot.periodic();
     mLeft.periodic();
     mRight.periodic();
-
-    // Calculate debouncers
-    mIsPivotHoldingTarget.calculate(
-        MathUtil.isNear(
-            getTargetFlywheelVelocityRevsPerSec(),
-            getFlywheelVelocityRevsPerSec(),
-            Units.degreesToRotations(kPivotEpsilonDeg.get())));
-    mIsFlywheelHoldingTarget.calculate(
-        MathUtil.isNear(
-            getTargetFlywheelVelocityRevsPerSec(),
-            getFlywheelVelocityRevsPerSec(),
-            Units.degreesToRotations(kFlywheelEpsilonDegPerSec.get())));
 
     // Update gains from tunables
     if (kPivotKs.hasChanged(hashCode())
@@ -310,6 +392,14 @@ public class Shooter extends SubsystemBase {
           kFlywheelKv.get(),
           kFlywheelKa.get());
     }
+
+    if (kPivotTuningAngleDeg.get() != -1.0) {
+      setPivotSetpoint(Rotation2d.fromDegrees(kPivotTuningAngleDeg.get()));
+    }
+
+    if (kFlywheelTuningSpeedRevsPerSec.get() != -1.0) {
+      setFlywheelSetpoint(kFlywheelTuningSpeedRevsPerSec.get());
+    }
   }
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~
@@ -331,16 +421,14 @@ public class Shooter extends SubsystemBase {
    */
   @Logged(name = "Is Locked (bool)", importance = Importance.INFO)
   public boolean isLocked() {
-    return mIsPivotHoldingTarget.calculate(
-            MathUtil.isNear(
-                getTargetFlywheelVelocityRevsPerSec(),
-                getFlywheelVelocityRevsPerSec(),
-                Units.degreesToRotations(kPivotEpsilonDeg.get())))
-        && mIsFlywheelHoldingTarget.calculate(
-            MathUtil.isNear(
-                getTargetFlywheelVelocityRevsPerSec(),
-                getFlywheelVelocityRevsPerSec(),
-                Units.degreesToRotations(kFlywheelEpsilonDegPerSec.get())));
+    // return MathUtil.isNear(
+    //         getTargetRotation2d().getDegrees(),
+    //         getRotation2d().getDegrees(),
+    //         kPivotEpsilonDeg.get())
+    return MathUtil.isNear(
+        getTargetFlywheelVelocityRevsPerSec(),
+        getFlywheelVelocityRevsPerSec(),
+        Units.degreesToRotations(kFlywheelEpsilonDegPerSec.get()));
   }
 
   /**
@@ -403,6 +491,56 @@ public class Shooter extends SubsystemBase {
     return mTargetFlywheelVelocityRevsPerSec;
   }
 
+  /**
+   * Get field coordinates of virtual target
+   *
+   * @return {@link Translation2d}
+   */
+  @Logged(name = "Virtual Target", importance = Importance.INFO)
+  public Translation2d getVirtualTarget() {
+    return mVirtualTarget;
+  }
+
+  public ProjectileParameters calculateParameters() {
+    // Get current state
+    var position = RobotState.getInstance().getEstimatedPosition();
+    var fieldRelativeSpeeds = RobotState.getInstance().getFieldRelativeSpeeds();
+    var speeds = RobotState.getInstance().getChassisSpeeds();
+
+    var target = Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d);
+
+    // Compensate for predicted latency
+    var predictedPosition =
+        position.exp(
+            new Twist2d(
+                speeds.vxMetersPerSecond * kLatencyCompensationSec.get(),
+                speeds.vyMetersPerSecond * kLatencyCompensationSec.get(),
+                speeds.omegaRadiansPerSecond * kLatencyCompensationSec.get()));
+
+    // Calculate for a standstill shot at position for a tof approximation
+    var approximatedTof =
+        kHubShotTree
+            .get(predictedPosition.getTranslation().getDistance(target.getTranslation()))
+            .timeOfFlightSec();
+
+    // Calculate virtual target
+    mVirtualTarget =
+        target
+            .getTranslation()
+            .minus(
+                new Translation2d(
+                    fieldRelativeSpeeds.vxMetersPerSecond * approximatedTof,
+                    fieldRelativeSpeeds.vyMetersPerSecond * approximatedTof));
+
+    // Calculate final shot
+    var parameters =
+        kHubShotTree.get(predictedPosition.getTranslation().getDistance(mVirtualTarget));
+
+    if (parameters != null) {
+      return parameters;
+    } else return new ProjectileParameters(0.0, 0.0, 0.0);
+  }
+
   // * ~~~~~~~~ SETTERS ~~~~~~~~
 
   protected void setPivotStow() {
@@ -433,6 +571,27 @@ public class Shooter extends SubsystemBase {
   }
 
   // * ~~~~~~~~ COMMANDS ~~~~~~~~
+
+  public Command runCharacterizationSequence() {
+    return Commands.sequence(
+            Commands.print("1"),
+            mSysIdRoutine.quasistatic(Direction.kForward),
+            Commands.waitUntil(() -> isLocked()),
+            Commands.print("2"),
+            mSysIdRoutine.quasistatic(Direction.kReverse),
+            Commands.waitUntil(() -> isLocked()),
+            Commands.print("3"),
+            mSysIdRoutine.dynamic(Direction.kForward),
+            Commands.waitUntil(() -> isLocked()),
+            Commands.print("4"),
+            mSysIdRoutine.dynamic(Direction.kReverse))
+        .beforeStarting(
+            () -> {
+              mTargetRotation2d = Rotation2d.fromRotations(kMinAngleRevs);
+              mTargetFlywheelVelocityRevsPerSec = 0.0;
+            })
+        .withName("Flywheel Characterization");
+  }
 
   /**
    * Stow hood and deaccelerate flywheel
@@ -502,6 +661,12 @@ public class Shooter extends SubsystemBase {
           setPivotSetpoint(angle.get());
           setFlywheelSetpoint(velocityRevsPerSec.getAsDouble());
         });
+  }
+
+  public Command runProjectileParametersSetpoint(Supplier<ProjectileParameters> parameters) {
+    return adjustToAndAccelerateTo(
+        () -> Rotation2d.fromRadians(parameters.get().initialProjectilePitchRads()),
+        () -> parameters.get().initialProjectileVelocityMps() * 2 / kFlywheelRadiusMeters);
   }
 
   /**

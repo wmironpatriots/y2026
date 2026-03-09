@@ -6,7 +6,6 @@
 
 package org.frc6423.robot;
 
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
 import edu.wpi.first.epilogue.Epilogue;
@@ -27,7 +26,6 @@ import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.RobotState;
-import org.frc6423.robot.subsystem.drive.Drive;
 import org.frc6423.robot.subsystem.shooter.Shooter;
 import org.frc6423.robot.util.FuelSimulation;
 
@@ -37,7 +35,7 @@ public class Robot extends CommandRobot {
 
   private final RobotState mRobotState = RobotState.getInstance();
 
-  private final Drive mDrive = Drive.create();
+  // private final Drive mDrive = Drive.create();
   private final Shooter mShooter = Shooter.create();
 
   private final CommandXboxController mController;
@@ -102,7 +100,6 @@ public class Robot extends CommandRobot {
       mFuelSim.ifPresent(
           (sim) -> {
             // Initial Configuration
-            sim.setSubticks(1);
             sim.enableAirResistance();
 
             // Setup robot
@@ -110,15 +107,17 @@ public class Robot extends CommandRobot {
                 Meters.of(
                     Flags.kDriveConstants.getTrackWidthMeters()
                         + Flags.kDriveConstants.getBumperThicknessInches());
-            sim.registerRobot(
-                chassisWidth,
-                chassisWidth,
-                Inches.of(6),
-                mDrive::getPose2d,
-                mDrive::getFieldRelativeChassisSpeeds);
+            // sim.registerRobot(
+            //     chassisWidth,
+            //     chassisWidth,
+            //     Inches.of(6),
+            //     mDrive::getPose2d,
+            //     mDrive::getFieldRelativeChassisSpeeds);
 
             // Setup arena
-            sim.spawnStartingFuel();
+            if (Flags.kSpawnStartingFuel) {
+              sim.spawnStartingFuel();
+            }
 
             // Reset field when auton opp mode starts
             RobotModeTriggers.autonomous()
@@ -133,16 +132,38 @@ public class Robot extends CommandRobot {
             sim.start();
 
             // Start sim notifier
-            addPeriodic(() -> sim.updateSim(), 0.02);
+            addPeriodic(() -> sim.updateSim(), 0.002);
+
+            // mController
+            //     .rightBumper()
+            //     .whileTrue(
+            //         Commands.runOnce(
+            //                 () ->
+            //                     sim.launchFuel(
+            //                         MetersPerSecond.of(
+            //                             mShooter.getTargetMuzzleVelocityMetersPerSecond()),
+            //                         mShooter.getTargetRotation2d().getMeasure(),
+            //                         Degrees.zero(),
+            //                         Meters.of(1)))
+            //             .andThen(Commands.waitSeconds(0.5))
+            //             .repeatedly());
           });
     } else mFuelSim = Optional.empty();
 
-    RobotModeTriggers.teleop()
-        .whileTrue(
-            mDrive.driveWhileFacingTarget(
-                () -> modifyJoystick(mController.getLeftY()),
-                () -> modifyJoystick(mController.getLeftX()),
-                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation()));
+    // RobotModeTriggers.teleop()
+    //     .whileTrue(
+    //         mDrive.drive(
+    //             () -> modifyJoystick(mController.getLeftY()),
+    //             () -> modifyJoystick(mController.getLeftX()),
+    //             () -> modifyJoystick(mController.getRightX())));
+    // mDrive.driveWhileFacingAngle(
+    //     () -> modifyJoystick(mController.getLeftY()),
+    //     () -> modifyJoystick(mController.getLeftX()),
+    //     () ->
+    //         mShooter
+    //             .getVirtualTarget()
+    //             .minus(mDrive.getPose2d().getTranslation())
+    //             .getAngle()));
   }
 
   public Optional<FuelSimulation> getFueldSimulation() {

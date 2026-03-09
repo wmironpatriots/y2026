@@ -195,8 +195,6 @@ public class Drive extends SubsystemBase {
     if (Robot.isSimulation())
       RobotState.getInstance()
           .resetPose(Flags.getRobotAlliancePose2d(Rebuilt.kRobotAllianceZone.getCenter()));
-
-    setDefaultCommand(brake());
   }
 
   @Override
@@ -459,14 +457,15 @@ public class Drive extends SubsystemBase {
   public Command driveWhileFacingAngle(
       DoubleSupplier vx, DoubleSupplier vy, Supplier<Rotation2d> heading) {
     return this.run(
-        () ->
-            setChassisSpeedsSetpoint(
-                ChassisSpeeds.fromFieldRelativeSpeeds(
-                    vx.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                    vy.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                    mAngularController.calculate(
-                        getRotation2d().getRadians(), heading.get().getRadians()),
-                    getRotation2d().plus(Flags.getAllianceRotation()))));
+            () ->
+                setChassisSpeedsSetpoint(
+                    ChassisSpeeds.fromFieldRelativeSpeeds(
+                        vx.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
+                        vy.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
+                        mAngularController.calculate(
+                            getRotation2d().getRadians(), heading.get().getRadians()),
+                        getRotation2d().plus(Flags.getAllianceRotation()))))
+        .beforeStarting(mAngularController::reset);
   }
 
   /**
@@ -482,9 +481,9 @@ public class Drive extends SubsystemBase {
             () ->
                 setChassisSpeedsSetpoint(
                     ChassisSpeeds.fromFieldRelativeSpeeds(
-                        vx.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                        vy.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                        omega.getAsDouble() * kConstants.getMaxAngularVelocityRadsPerSec(),
+                        vx.getAsDouble(), // * kConstants.getMaxLinearVelocityMetersPerSecond(),
+                        vy.getAsDouble(), // * kConstants.getMaxLinearVelocityMetersPerSecond(),
+                        omega.getAsDouble(), // * kConstants.getMaxAngularVelocityRadsPerSec(),
                         getRotation2d().plus(Flags.getAllianceRotation()))))
         .beforeStarting(() -> mControlMode = ControlMode.TELEOPERATED_FULL);
   }

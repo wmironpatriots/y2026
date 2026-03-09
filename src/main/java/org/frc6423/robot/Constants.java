@@ -42,8 +42,16 @@ public final class Constants {
     /** {@link Importance} Minimum Epilogue importance to be logged */
     public static final Importance kLoggingLevel = Importance.DEBUG;
 
+    /** {@link Alliance} Alliance robot is currently on */
     public static final Alliance kRobotAlliance = DriverStation.getAlliance().orElse(Alliance.Blue);
 
+    public static final boolean kSpawnStartingFuel = true;
+
+    /**
+     * Get yaw offset based on {@link #kRobotAlliance}
+     *
+     * @return {@link getAllianceRotation}
+     */
     public static Rotation2d getAllianceRotation() {
       return Rotation2d.fromRotations(kRobotAlliance == Alliance.Blue ? 0.0 : 0.5);
     }
