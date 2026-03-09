@@ -481,9 +481,9 @@ public class Drive extends SubsystemBase {
             () ->
                 setChassisSpeedsSetpoint(
                     ChassisSpeeds.fromFieldRelativeSpeeds(
-                        vx.getAsDouble(), // * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                        vy.getAsDouble(), // * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                        omega.getAsDouble(), // * kConstants.getMaxAngularVelocityRadsPerSec(),
+                        vx.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
+                        vy.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
+                        omega.getAsDouble() * kConstants.getMaxAngularVelocityRadsPerSec(),
                         getRotation2d().plus(Flags.getAllianceRotation()))))
         .beforeStarting(() -> mControlMode = ControlMode.TELEOPERATED_FULL);
   }

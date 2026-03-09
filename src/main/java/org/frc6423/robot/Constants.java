@@ -45,7 +45,7 @@ public final class Constants {
     /** {@link Alliance} Alliance robot is currently on */
     public static final Alliance kRobotAlliance = DriverStation.getAlliance().orElse(Alliance.Blue);
 
-    public static final boolean kSpawnStartingFuel = true;
+    public static final boolean kSpawnStartingFuel = false;
 
     /**
      * Get yaw offset based on {@link #kRobotAlliance}

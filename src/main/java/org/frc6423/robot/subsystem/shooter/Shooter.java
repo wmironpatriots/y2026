@@ -187,20 +187,22 @@ public class Shooter extends SubsystemBase {
 
   // TODO fill from irl testing
   static {
-    kHubShotTree.addSample(Units.feetToMeters(4), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(6), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(8), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(10), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(12), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(14), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(16), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(18), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(20), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(22), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(24), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(26), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(28), new ProjectileParameters(0.0, 0.0, 0.0));
-    kHubShotTree.addSample(Units.feetToMeters(30), new ProjectileParameters(0.0, 0.0, 0.0));
+    kHubShotTree.addSample(
+        6.06532, new ProjectileParameters(Units.degreesToRadians(45.81), 8.4, 0.0));
+    kHubShotTree.addSample(
+        5.80109, new ProjectileParameters(Units.degreesToRadians(45.81), 8.27, 0.0));
+    kHubShotTree.addSample(
+        5.60242, new ProjectileParameters(Units.degreesToRadians(45.81), 8.11, 0.0));
+    kHubShotTree.addSample(
+        5.40326, new ProjectileParameters(Units.degreesToRadians(43.10), 8.00, 0.0));
+    kHubShotTree.addSample(
+        5.20555, new ProjectileParameters(Units.degreesToRadians(40.13), 7.90, 0.0));
+    kHubShotTree.addSample(
+        5.00524, new ProjectileParameters(Units.degreesToRadians(40.19), 7.90, 0.0));
+    kHubShotTree.addSample(
+        4.80267, new ProjectileParameters(Units.degreesToRadians(40.19), 7.67, 0.0));
+    kHubShotTree.addSample(
+        4.60475, new ProjectileParameters(Units.degreesToRadians(40.19), 7.67, 0.0));
   }
 
   // TODO fill from irl testing
@@ -399,8 +401,12 @@ public class Shooter extends SubsystemBase {
     }
 
     if (kFlywheelTuningSpeedRevsPerSec.get() != -1.0) {
-      setFlywheelSetpoint(kFlywheelTuningSpeedRevsPerSec.get());
+      setFlywheelSetpoint(kFlywheelTuningSpeedRevsPerSec.get() * 2 / kFlywheelRadiusMeters);
     }
+
+    setPivotSetpoint(Rotation2d.fromRadians(calculateParameters().initialProjectilePitchRads()));
+    setFlywheelSetpoint(
+        calculateParameters().initialProjectileVelocityMps() * 2 / kFlywheelRadiusMeters);
   }
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~
@@ -450,6 +456,13 @@ public class Shooter extends SubsystemBase {
   @Logged(name = "Target Rotation2d", importance = Importance.INFO)
   public Rotation2d getTargetRotation2d() {
     return mTargetRotation2d;
+  }
+
+  @Logged(name = "distance meters", importance = Importance.INFO)
+  public double getDistanceFromHubMeters() {
+    return Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)
+        .getTranslation()
+        .getDistance(RobotState.getInstance().getEstimatedPosition().getTranslation());
   }
 
   /**

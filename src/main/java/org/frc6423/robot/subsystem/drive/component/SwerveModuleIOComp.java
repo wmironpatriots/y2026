@@ -72,33 +72,8 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
     mDriveAngle = mDrive.getPosition(true);
     mDriveSpeed = mDrive.getVelocity(true);
 
-    // BaseStatusSignal.setUpdateFrequencyForAll(
-    //     50.0,
-    //     mDriveAngle,
-    //     mDriveSpeed,
-    //     mPivotAngle,
-    //     mPivotSpeed,
-    //     mPivotVolts,
-    //     mPivotSupply,
-    //     mPivotTorque,
-    //     mPivotTemp,
-    //     mPivotAngle,
-    //     mPivotSpeed,
-    //     mDriveVolts,
-    //     mDriveSupply,
-    //     mDriveStator,
-    //     mDriveTorque,
-    //     mDriveTemp,
-    //     mDriveAngle,
-    //     mDriveSpeed);
-
-    // ParentDevice.optimizeBusUtilizationForAll(mEncoder, mPivot, mDrive);
-
-  }
-
-  @Override
-  public void periodic() {
-    BaseStatusSignal.refreshAll(
+    BaseStatusSignal.setUpdateFrequencyForAll(
+        50.0,
         mDriveAngle,
         mDriveSpeed,
         mPivotAngle,

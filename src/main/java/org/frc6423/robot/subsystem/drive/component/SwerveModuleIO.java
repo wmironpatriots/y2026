@@ -133,8 +133,6 @@ public abstract class SwerveModuleIO {
 
   // * ~~~~~~~~ ABSTRACT ~~~~~~~~
 
-  public void periodic() {}
-
   @Logged(name = "Pivot Applied Voltage (volts)", importance = Importance.DEBUG)
   public abstract double getPivotAppliedVolts();
 
