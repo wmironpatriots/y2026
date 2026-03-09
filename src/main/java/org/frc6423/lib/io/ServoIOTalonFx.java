@@ -164,23 +164,13 @@ public class ServoIOTalonFx extends ServoIO {
   }
 
   @Override
-  public void setFeedforwardGains(double kS, double kG, double kV, double kA) {
+  public void setGains(double kP, double kD, double kS, double kG, double kV, double kA) {
     new Thread(
             () -> {
               mTalonConfig.Slot0.kS = kS;
               mTalonConfig.Slot0.kG = kG;
               mTalonConfig.Slot0.kV = kV;
               mTalonConfig.Slot0.kA = kA;
-
-              PhoneixUtils.tryUntilOk(5, () -> mServo.getConfigurator().apply(mTalonConfig));
-            })
-        .start();
-  }
-
-  @Override
-  public void setFeedbackGains(double kP, double kD) {
-    new Thread(
-            () -> {
               mTalonConfig.Slot0.kP = kP;
               mTalonConfig.Slot0.kD = kD;
 

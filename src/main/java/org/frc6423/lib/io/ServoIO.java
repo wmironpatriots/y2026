@@ -97,9 +97,7 @@ public abstract class ServoIO {
 
   public abstract void setBrakeModeStatus(boolean brakeEnabled);
 
-  public abstract void setFeedbackGains(double kP, double kD);
-
-  public abstract void setFeedforwardGains(double kS, double kG, double kV, double kA);
+  public abstract void setGains(double kP, double kD, double kS, double kG, double kV, double kA);
 
   public abstract void setProfilingConstraints(
       double angularVelocityLimitRevsPerSec, double angularAccelerationLimitRevsPerSecPerSec);

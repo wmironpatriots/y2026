@@ -28,7 +28,6 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.EncoderIO;
@@ -38,8 +37,7 @@ import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
 import org.frc6423.lib.io.ServoIOTalonFxFlywheelSim;
 import org.frc6423.lib.io.ServoIOTalonFxPivotSim;
-import org.frc6423.lib.util.NetworkTableUtil;
-import org.frc6423.robot.Constants.Flags;
+import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
 
@@ -178,7 +176,6 @@ public class Shooter extends SubsystemBase {
               new FeedbackConfigs()
                   .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
                   .withSensorToMechanismRatio(kFlywheelRotorToMechRatio))
-          .withMotionMagic(new MotionMagicConfigs().withMotionMagicAcceleration(9999.0))
           .withSlot0(
               new Slot0Configs().withKS(0.0).withKV(0.0).withKA(0.0).withKP(10.0).withKD(0.1));
 
@@ -192,53 +189,67 @@ public class Shooter extends SubsystemBase {
 
   public static final double kFlywheelRadiusMeters = Units.inchesToMeters(2);
 
+  public static final String kTunablesPrefix = "/Shooter/";
+
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
-  private double mPivotEpsilonRevs = Units.degreesToRadians(0.1);
-  private double mFlywheelEpsilonRevs = Units.degreesToRadians(1);
+  public static TunableNumber kPivotEpsilonDeg =
+      new TunableNumber(kTunablesPrefix + "/Pivot/Epsilon (degrees)");
 
-  private final DoubleEntry mPivotEpsilonTunable =
-      NetworkTableUtil.createEntry("Tunables/Shooter/Pivot Epsilon (revs)", mPivotEpsilonRevs);
-  private final DoubleEntry mFlywheelEpsilonTunable =
-      NetworkTableUtil.createEntry(
-          "Tunables/Shooter/Flywheel Epsilon (revs)", mFlywheelEpsilonRevs);
+  public static TunableNumber kPivotKs = new TunableNumber(kTunablesPrefix + "/Pivot/Ks");
 
-  private double mPivotKp = 0.0;
-  private double mPivotKd = 0.0;
+  public static TunableNumber kPivotKv = new TunableNumber(kTunablesPrefix + "/Pivot/Kv");
 
-  private final DoubleEntry mPivotKpTunable =
-      NetworkTableUtil.createEntry("Tunables/Shooter/Pivot Kp", mPivotKp);
-  private final DoubleEntry mPivotKdTunable =
-      NetworkTableUtil.createEntry("Tunables/Shooter/Pivot Kd", mPivotKd);
+  public static TunableNumber kPivotKa = new TunableNumber(kTunablesPrefix + "/Pivot/Ka");
 
-  private double mPivotMaxAngularVelocityRevsPerSec = 2;
-  private double mPivotMaxAngularAccelerationRevsPerSecPerSec = 3;
+  public static TunableNumber kPivotKp = new TunableNumber(kTunablesPrefix + "/Pivot/Kp");
 
-  private final DoubleEntry mPivotMaxAngularVelocityTunable =
-      NetworkTableUtil.createEntry(
-          "Tunables/Shooter/Pivot Max Velocity (revs per second)",
-          mPivotMaxAngularVelocityRevsPerSec);
-  private final DoubleEntry mPivotMaxAngularAccelerationTunable =
-      NetworkTableUtil.createEntry(
-          "Tunables/Shooter/Pivot Max Acceleration (revs per second per second)",
-          mPivotMaxAngularAccelerationRevsPerSecPerSec);
+  public static TunableNumber kPivotKd = new TunableNumber(kTunablesPrefix + "/Pivot/Kd");
 
-  private double mFlywheelKs = 0.0;
-  private double mFlywheelKv = 0.0;
-  private double mFlywheelKa = 0.0;
-  private double mFlywheelKp = 0.0;
-  private double mFlywheelKd = 0.0;
+  public static TunableNumber kFlywheelEpsilonDegPerSec =
+      new TunableNumber(kTunablesPrefix + "/Flywheel/Epsilon (degrees per second)");
 
-  private final DoubleEntry mFlywheelKsTunable =
-      NetworkTableUtil.createEntry("Tunables/Shooter/Flywheel Ks", mFlywheelKs);
-  private final DoubleEntry mFlywheelKvTunable =
-      NetworkTableUtil.createEntry("Tunables/Shooter/Flywheel Kv", mFlywheelKv);
-  private final DoubleEntry mFlywheelKaTunable =
-      NetworkTableUtil.createEntry("Tunables/Shooter/Flywheel Ka", mFlywheelKa);
-  private final DoubleEntry mFlywheelKpTunable =
-      NetworkTableUtil.createEntry("Tunables/Shooter/Flywheel Kp", mFlywheelKp);
-  private final DoubleEntry mFlywheelKdTunable =
-      NetworkTableUtil.createEntry("Tunables/Shooter/Flywheel Kd", mFlywheelKd);
+  public static TunableNumber kFlywheelKs = new TunableNumber(kTunablesPrefix + "/Flywheel/Ks");
+
+  public static TunableNumber kFlywheelKv = new TunableNumber(kTunablesPrefix + "/Flywheel/Kv");
+
+  public static TunableNumber kFlywheelKa = new TunableNumber(kTunablesPrefix + "/Flywheel/Ka");
+
+  public static TunableNumber kFlywheelKp = new TunableNumber(kTunablesPrefix + "/Flywheel/Kp");
+
+  public static TunableNumber kFlywheelKd = new TunableNumber(kTunablesPrefix + "/Flywheel/Kd");
+
+  static {
+    if (Robot.isReal()) {
+      kPivotEpsilonDeg.initDefault(0.0);
+      kPivotKs.initDefault(0.0);
+      kPivotKv.initDefault(0.0);
+      kPivotKa.initDefault(0.0);
+      kPivotKp.initDefault(0.0);
+      kPivotKd.initDefault(0.0);
+
+      kFlywheelEpsilonDegPerSec.initDefault(0.0);
+      kFlywheelKs.initDefault(4.8691);
+      kFlywheelKv.initDefault(0.10515);
+      kFlywheelKa.initDefault(1.729);
+      kFlywheelKp.initDefault(0.26322);
+      kFlywheelKd.initDefault(0.0);
+    } else {
+      kPivotEpsilonDeg.initDefault(0.0);
+      kPivotKs.initDefault(0.0);
+      kPivotKv.initDefault(0.0);
+      kPivotKa.initDefault(0.0);
+      kPivotKp.initDefault(0.0);
+      kPivotKd.initDefault(0.0);
+
+      kFlywheelEpsilonDegPerSec.initDefault(0.0);
+      kFlywheelKs.initDefault(4.8691);
+      kFlywheelKv.initDefault(0.10515);
+      kFlywheelKa.initDefault(1.729);
+      kFlywheelKp.initDefault(0.26322);
+      kFlywheelKd.initDefault(0.0);
+    }
+  }
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
@@ -258,9 +269,6 @@ public class Shooter extends SubsystemBase {
     mRight = right;
 
     mRight.setLeader(mLeft, true);
-
-    // TODO
-    setDefaultCommand(null);
   }
 
   @Override
@@ -271,49 +279,44 @@ public class Shooter extends SubsystemBase {
     mRight.periodic();
 
     mHoodHoldingSetpoint.calculate(
-        MathUtil.isNear(mTargetAngleRevs, getRotation2d().getRotations(), mPivotEpsilonRevs));
+        MathUtil.isNear(
+            mTargetAngleRevs,
+            getRotation2d().getRotations(),
+            Units.degreesToRotations(kPivotEpsilonDeg.get())));
     mFlywheelHoldingSetpoint.calculate(
         MathUtil.isNear(
             getTargetAngularVelocityRevsPerSecond(),
             getAngularVelocityRevsPerSec(),
-            mFlywheelEpsilonRevs));
+            Units.degreesToRotations(kFlywheelEpsilonDegPerSec.get())));
 
-    if (Flags.kTuningModeEnabled) {
-      mPivotEpsilonRevs = mPivotEpsilonTunable.get();
-      mFlywheelEpsilonRevs = mFlywheelEpsilonTunable.get();
+    if (kPivotKs.hasChanged(hashCode())
+        || kPivotKv.hasChanged(hashCode())
+        || kPivotKa.hasChanged(hashCode())
+        || kPivotKp.hasChanged(hashCode())
+        || kPivotKd.hasChanged(hashCode())) {
+      mPivot.setGains(
+          kPivotKp.get(), kPivotKd.get(), kPivotKs.get(), 0.0, kPivotKv.get(), kPivotKa.get());
+    }
 
-      if (mPivotKpTunable.get() != mPivotKp || mPivotKdTunable.get() != mPivotKd) {
-        mPivotKp = mPivotKpTunable.get();
-        mPivotKd = mPivotKdTunable.get();
-        mPivot.setFeedbackGains(mPivotKp, mPivotKd);
-      }
-
-      if (mPivotMaxAngularVelocityTunable.get() != mPivotMaxAngularVelocityRevsPerSec
-          || mPivotMaxAngularAccelerationTunable.get()
-              != mPivotMaxAngularAccelerationRevsPerSecPerSec) {
-        mPivotMaxAngularVelocityRevsPerSec = mPivotMaxAngularVelocityTunable.get();
-        mPivotMaxAngularAccelerationRevsPerSecPerSec = mPivotMaxAngularAccelerationTunable.get();
-
-        mPivot.setProfilingConstraints(
-            mPivotMaxAngularVelocityRevsPerSec, mPivotMaxAngularAccelerationRevsPerSecPerSec);
-      }
-
-      if (mFlywheelKsTunable.get() != mFlywheelKs
-          || mFlywheelKvTunable.get() != mFlywheelKv
-          || mFlywheelKaTunable.get() != mFlywheelKa
-          || mFlywheelKpTunable.get() != mFlywheelKp
-          || mFlywheelKdTunable.get() != mFlywheelKd) {
-        mFlywheelKs = mFlywheelKsTunable.get();
-        mFlywheelKv = mFlywheelKvTunable.get();
-        mFlywheelKa = mFlywheelKaTunable.get();
-        mFlywheelKp = mFlywheelKpTunable.get();
-        mFlywheelKd = mFlywheelKdTunable.get();
-
-        mLeft.setFeedforwardGains(mFlywheelKs, 0.0, mFlywheelKv, mFlywheelKa);
-        mLeft.setFeedbackGains(mFlywheelKp, mFlywheelKd);
-        mRight.setFeedforwardGains(mFlywheelKs, 0.0, mFlywheelKv, mFlywheelKa);
-        mRight.setFeedbackGains(mFlywheelKp, mFlywheelKd);
-      }
+    if (kFlywheelKs.hasChanged(hashCode())
+        || kFlywheelKv.hasChanged(hashCode())
+        || kFlywheelKa.hasChanged(hashCode())
+        || kFlywheelKp.hasChanged(hashCode())
+        || kFlywheelKd.hasChanged(hashCode())) {
+      mLeft.setGains(
+          kFlywheelKp.get(),
+          kFlywheelKd.get(),
+          kFlywheelKs.get(),
+          0.0,
+          kFlywheelKv.get(),
+          kFlywheelKa.get());
+      mRight.setGains(
+          kFlywheelKp.get(),
+          kFlywheelKd.get(),
+          kFlywheelKs.get(),
+          0.0,
+          kFlywheelKv.get(),
+          kFlywheelKa.get());
     }
   }
 
