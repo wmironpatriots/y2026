@@ -6,6 +6,8 @@
 
 package org.frc6423.robot.subsystem.shooter;
 
+import static edu.wpi.first.units.Units.Rotation;
+
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -19,12 +21,15 @@ import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
@@ -242,10 +247,13 @@ public class Shooter extends SubsystemBase {
 
   @Logged private final ServoIO mPivot, mLeft, mRight;
 
-  private boolean mIsZeroed = false;
+  private boolean mIsHomed = false;
 
   private Rotation2d mTargetRotation2d = Rotation2d.fromRotations(kMinAngleRevs);
   private double mTargetFlywheelVelocityRevsPerSec = 0.0;
+
+  private final Debouncer mIsPivotHoldingTarget = new Debouncer(0.1);
+  private final Debouncer mIsFlywheelHoldingTarget = new Debouncer(0.03);
 
   protected Shooter(ServoIO pivot, ServoIO left, ServoIO right) {
     mPivot = pivot;
@@ -260,6 +268,17 @@ public class Shooter extends SubsystemBase {
     mPivot.periodic();
     mLeft.periodic();
     mRight.periodic();
+
+    mIsPivotHoldingTarget.calculate(
+        MathUtil.isNear(
+            getTargetFlywheelVelocityRevsPerSec(),
+            getFlywheelVelocityRevsPerSec(),
+            Units.degreesToRotations(kPivotEpsilonDeg.get())));
+    mIsFlywheelHoldingTarget.calculate(
+        MathUtil.isNear(
+            getTargetFlywheelVelocityRevsPerSec(),
+            getFlywheelVelocityRevsPerSec(),
+            Units.degreesToRotations(kFlywheelEpsilonDegPerSec.get())));
 
     if (kPivotKs.hasChanged(hashCode())
         || kPivotKv.hasChanged(hashCode())
@@ -290,6 +309,35 @@ public class Shooter extends SubsystemBase {
           kFlywheelKv.get(),
           kFlywheelKa.get());
     }
+  }
+
+  /**
+   * Check if pivot has been homed
+   *
+   * @return {@link Boolean}
+   */
+  @Logged(name = "Is Homed (bool)", importance = Importance.INFO)
+  public boolean isHomed() {
+    return mIsHomed;
+  }
+
+  /**
+   * Check if pivot & flywheel are aimed and up to speed
+   *
+   * @return {@link Boolean}
+   */
+  @Logged(name = "Is Locked (bool)", importance = Importance.INFO)
+  public boolean isLocked() {
+    return mIsPivotHoldingTarget.calculate(
+            MathUtil.isNear(
+                getTargetFlywheelVelocityRevsPerSec(),
+                getFlywheelVelocityRevsPerSec(),
+                Units.degreesToRotations(kPivotEpsilonDeg.get())))
+        && mIsFlywheelHoldingTarget.calculate(
+            MathUtil.isNear(
+                getTargetFlywheelVelocityRevsPerSec(),
+                getFlywheelVelocityRevsPerSec(),
+                Units.degreesToRotations(kFlywheelEpsilonDegPerSec.get())));
   }
 
   /**
@@ -352,7 +400,106 @@ public class Shooter extends SubsystemBase {
     return mTargetFlywheelVelocityRevsPerSec;
   }
 
+  // * ~~~~~~~~ SETTERS ~~~~~~~~
+
+  protected void setPivotStow() {
+    mTargetRotation2d = Rotation2d.fromRotations(kMinAngleRevs);
+    setPivotSetpoint(mTargetRotation2d);
+  }
+
+  protected void setPivotSetpoint(Rotation2d angle) {
+    mTargetRotation2d =
+        Rotation2d.fromRotations(
+            MathUtil.clamp(angle.getRotations(), kMinAngleRevs, kMaxAngleRevs));
+
+    mPivot.setPositionSetpoint(mTargetRotation2d.getRotations());
+  }
+
+  protected void setFlywheelCoast() {
+    mLeft.setNeutral();
+  }
+
+  protected void setFlywheelStop() {
+    mTargetFlywheelVelocityRevsPerSec = 0.0;
+    setFlywheelSetpoint(0.0);
+  }
+
+  protected void setFlywheelSetpoint(double velocityRevsPerSec) {
+    mTargetFlywheelVelocityRevsPerSec = velocityRevsPerSec;
+    mLeft.setProfiledVelocitySetpoint(mTargetFlywheelVelocityRevsPerSec);
+  }
+
   // * ~~~~~~~~ COMMANDS ~~~~~~~~
+
+  /**
+   * Stow hood and deaccelerate flywheel
+   *
+   * @return {@link Command}
+   */
+  public Command stowAndStop() {
+    return this.run(
+        () -> {
+          setPivotStow();
+          setFlywheelStop();
+        });
+  }
+
+  /**
+   * Stow hood and let flywheel coast
+   *
+   * @return {@link Command}
+   */
+  public Command stowAndCoast() {
+    return this.run(
+        () -> {
+          setPivotStow();
+          setFlywheelCoast();
+        });
+  }
+
+  /**
+   * Adjust hood to specified angle and let flywheel coast
+   *
+   * @param angle {@link Supplier} of {@link Rotation} Angle to adjust to
+   * @return {@link Command}
+   */
+  public Command adjustToAngleAndCoast(Supplier<Rotation2d> angle) {
+    return this.run(
+        () -> {
+          setPivotSetpoint(angle.get());
+          setFlywheelCoast();
+        });
+  }
+
+  /**
+   * Stow hood and accelerate flywheel to specified velocity
+   *
+   * @param velocityRevsPerSec {@link Supplier} of {@link Double} Velocity to accelerate to
+   * @return {@link Command}
+   */
+  public Command stowAndAccelerateTo(DoubleSupplier velocityRevsPerSec) {
+    return this.run(
+        () -> {
+          setPivotStow();
+          setFlywheelSetpoint(velocityRevsPerSec.getAsDouble());
+        });
+  }
+
+  /**
+   * Adjust hood to specified angle and accelerate flywheel to specified velocity
+   *
+   * @param angle {@link Supplier} of {@link Rotation} Angle to adjust to
+   * @param velocityRevsPerSec {@link Supplier} of {@link Double} Velocity to accelerate to
+   * @return {@link Command}
+   */
+  public Command adjustToAndAccelerateTo(
+      Supplier<Rotation2d> angle, DoubleSupplier velocityRevsPerSec) {
+    return this.run(
+        () -> {
+          setPivotSetpoint(angle.get());
+          setFlywheelSetpoint(velocityRevsPerSec.getAsDouble());
+        });
+  }
 
   /**
    * Run pivot backwards at a constant voltage until it stops moving
@@ -378,6 +525,10 @@ public class Shooter extends SubsystemBase {
    * @return {@link Command}
    */
   protected Command homePivot() {
-    return this.runOnce(() -> mPivot.setPositionSetpoint(kMinAngleRevs));
+    return this.runOnce(
+        () -> {
+          mPivot.setPositionSetpoint(kMinAngleRevs);
+          mIsHomed = true;
+        });
   }
 }

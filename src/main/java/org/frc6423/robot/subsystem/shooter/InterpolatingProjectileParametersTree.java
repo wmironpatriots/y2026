@@ -66,12 +66,13 @@ public class InterpolatingProjectileParametersTree {
    * Calculate a {@link ProjectileParameters} sample from a specified robot position to a target
    * position
    *
-   * @param robot {@link Pose2d} Robot Position on field
+   * @param robot {@link Translation2d} Robot Position on field
    * @param target {@link Translation2d} Target Position on field
    * @return {@link ProjectileParameters}
    */
-  public ProjectileParameters calculateProjectileParameters(Pose2d robot, Translation2d target) {
-    return get(robot.getTranslation().getDistance(target));
+  public ProjectileParameters calculateProjectileParameters(
+      Translation2d robot, Translation2d target) {
+    return get(robot.getDistance(target));
   }
 
   /**
