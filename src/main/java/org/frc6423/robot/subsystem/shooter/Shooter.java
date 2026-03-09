@@ -161,7 +161,7 @@ public class Shooter extends SubsystemBase {
   public static final double kFlywheelRadiusMeters = Units.inchesToMeters(2);
 
   /** {@link String} Nt directory to store tunables in */
-  public static final String kTunablesPrefix = "/Shooter/";
+  public static final String kTunablesPrefix = "/Shooter";
 
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 

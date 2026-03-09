@@ -77,7 +77,7 @@ public class Drive extends SubsystemBase {
   public static Lock kLock = new ReentrantLock();
 
   /** {@link String} The directory to store tunables in NT */
-  public static final String kTunablesPrefix = "/drive";
+  public static final String kTunablesPrefix = "/Drive";
 
   /** {@link Enum} Method of control drivetrain is currently being controlled by */
   public static enum ControlMode {
@@ -91,19 +91,19 @@ public class Drive extends SubsystemBase {
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
   public static final TunableNumber kTranslationalKp =
-      new TunableNumber(kTunablesPrefix + "Translational kP");
+      new TunableNumber(kTunablesPrefix + "/Translational kP");
   public static final TunableNumber kTranslationalKi =
-      new TunableNumber(kTunablesPrefix + "Translational kI");
+      new TunableNumber(kTunablesPrefix + "/Translational kI");
   public static final TunableNumber kTranslationalKd =
-      new TunableNumber(kTunablesPrefix + "Translational kD");
+      new TunableNumber(kTunablesPrefix + "/Translational kD");
   public static final TunableNumber kTranslationalToleranceCm =
-      new TunableNumber(kTunablesPrefix + "Translational Tolernace (centimeters)");
+      new TunableNumber(kTunablesPrefix + "/Translational Tolernace (centimeters)");
 
-  public static final TunableNumber kAngularKp = new TunableNumber(kTunablesPrefix + "Angular kP");
-  public static final TunableNumber kAngularKi = new TunableNumber(kTunablesPrefix + "Angular kI");
-  public static final TunableNumber kAngularKd = new TunableNumber(kTunablesPrefix + "Angular kD");
+  public static final TunableNumber kAngularKp = new TunableNumber(kTunablesPrefix + "/Angular kP");
+  public static final TunableNumber kAngularKi = new TunableNumber(kTunablesPrefix + "/Angular kI");
+  public static final TunableNumber kAngularKd = new TunableNumber(kTunablesPrefix + "/Angular kD");
   public static final TunableNumber kAngularToleranceDeg =
-      new TunableNumber(kTunablesPrefix + "Angular Tolerance (degrees)");
+      new TunableNumber(kTunablesPrefix + "/Angular Tolerance (degrees)");
 
   static {
     if (Robot.isReal()) {
@@ -192,7 +192,9 @@ public class Drive extends SubsystemBase {
 
     mF2d = new Field2d();
 
-    if (Robot.isSimulation()) RobotState.getInstance().resetPose(Rebuilt.kMidPose);
+    if (Robot.isSimulation())
+      RobotState.getInstance()
+          .resetPose(Flags.getRobotAlliancePose2d(Rebuilt.kRobotAllianceZone.getCenter()));
 
     setDefaultCommand(brake());
   }
