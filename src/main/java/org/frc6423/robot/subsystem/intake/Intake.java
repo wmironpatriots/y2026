@@ -274,9 +274,6 @@ public class Intake extends SubsystemBase {
         mPivotKp = mPivotKpTunable.get();
         mPivotKd = mPivotKdTunable.get();
         mPivotKs = mPivotKsTunable.get();
-
-        mPivot.setFeedforwardGains(mPivotKs, 0.0, 0.0, 0.0);
-        mPivot.setFeedbackGains(mPivotKp, mPivotKd);
       }
       if (mPivotMaxAngularVelocityTunable.get() != mPivotMaxAngularVelocityRevsPerSec
           || mPivotMaxAngularAccelerationTunable.get()

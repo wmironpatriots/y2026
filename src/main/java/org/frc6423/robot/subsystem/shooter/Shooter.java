@@ -8,30 +8,23 @@ package org.frc6423.robot.subsystem.shooter;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.AudioConfigs;
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
-import com.ctre.phoenix6.configs.MagnetSensorConfigs;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import org.frc6423.lib.io.EncoderIO;
-import org.frc6423.lib.io.EncoderIOCanCoder;
 import org.frc6423.lib.io.ServoIO;
 import org.frc6423.lib.io.ServoIONone;
 import org.frc6423.lib.io.ServoIOTalonFx;
@@ -50,7 +43,6 @@ public class Shooter extends SubsystemBase {
   public static Shooter create() {
     return (Robot.isReal())
         ? new Shooter(
-            new EncoderIOCanCoder(kEncoderCanDeviceId, kCanBus, kEncoderConfig),
             new ServoIOTalonFx(
                 "Pivot", MotorType.KrakenX44, kCanBus, kPivotCanDeviceId, kPivotConfig),
             new ServoIOTalonFx(
@@ -58,7 +50,6 @@ public class Shooter extends SubsystemBase {
             new ServoIOTalonFx(
                 "Right", MotorType.KrakenX60, kCanBus, kFlywheelRightCanDeviceId, kPivotConfig))
         : new Shooter(
-            new EncoderIOCanCoder(kEncoderCanDeviceId, kCanBus, kEncoderConfig),
             new ServoIOTalonFxPivotSim(
                 "Pivot",
                 MotorType.KrakenX44,
@@ -80,9 +71,9 @@ public class Shooter extends SubsystemBase {
                 kFlywheelLeftCanDeviceId,
                 kPivotConfig,
                 kFlywheelRotationalInertiaKgSquaredMeters,
-                DCMotor.getKrakenX60Foc(1),
+                DCMotor.getKrakenX60Foc(2),
                 kFlywheelRotorToMechRatio),
-            new ServoIONone("Right"));
+            new ServoIONone("Right")); // No need for this one me thinks
   }
 
   // * ~~~~~~~~ CONSTANTS ~~~~~~~~
@@ -93,11 +84,13 @@ public class Shooter extends SubsystemBase {
   /** {@link Integer} Unique CAN device indentifier for the abs encoder */
   public static final int kEncoderCanDeviceId = Matrix.kIntakeEncoderId;
 
-  /** {@link Integer} Unique CAN device indentifier for the pivot servo */
+  /** {@link Integer} Unique CAN device identifier for the pivot servo */
   public static final int kPivotCanDeviceId = Matrix.kIntakePivotId;
 
+  /** {@link Integer} Unique CAN device identifier for left flywheel servo */
   public static final int kFlywheelLeftCanDeviceId = Matrix.kFlywheelLeftId;
 
+  /** {@link Integer} Unique CAN device identifier for right flywheel servo */
   public static final int kFlywheelRightCanDeviceId = Matrix.kFlywheelRightId;
 
   /** {@link Double} Lower limit on pivot angular position */
@@ -115,25 +108,6 @@ public class Shooter extends SubsystemBase {
   /** {@link Double} Gear ratio between flywheel servos to mechanism */
   public static final double kFlywheelRotorToMechRatio = (28.0 / 16.0);
 
-  /** {@link Double} Angular Position offset to the stowed angle of abs encoder */
-  public static final double kEncoderAngularOffsetRevs =
-      0.0 + (kMinAngleRevs * kPivotSensorToMechRatio); // TODO
-
-  /** {@link Double} Angular Position in the middle of the 'unreachable' area of pivot */
-  public static final double kEncoderSensorDiscontinuityPointRevs =
-      360
-          - (kMaxAngleRevs - kMinAngleRevs) / 2
-          + kMaxAngleRevs; // TODO we might have to add to encoder offset to zero
-
-  /** {@link CANcoderConfiguration} Hardware config of abs encoder */
-  public static final CANcoderConfiguration kEncoderConfig =
-      new CANcoderConfiguration()
-          .withMagnetSensor(
-              new MagnetSensorConfigs()
-                  .withSensorDirection(SensorDirectionValue.CounterClockwise_Positive)
-                  .withMagnetOffset(kEncoderAngularOffsetRevs)
-                  .withAbsoluteSensorDiscontinuityPoint(kEncoderSensorDiscontinuityPointRevs));
-
   /** {@link TalonFXConfiguration} Hardware config of pivot servo */
   public static final TalonFXConfiguration kPivotConfig =
       new TalonFXConfiguration()
@@ -148,15 +122,8 @@ public class Shooter extends SubsystemBase {
                   .withStatorCurrentLimitEnable(true))
           .withFeedback(
               new FeedbackConfigs()
-                  .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
-                  .withFeedbackRemoteSensorID(kEncoderCanDeviceId)
-                  .withRotorToSensorRatio(kPivotRotorToSensorRatio)
-                  .withSensorToMechanismRatio(kPivotSensorToMechRatio))
-          .withMotionMagic(
-              new MotionMagicConfigs()
-                  .withMotionMagicCruiseVelocity(1)
-                  .withMotionMagicAcceleration(2))
-          .withSlot0(new Slot0Configs().withKP(0.0).withKD(0.0)); // Torque Current Control Gains
+                  .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
+                  .withSensorToMechanismRatio(kPivotRotorToSensorRatio * kPivotSensorToMechRatio));
 
   /** {@link TalonFXConfiguration} Hardware config of flywheel servos */
   public static final TalonFXConfiguration kServoTalonConfig =
@@ -175,9 +142,7 @@ public class Shooter extends SubsystemBase {
           .withFeedback(
               new FeedbackConfigs()
                   .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
-                  .withSensorToMechanismRatio(kFlywheelRotorToMechRatio))
-          .withSlot0(
-              new Slot0Configs().withKS(0.0).withKV(0.0).withKA(0.0).withKP(10.0).withKD(0.1));
+                  .withSensorToMechanismRatio(kFlywheelRotorToMechRatio));
 
   /** {@link Double} Moment of Inertia of pivot system */
   public static final double kPivotRotationalInertiaKgSquaredMeters = 402.290096 * 0.0002926397;
@@ -185,42 +150,64 @@ public class Shooter extends SubsystemBase {
   /** {@link Double} Length of pivot arm in meters */
   public static final double kPivotArmLengthMeters = 0.5;
 
+  public static final double kPivotHomingVolts = 2.5;
+
+  /** {@link Double} Moment of Inertia of flywheel */
   public static final double kFlywheelRotationalInertiaKgSquaredMeters = 10.491008 * 0.0002926397;
 
+  /** {@link Double} Radius of flywheel */
   public static final double kFlywheelRadiusMeters = Units.inchesToMeters(2);
 
+  /** {@link String} Nt directory to store tunables in */
   public static final String kTunablesPrefix = "/Shooter/";
 
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
+  public static TunableNumber kPivotZeroingVelocityThreshold =
+      new TunableNumber(kTunablesPrefix + "/Pivot/Zeroing Velocity Threshold (deg per sec)");
+
+  /** {@link TunableNumber} Maximum allowed angular position error for pivot */
   public static TunableNumber kPivotEpsilonDeg =
       new TunableNumber(kTunablesPrefix + "/Pivot/Epsilon (degrees)");
 
+  /** {@link TunableNumber} Pivot control gain acting against static friction (kS * signum(vel)) */
   public static TunableNumber kPivotKs = new TunableNumber(kTunablesPrefix + "/Pivot/Ks");
 
+  /** {@link TunableNumber} Pivot control gain inducing velocity (kV * desired_vel) */
   public static TunableNumber kPivotKv = new TunableNumber(kTunablesPrefix + "/Pivot/Kv");
 
+  /** {@link TunableNumber} Pivot control gain inducing acceleration (kV * desired_accel) */
   public static TunableNumber kPivotKa = new TunableNumber(kTunablesPrefix + "/Pivot/Ka");
 
+  /** {@link TunableNumber} Pivot control gain for driving angular position error to 0 */
   public static TunableNumber kPivotKp = new TunableNumber(kTunablesPrefix + "/Pivot/Kp");
 
+  /** {@link TunableNumber} Pivot control gain for driving angular velocity error to 0 */
   public static TunableNumber kPivotKd = new TunableNumber(kTunablesPrefix + "/Pivot/Kd");
 
   public static TunableNumber kFlywheelEpsilonDegPerSec =
       new TunableNumber(kTunablesPrefix + "/Flywheel/Epsilon (degrees per second)");
 
+  /**
+   * {@link TunableNumber} Flywheel control gain acting against static friction (kS * signum(vel))
+   */
   public static TunableNumber kFlywheelKs = new TunableNumber(kTunablesPrefix + "/Flywheel/Ks");
 
+  /** {@link TunableNumber} Flywheel control gain inducing velocity (kV * desired_vel) */
   public static TunableNumber kFlywheelKv = new TunableNumber(kTunablesPrefix + "/Flywheel/Kv");
 
+  /** {@link TunableNumber} Flywheel control gain inducing acceleration (kV * desired_accel) */
   public static TunableNumber kFlywheelKa = new TunableNumber(kTunablesPrefix + "/Flywheel/Ka");
 
+  /** {@link TunableNumber} Flywheel control gain for driving angular position error to 0 */
   public static TunableNumber kFlywheelKp = new TunableNumber(kTunablesPrefix + "/Flywheel/Kp");
 
+  /** {@link TunableNumber} Flywheel control gain for driving angular velocity error to 0 */
   public static TunableNumber kFlywheelKd = new TunableNumber(kTunablesPrefix + "/Flywheel/Kd");
 
   static {
     if (Robot.isReal()) {
+      kPivotZeroingVelocityThreshold.initDefault(0.1);
       kPivotEpsilonDeg.initDefault(0.0);
       kPivotKs.initDefault(0.0);
       kPivotKv.initDefault(0.0);
@@ -253,17 +240,14 @@ public class Shooter extends SubsystemBase {
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
-  @Logged private final EncoderIO mEncoder;
   @Logged private final ServoIO mPivot, mLeft, mRight;
 
-  private double mTargetAngleRevs;
-  private double mTargetFlywheelMuzzleVelocityMetersPerSec;
+  private boolean mIsZeroed = false;
 
-  private final Debouncer mHoodHoldingSetpoint = new Debouncer(0.1);
-  private final Debouncer mFlywheelHoldingSetpoint = new Debouncer(0.03);
+  private Rotation2d mTargetRotation2d = Rotation2d.fromRotations(kMinAngleRevs);
+  private double mTargetFlywheelVelocityRevsPerSec = 0.0;
 
-  protected Shooter(EncoderIO encoder, ServoIO pivot, ServoIO left, ServoIO right) {
-    mEncoder = encoder;
+  protected Shooter(ServoIO pivot, ServoIO left, ServoIO right) {
     mPivot = pivot;
     mLeft = left;
     mRight = right;
@@ -273,21 +257,9 @@ public class Shooter extends SubsystemBase {
 
   @Override
   public void periodic() {
-    mEncoder.periodic();
     mPivot.periodic();
     mLeft.periodic();
     mRight.periodic();
-
-    mHoodHoldingSetpoint.calculate(
-        MathUtil.isNear(
-            mTargetAngleRevs,
-            getRotation2d().getRotations(),
-            Units.degreesToRotations(kPivotEpsilonDeg.get())));
-    mFlywheelHoldingSetpoint.calculate(
-        MathUtil.isNear(
-            getTargetAngularVelocityRevsPerSecond(),
-            getAngularVelocityRevsPerSec(),
-            Units.degreesToRotations(kFlywheelEpsilonDegPerSec.get())));
 
     if (kPivotKs.hasChanged(hashCode())
         || kPivotKv.hasChanged(hashCode())
@@ -320,55 +292,92 @@ public class Shooter extends SubsystemBase {
     }
   }
 
-  @Logged(name = "Target Rotation2d (rads)", importance = Importance.INFO)
-  public Rotation2d getTargetRotation2d() {
-    return Rotation2d.fromRotations(mTargetAngleRevs);
-  }
-
-  @Logged(name = "Rotation2d (rads)", importance = Importance.INFO)
+  /**
+   * Get angle shooter is aimed at
+   *
+   * @return {@link Rotation2d}
+   */
+  @Logged(name = "Rotation2d", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
     return Rotation2d.fromRotations(mPivot.getAngularPositionRevs());
   }
 
-  @Logged(name = "Target Muzzle Velocity (meters per second)", importance = Importance.INFO)
-  public double getTargetMuzzleVelocityMetersPerSecond() {
-    return mTargetFlywheelMuzzleVelocityMetersPerSec;
+  /**
+   * Get target angle shooter needs to be at
+   *
+   * @return {@link Rotation2d}
+   */
+  @Logged(name = "Target Rotation2d", importance = Importance.INFO)
+  public Rotation2d getTargetRotation2d() {
+    return mTargetRotation2d;
   }
 
-  @Logged(name = "Target Angular Velocity (revs per second)", importance = Importance.INFO)
-  public double getTargetAngularVelocityRevsPerSecond() {
-    // omega = (v / 2) * radius
-    return getTargetMuzzleVelocityMetersPerSecond() * 0.5 * kFlywheelRadiusMeters;
-  }
-
+  /**
+   * Get an approximation of the exit velocity of projectiles
+   *
+   * @return {@link Double}
+   */
   @Logged(name = "Approximated Muzzle Velocity (meters per second)", importance = Importance.INFO)
-  public double getApproximatedMuzzleVelocityMetersPerSecond() {
-    // v = (omega / radius) * 2
-    return getAngularVelocityRevsPerSec() / kFlywheelRadiusMeters * 2;
+  public double getApproximatedMuzzleVelocityMetersPerSec() {
+    return getFlywheelVelocityRevsPerSec() * kFlywheelRadiusMeters * 0.5;
   }
 
-  @Logged(name = "Angular Velocity (revs per second)", importance = Importance.INFO)
-  public double getAngularVelocityRevsPerSec() {
+  /**
+   * Get angular velocity of flywheel
+   *
+   * @return {@link Double}
+   */
+  @Logged(name = "Flywheel Velocity (revs per sec)", importance = Importance.INFO)
+  public double getFlywheelVelocityRevsPerSec() {
     return mLeft.getAngularVelocityRevsPerSec();
   }
 
-  public Command runSetpoint(double pivotAngleRevs, double muzzleVelocityMetersPerSec) {
-    return this.run(
-        () -> {
-          mTargetAngleRevs = MathUtil.clamp(pivotAngleRevs, kMinAngleRevs, kMaxAngleRevs);
-
-          mPivot.setProfiledPositionSetpoint(mTargetAngleRevs);
-          // omega = (v / 2) * radius
-          mLeft.setProfiledVelocitySetpoint(
-              muzzleVelocityMetersPerSec * 0.5 * kFlywheelRadiusMeters);
-        });
+  /**
+   * Get the desired exit velocity of projectiles
+   *
+   * @return {@link Double}
+   */
+  @Logged(name = "Target Muzzle Velocity (meters per second)", importance = Importance.INFO)
+  public double getTargetMuzzleVelocityMetersPerSecond() {
+    return getTargetFlywheelVelocityRevsPerSec() * kFlywheelRadiusMeters * 0.5;
   }
 
-  public Command stowAndCoast() {
-    return this.run(
-        () -> {
-          mPivot.setProfiledPositionSetpoint(kMinAngleRevs);
-          mLeft.setNeutral();
-        });
+  /**
+   * Get target flywheel velocity shooter needs to be spinning at
+   *
+   * @return {@link Double}
+   */
+  @Logged(name = "Target Flywheel Velocity (revs per sec)", importance = Importance.INFO)
+  public double getTargetFlywheelVelocityRevsPerSec() {
+    return mTargetFlywheelVelocityRevsPerSec;
+  }
+
+  // * ~~~~~~~~ COMMANDS ~~~~~~~~
+
+  /**
+   * Run pivot backwards at a constant voltage until it stops moving
+   *
+   * <p>Then, set current position as pivot home angle, aka its minimum angle
+   *
+   * @return {@link Command}
+   */
+  public Command runCurrentHoming() {
+    return this.run(() -> mPivot.setVoltageOutput(kPivotHomingVolts, true))
+        .until(
+            () ->
+                MathUtil.isNear(
+                    0.0,
+                    mPivot.getAngularVelocityRevsPerSec(),
+                    kPivotZeroingVelocityThreshold.get()))
+        .andThen(Commands.print("Hood Homed").alongWith(homePivot()));
+  }
+
+  /**
+   * Reset pivot relative encoder to minimum angle
+   *
+   * @return {@link Command}
+   */
+  protected Command homePivot() {
+    return this.runOnce(() -> mPivot.setPositionSetpoint(kMinAngleRevs));
   }
 }
