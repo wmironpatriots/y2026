@@ -16,6 +16,9 @@ import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
 // TODO acceleration?
 /** Interface for interacting with gyro hardware */
 public abstract class SwerveModuleIO {
+
+  // * ~~~~~~~~ MEMBERS ~~~~~~~~
+
   protected final ModuleConfig mConfig;
 
   protected SwerveModuleIO(ModuleConfig config) {

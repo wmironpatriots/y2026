@@ -18,8 +18,6 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.lang.reflect.Array;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -68,14 +66,10 @@ public class RobotState {
 
   private ChassisSpeeds mSpeeds = new ChassisSpeeds();
 
-  private final Field2d mF2d = new Field2d();
-
   private RobotState() {
     for (int i = 0; i < 3; ++i) {
       qStdDevs.set(i, 0, Math.pow(kOdometryStateStdDevs.get(i, 0), 2));
     }
-
-    SmartDashboard.putData(mF2d);
   }
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~
@@ -122,8 +116,6 @@ public class RobotState {
     mEstimatedPose = pose;
     mOdometryPose = pose;
     mPoseBuffer.clear();
-
-    mF2d.setRobotPose(pose);
   }
 
   /**
@@ -162,7 +154,6 @@ public class RobotState {
     // Calculate diff in position from last odometry pose and modify estimated pose
     var finalTwist = previousOdoPose.log(mOdometryPose);
     mEstimatedPose = mEstimatedPose.exp(finalTwist);
-    mF2d.setRobotPose(mEstimatedPose);
   }
 
   /**
@@ -225,7 +216,6 @@ public class RobotState {
     // Recalculate current estimate by applying scaled transform to old estimate
     // then replaying odometry data
     mEstimatedPose = estimateAtTime.plus(scaledTransform).plus(sampleToOdometryTransform);
-    mF2d.setRobotPose(mEstimatedPose);
   }
 
   // * ~~~~~~~~ STRUCTS ~~~~~~~~

@@ -8,6 +8,9 @@ package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
 import org.frc6423.robot.subsystem.drive.constants.SwerveConstants;
 
@@ -36,6 +39,12 @@ public final class Constants {
 
     /** {@link Importance} Minimum Epilogue importance to be logged */
     public static final Importance kLoggingLevel = Importance.DEBUG;
+
+    public static final Alliance kRobotAlliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+
+    public static Rotation2d getAllianceRotation() {
+      return Rotation2d.fromRotations(kRobotAlliance == Alliance.Blue ? 0.0 : 0.5);
+    }
   }
 
   /** The matrix contains the CAN identification information for all devices */

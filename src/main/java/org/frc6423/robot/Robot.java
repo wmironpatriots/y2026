@@ -19,18 +19,17 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.Drive;
-import org.frc6423.robot.subsystem.vision.Vision;
 
 @Logged
 public class Robot extends CommandRobot {
   private final CommandXboxController mController;
 
   private final RobotState mRobotState = RobotState.getInstance();
-  private final Vision mVision = Vision.create();
   private final Drive mDrive = Drive.create();
 
   public Robot() {
@@ -85,6 +84,13 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "GitBranch", BuildConstants.GIT_BRANCH);
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
+
+    RobotModeTriggers.teleop()
+        .whileTrue(
+            mDrive.driveWhileFacingTarget(
+                () -> modifyJoystick(mController.getLeftY()),
+                () -> modifyJoystick(mController.getLeftX()),
+                () -> Rebuilt.kHubPose2d.getTranslation()));
   }
 
   public double modifyJoystick(double value) {
