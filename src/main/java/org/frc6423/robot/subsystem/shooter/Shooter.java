@@ -86,9 +86,6 @@ public class Shooter extends SubsystemBase {
   /** {@link CANBus} CAN bus devices are on */
   public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
 
-  /** {@link Integer} Unique CAN device indentifier for the abs encoder */
-  public static final int kEncoderCanDeviceId = Matrix.kIntakeEncoderId;
-
   /** {@link Integer} Unique CAN device identifier for the pivot servo */
   public static final int kPivotCanDeviceId = Matrix.kIntakePivotId;
 
@@ -190,6 +187,7 @@ public class Shooter extends SubsystemBase {
   /** {@link TunableNumber} Pivot control gain for driving angular velocity error to 0 */
   public static TunableNumber kPivotKd = new TunableNumber(kTunablesPrefix + "/Pivot/Kd");
 
+  /** {@link TunableNumber} Maximum allowed angular velocity error for flywheel */
   public static TunableNumber kFlywheelEpsilonDegPerSec =
       new TunableNumber(kTunablesPrefix + "/Flywheel/Epsilon (degrees per second)");
 
@@ -265,10 +263,12 @@ public class Shooter extends SubsystemBase {
 
   @Override
   public void periodic() {
+    // Update all Hardware
     mPivot.periodic();
     mLeft.periodic();
     mRight.periodic();
 
+    // Calculate debouncers
     mIsPivotHoldingTarget.calculate(
         MathUtil.isNear(
             getTargetFlywheelVelocityRevsPerSec(),
@@ -280,6 +280,7 @@ public class Shooter extends SubsystemBase {
             getFlywheelVelocityRevsPerSec(),
             Units.degreesToRotations(kFlywheelEpsilonDegPerSec.get())));
 
+    // Update gains from tunables
     if (kPivotKs.hasChanged(hashCode())
         || kPivotKv.hasChanged(hashCode())
         || kPivotKa.hasChanged(hashCode())
@@ -310,6 +311,8 @@ public class Shooter extends SubsystemBase {
           kFlywheelKa.get());
     }
   }
+
+  // * ~~~~~~~~ GETTERS ~~~~~~~~
 
   /**
    * Check if pivot has been homed

@@ -8,9 +8,11 @@ package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
 import org.frc6423.robot.subsystem.drive.constants.SwerveConstants;
 
@@ -44,6 +46,10 @@ public final class Constants {
 
     public static Rotation2d getAllianceRotation() {
       return Rotation2d.fromRotations(kRobotAlliance == Alliance.Blue ? 0.0 : 0.5);
+    }
+
+    public static Pose2d getRobotAlliancePose2d(Pose2d pose) {
+      return GeometryUtil.allianceFlipPose2d(Rebuilt.kMidPose, pose);
     }
   }
 
