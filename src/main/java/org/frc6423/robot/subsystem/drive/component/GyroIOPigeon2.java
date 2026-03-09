@@ -7,11 +7,12 @@
 package org.frc6423.robot.subsystem.drive.component;
 
 import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.configs.Pigeon2Configuration;
+import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.Pigeon2;
+import edu.wpi.first.math.util.Units;
 import java.util.Queue;
 import org.frc6423.robot.subsystem.drive.PhoneixOdometryThread;
+import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.GyroConfig;
 
 /** Interface for interacting with {@link Pigeon2} gyro hardware */
 public class GyroIOPigeon2 extends GyroIO {
@@ -22,29 +23,23 @@ public class GyroIOPigeon2 extends GyroIO {
   private final Queue<Double> mYawPositionQueue;
   private final Queue<Double> mYawTimestampQueue;
 
-  public GyroIOPigeon2(int canDeviceId, CANBus canBus, Pigeon2Configuration config) {
-    mPigeon = new Pigeon2(canDeviceId, canBus);
-    mPigeon.getConfigurator().apply(config);
+  public GyroIOPigeon2(GyroConfig config) {
+    mPigeon = new Pigeon2(config.deviceId(), config.canBus());
+    mPigeon.getConfigurator().apply(config.config());
     mPigeon.getConfigurator().setYaw(0.0);
 
     mYawSignal = mPigeon.getYaw();
     mYawSignal.setUpdateFrequency(PhoneixOdometryThread.kFrequencyHz);
 
-    // TODO do we need to specify the freq?
-    mPigeon.optimizeBusUtilization();
-
     mYawTimestampQueue = PhoneixOdometryThread.getInstance().makeTimestampQueue();
-    mYawPositionQueue = PhoneixOdometryThread.getInstance().registerSignal(mPigeon.getYaw());
-  }
+    mYawPositionQueue = PhoneixOdometryThread.getInstance().registerSignal(mYawSignal);
 
-  @Override
-  public void periodic() {
-    BaseStatusSignal.refreshAll(mYawSignal);
+    ParentDevice.optimizeBusUtilizationForAll(mPigeon);
   }
 
   @Override
   public double[] getYawRotationsRads() {
-    var result = mYawPositionQueue.stream().mapToDouble((Double value) -> value).toArray();
+    var result = mYawPositionQueue.stream().mapToDouble(Units::rotationsToRadians).toArray();
     mYawPositionQueue.clear();
 
     return result;
