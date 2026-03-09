@@ -27,9 +27,6 @@ public abstract class ServoIO {
     mTalonConfig = config;
   }
 
-  /** Update hardware loggers */
-  public abstract void periodic();
-
   // * ~~~~~~~~ GETTERS ~~~~~~~~
 
   /**

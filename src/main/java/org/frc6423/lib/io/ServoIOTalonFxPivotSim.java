@@ -7,9 +7,7 @@
 package org.frc6423.lib.io;
 
 import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
@@ -60,14 +58,6 @@ public class ServoIOTalonFxPivotSim extends ServoIOTalonFx {
             shouldSimulateGravity,
             Units.degreesToRadians(startingAngleDegrees));
 
-    // Configure Phoneix 6 Sim
-    mTalonConfig =
-        mTalonConfig.withFeedback(
-            new FeedbackConfigs()
-                .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
-                .withRotorToSensorRatio(1.0)
-                .withSensorToMechanismRatio(mRatio));
-
     mServo.getConfigurator().apply(mTalonConfig);
 
     mServo.getSimState().setMotorType(type);
@@ -91,10 +81,11 @@ public class ServoIOTalonFxPivotSim extends ServoIOTalonFx {
 
               mServo
                   .getSimState()
-                  .setRawRotorPosition((mModel.getAngleRads() / (Math.PI * 2)) * mRatio);
+                  .setRawRotorPosition(Units.radiansToRotations(mModel.getAngleRads()) * mRatio);
               mServo
                   .getSimState()
-                  .setRotorVelocity((mModel.getVelocityRadPerSec() / (Math.PI * 2)) * mRatio);
+                  .setRotorVelocity(
+                      Units.radiansToRotations(mModel.getVelocityRadPerSec()) * mRatio);
             });
 
     mNotifier.startPeriodic(0.002);

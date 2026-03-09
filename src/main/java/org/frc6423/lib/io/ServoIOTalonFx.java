@@ -58,38 +58,14 @@ public class ServoIOTalonFx extends ServoIO {
 
     mTalonType = type;
 
-    mVoltsSignal = mServo.getMotorVoltage(true);
-    mSupplyAmpsSignal = mServo.getSupplyCurrent(true);
-    mStatorAmpsSignal = mServo.getStatorCurrent(true);
-    mTorqueAmpsSignal = mServo.getTorqueCurrent(true);
-    mCelsiusSignal = mServo.getDeviceTemp(true);
-    mRevsSignal = mServo.getPosition(true);
-    mRevsPerSecSignal = mServo.getVelocity(true);
-    mRevsPerSecPerSecSignal = mServo.getAcceleration(true);
-
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
-        mVoltsSignal,
-        mSupplyAmpsSignal,
-        mStatorAmpsSignal,
-        mTorqueAmpsSignal,
-        mCelsiusSignal,
-        mRevsSignal,
-        mRevsPerSecSignal,
-        mRevsPerSecPerSecSignal);
-  }
-
-  @Override
-  public void periodic() {
-    BaseStatusSignal.refreshAll(
-        mVoltsSignal,
-        mSupplyAmpsSignal,
-        mStatorAmpsSignal,
-        mTorqueAmpsSignal,
-        mCelsiusSignal,
-        mRevsSignal,
-        mRevsPerSecSignal,
-        mRevsPerSecPerSecSignal);
+    mVoltsSignal = mServo.getMotorVoltage();
+    mSupplyAmpsSignal = mServo.getSupplyCurrent();
+    mStatorAmpsSignal = mServo.getStatorCurrent();
+    mTorqueAmpsSignal = mServo.getTorqueCurrent();
+    mCelsiusSignal = mServo.getDeviceTemp();
+    mRevsSignal = mServo.getPosition();
+    mRevsPerSecSignal = mServo.getVelocity();
+    mRevsPerSecPerSecSignal = mServo.getAcceleration();
   }
 
   @Override
