@@ -7,28 +7,45 @@
 package org.frc6423.robot.subsystem.drive;
 
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.frc6423.lib.util.Tracer;
+import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.RobotState.OdometryMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
+import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
+import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOComp;
+import org.frc6423.robot.subsystem.drive.constants.SwerveConstants;
 
 public class Drive extends SubsystemBase {
+  public static Drive create() {
+    return new Drive(
+        new GyroIOPigeon2(kConstants.getGyroConfig()),
+        new SwerveModuleIOComp(kConstants.getFrontRightModuleConfig()),
+        new SwerveModuleIOComp(kConstants.getBackRightModuleConfig()),
+        new SwerveModuleIOComp(kConstants.getFrontLeftModuleConfig()),
+        new SwerveModuleIOComp(kConstants.getBackLeftModuleConfig()));
+  }
 
   // * ~~~~~~~~ CONSTANTS ~~~~~~~~
+
+  public static final SwerveConstants kConstants = Flags.kDriveConstants;
 
   public static Lock kLock = new ReentrantLock();
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
-  @Logged(name = "Gyro")
   private final GyroIO mGyro;
 
   @Logged(name = "Front Right")
@@ -66,40 +83,64 @@ public class Drive extends SubsystemBase {
     Tracer.traceFunc(
         "Odometry Update",
         () -> {
-          Tracer.traceFunc(
-              "Proccess Hardware Signals",
-              () -> {
-                // Prevent odo thread from updating while processing data
-                kLock.lock();
+          // Prevent odo thread from updating while processing data
+          kLock.lock();
 
-                // Update hardware
-                mGyro.periodic();
-                for (var module : mModules) {
-                  module.periodic();
-                }
-                kLock.unlock();
+          try {
 
-                double[] sampleTimestamps =
-                    Robot.isReal()
-                        ? mGyro.getYawTimestampsSec()
-                        : new double[] {Timer.getFPGATimestamp()};
+            // Get samples & their timestamps
+            var sampleTimestamps =
+                Robot.isReal()
+                    ? mGyro.getYawTimestampsSec()
+                    : new double[] {Timer.getFPGATimestamp()};
 
-                int sampleCount = sampleTimestamps.length;
-                for (int i = 0; i < sampleCount; i++) {
-                  SwerveModulePosition[] wheelPositions = new SwerveModulePosition[4];
+            var gyroSamples = mGyro.getYawRotationsRads();
+            var moduleSamples =
+                new SwerveModulePosition[][] {
+                  mModules[0].getWheelPositions(),
+                  mModules[1].getWheelPositions(),
+                  mModules[2].getWheelPositions(),
+                  mModules[3].getWheelPositions(),
+                };
 
-                  for (int j = 0; j < 4; j++) {
-                    // TODO wheelPositions[j] = mModules[j].getOdometryPositions()[i];
-                  }
+            var sampleSize = sampleTimestamps.length;
 
-                  RobotState.getInstance()
-                      .addOdometryMeasurement(
-                          new OdometryMeasurement(
-                              sampleTimestamps[i],
-                              wheelPositions,
-                              Optional.ofNullable(mGyro.getY)));
-                }
-              });
+            // Give all data to {@link RobotState}
+            for (int i = 0; i < sampleSize; i++) {
+              SwerveModulePosition[] wheelPositions = new SwerveModulePosition[4];
+
+              for (int j = 0; j < 4; j++) {
+                wheelPositions[j] = moduleSamples[j][i];
+              }
+
+              RobotState.getInstance()
+                  .addOdometryMeasurement(
+                      new OdometryMeasurement(
+                          sampleTimestamps[i],
+                          wheelPositions,
+                          (Robot.isReal())
+                              ? Optional.of(Rotation2d.fromRadians(gyroSamples[i]))
+                              : Optional.empty()));
+            }
+
+          } catch (RuntimeException e) {
+            e.printStackTrace();
+          } finally {
+            kLock.unlock();
+          }
         });
+
+    // todo
+    RobotState.getInstance().setChassisSpeeds(getChassisSpeeds());
+  }
+
+  public ChassisSpeeds getChassisSpeeds() {
+    return kConstants.getKinematics().toChassisSpeeds(getWheelStates());
+  }
+
+  public SwerveModuleState[] getWheelStates() {
+    return Arrays.stream(mModules)
+        .map(SwerveModuleIO::getWheelState)
+        .toArray(SwerveModuleState[]::new);
   }
 }
