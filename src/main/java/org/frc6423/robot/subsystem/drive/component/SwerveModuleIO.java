@@ -182,12 +182,4 @@ public abstract class SwerveModuleIO {
 
   /** Set all servos to neutral mode */
   public abstract void neutral();
-
-  public abstract SwerveModulePosition[] getWheelPositions();
-
-  public abstract double[] getPositions();
-
-  public abstract double[] getRotations();
-
-  public abstract double[] getTimestamps();
 }

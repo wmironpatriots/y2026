@@ -15,11 +15,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import java.util.Queue;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.subsystem.drive.PhoneixOdometryThread;
 import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
 
 public class SwerveModuleIOComp extends SwerveModuleIO {
@@ -35,7 +31,6 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
   private final MotionMagicTorqueCurrentFOC mPositionReq =
       new MotionMagicTorqueCurrentFOC(0.0).withSlot(0);
 
-  private final BaseStatusSignal mAbsPosition;
   private final BaseStatusSignal mPivotVolts,
       mPivotSupply,
       mPivotStator,
@@ -51,10 +46,6 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
       mDriveAngle,
       mDriveSpeed;
 
-  private final Queue<Double> mTimestamps;
-  private final Queue<Double> mRotations;
-  private final Queue<Double> mPositions;
-
   public SwerveModuleIOComp(ModuleConfig config) {
     super(config);
 
@@ -65,8 +56,6 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
     mEncoder.getConfigurator().apply(config.cancoderConfig());
     mPivot.getConfigurator().apply(config.pivotConfig());
     mDrive.getConfigurator().apply(config.driveConfig());
-
-    mAbsPosition = mEncoder.getAbsolutePosition();
 
     mPivotVolts = mPivot.getMotorVoltage(true);
     mPivotSupply = mPivot.getSupplyCurrent(true);
@@ -85,15 +74,11 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
     mDriveSpeed = mDrive.getVelocity(true);
 
     BaseStatusSignal.setUpdateFrequencyForAll(
-        PhoneixOdometryThread.kFrequencyHz,
-        mEncoder.getAbsolutePosition(),
+        50.0,
         mDriveAngle,
         mDriveSpeed,
         mPivotAngle,
-        mPivotSpeed);
-
-    BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0,
+        mPivotSpeed,
         mPivotVolts,
         mPivotSupply,
         mPivotTorque,
@@ -107,11 +92,6 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
         mDriveTemp,
         mDriveAngle,
         mDriveSpeed);
-
-    mTimestamps = PhoneixOdometryThread.getInstance().makeTimestampQueue();
-
-    mRotations = PhoneixOdometryThread.getInstance().registerSignal(mPivotAngle);
-    mPositions = PhoneixOdometryThread.getInstance().registerSignal(mDriveAngle);
 
     ParentDevice.optimizeBusUtilizationForAll(mEncoder, mPivot, mDrive);
 
@@ -226,45 +206,5 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
   public void neutral() {
     mPivot.stopMotor();
     mDrive.stopMotor();
-  }
-
-  @Override
-  public SwerveModulePosition[] getWheelPositions() {
-    SwerveModulePosition[] positions = new SwerveModulePosition[20];
-
-    var timestamps = getTimestamps();
-    var drivePositions = getPositions();
-    var rotations = getRotations();
-
-    for (int i = 0; i < timestamps.length; i++) {
-      positions[i] =
-          new SwerveModulePosition(drivePositions[i], Rotation2d.fromRotations(rotations[i]));
-    }
-
-    return positions;
-  }
-
-  @Override
-  public double[] getPositions() {
-    var values = mPositions.stream().mapToDouble((value) -> value).toArray();
-    mPositions.clear();
-
-    return values;
-  }
-
-  @Override
-  public double[] getRotations() {
-    var values = mRotations.stream().mapToDouble((value) -> value).toArray();
-    mRotations.clear();
-
-    return values;
-  }
-
-  @Override
-  public double[] getTimestamps() {
-    var values = mTimestamps.stream().mapToDouble((value) -> value).toArray();
-    mTimestamps.clear();
-
-    return values;
   }
 }
