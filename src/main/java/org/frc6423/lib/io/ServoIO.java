@@ -27,6 +27,8 @@ public abstract class ServoIO {
     mTalonConfig = config;
   }
 
+  public abstract void periodic();
+
   // * ~~~~~~~~ GETTERS ~~~~~~~~
 
   /**

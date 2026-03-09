@@ -69,6 +69,18 @@ public class ServoIOTalonFx extends ServoIO {
   }
 
   @Override
+  public void periodic() {
+    BaseStatusSignal.refreshAll(
+        mVoltsSignal,
+        mSupplyAmpsSignal,
+        mStatorAmpsSignal,
+        mTorqueAmpsSignal,
+        mCelsiusSignal,
+        mRevsPerSecSignal,
+        mRevsPerSecPerSecSignal);
+  }
+
+  @Override
   public double getMotorKtNewtonMetersPerAmps() {
     if (mTalonType == MotorType.KrakenX44) return DCMotor.getKrakenX44Foc(1).KtNMPerAmp;
     else return DCMotor.getKrakenX60Foc(1).KtNMPerAmp;

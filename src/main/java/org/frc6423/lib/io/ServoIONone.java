@@ -14,6 +14,9 @@ public class ServoIONone extends ServoIO {
   }
 
   @Override
+  public void periodic() {}
+
+  @Override
   public double getMotorKtNewtonMetersPerAmps() {
     return 0.0;
   }
