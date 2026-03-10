@@ -67,8 +67,8 @@
     "###Keyboard 0 Settings": {
       "Collapsed": "0",
       "DockId": "0x00000011,0",
-      "Pos": "401,39",
-      "Size": "2088,652"
+      "Pos": "70,39",
+      "Size": "363,652"
     },
     "###NetworkTables": {
       "Collapsed": "0",
@@ -125,7 +125,7 @@
       "Collapsed": "0",
       "DockId": "0x00000010,0",
       "Pos": "-1,39",
-      "Size": "400,652"
+      "Size": "434,652"
     }
   }
 }
