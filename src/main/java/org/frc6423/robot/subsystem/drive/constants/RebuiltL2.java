@@ -142,8 +142,8 @@ public class RebuiltL2 extends SwerveConstants {
         .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(true))
         .withMotionMagic(
             new MotionMagicConfigs()
-                .withMotionMagicCruiseVelocity((5800 / 60) / getPivotRotorToSensorRatio())
-                .withMotionMagicAcceleration((5800 / 60) / getPivotRotorToSensorRatio() * 0.005))
+                .withMotionMagicCruiseVelocity((7368 / 60) / getPivotRotorToSensorRatio())
+                .withMotionMagicAcceleration((7368 / 60) / getPivotRotorToSensorRatio() * 0.005))
         .withSlot0(
             new Slot0Configs()
                 .withKS(0.014)
@@ -201,8 +201,8 @@ public class RebuiltL2 extends SwerveConstants {
             new MagnetSensorConfigs()
                 .withSensorDirection(
                     getPivotInverted()
-                        ? SensorDirectionValue.Clockwise_Positive
-                        : SensorDirectionValue.CounterClockwise_Positive)
+                        ? SensorDirectionValue.CounterClockwise_Positive
+                        : SensorDirectionValue.Clockwise_Positive)
                 .withMagnetOffset(angularOffsetRevs));
   }
 
@@ -212,34 +212,6 @@ public class RebuiltL2 extends SwerveConstants {
   }
 
   // TODO offsets
-
-  @Override
-  public ModuleConfig getFrontRightModuleConfig() {
-    return new ModuleConfig(
-        "FR",
-        getCANBus(),
-        Matrix.kDriveFrPivotId,
-        Matrix.kDriveFrDriveId,
-        Matrix.kDriveFrEncoderId,
-        getPivotServoConfig(Matrix.kDriveFrEncoderId),
-        getDriveServoConfig(),
-        getCANcoderConfig(0.363037109375),
-        getWheelRadiusMeters());
-  }
-
-  @Override
-  public ModuleConfig getBackRightModuleConfig() {
-    return new ModuleConfig(
-        "BR",
-        getCANBus(),
-        Matrix.kDriveBrPivotId,
-        Matrix.kDriveBrDriveId,
-        Matrix.kDriveBrEncoderId,
-        getPivotServoConfig(Matrix.kDriveBrEncoderId),
-        getDriveServoConfig(),
-        getCANcoderConfig(0.39990234375),
-        getWheelRadiusMeters());
-  }
 
   @Override
   public ModuleConfig getFrontLeftModuleConfig() {
@@ -256,6 +228,20 @@ public class RebuiltL2 extends SwerveConstants {
   }
 
   @Override
+  public ModuleConfig getFrontRightModuleConfig() {
+    return new ModuleConfig(
+        "FR",
+        getCANBus(),
+        Matrix.kDriveFrPivotId,
+        Matrix.kDriveFrDriveId,
+        Matrix.kDriveFrEncoderId,
+        getPivotServoConfig(Matrix.kDriveFrEncoderId),
+        getDriveServoConfig(),
+        getCANcoderConfig(0.363037109375),
+        getWheelRadiusMeters());
+  }
+
+  @Override
   public ModuleConfig getBackLeftModuleConfig() {
     return new ModuleConfig(
         "BL",
@@ -266,6 +252,20 @@ public class RebuiltL2 extends SwerveConstants {
         getPivotServoConfig(Matrix.kDriveBlEncoderId),
         getDriveServoConfig(),
         getCANcoderConfig(0.3701171875),
+        getWheelRadiusMeters());
+  }
+
+  @Override
+  public ModuleConfig getBackRightModuleConfig() {
+    return new ModuleConfig(
+        "BR",
+        getCANBus(),
+        Matrix.kDriveBrPivotId,
+        Matrix.kDriveBrDriveId,
+        Matrix.kDriveBrEncoderId,
+        getPivotServoConfig(Matrix.kDriveBrEncoderId),
+        getDriveServoConfig(),
+        getCANcoderConfig(0.39990234375),
         getWheelRadiusMeters());
   }
 }

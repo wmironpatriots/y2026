@@ -48,6 +48,9 @@ public class SwerveModuleIOSim extends SwerveModuleIO {
   }
 
   @Override
+  public void periodic() {}
+
+  @Override
   public double getPivotAppliedVolts() {
     return mPivotSim.getInputVoltage();
   }

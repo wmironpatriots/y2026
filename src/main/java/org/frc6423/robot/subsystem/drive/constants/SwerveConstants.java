@@ -121,17 +121,17 @@ public abstract class SwerveConstants {
   /**
    * Get displacements of wheel centers from center of chassis
    *
-   * <p>FR, BR, FL, BL
+   * <p>FL, FR, BL, BR
    *
    * @return {@link Array} of {@link Translation2d}
    */
   public Translation2d[] getModuleDisplacements() {
     var coord = getTrackWidthMeters() / 2;
     return new Translation2d[] {
-      new Translation2d(coord, coord),
-      new Translation2d(coord, -coord),
-      new Translation2d(-coord, coord),
-      new Translation2d(-coord, -coord),
+      new Translation2d(-coord, coord), // FL
+      new Translation2d(coord, coord), // FR
+      new Translation2d(-coord, -coord), // BL
+      new Translation2d(coord, -coord), // BR
     };
   }
 

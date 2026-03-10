@@ -6,7 +6,6 @@
 
 package org.frc6423.robot;
 
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
 import edu.wpi.first.epilogue.Epilogue;
@@ -28,9 +27,6 @@ import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.Drive;
-// import org.frc6423.robot.subsystem.feeder.Feeder;
-// import org.frc6423.robot.subsystem.indexer.Indexer;
-// import org.frc6423.robot.subsystem.intake.Intake;
 import org.frc6423.robot.subsystem.shooter.Shooter;
 import org.frc6423.robot.util.sim.FuelSimulation;
 import org.frc6423.robot.util.sim.HopperSimulation;
@@ -48,7 +44,7 @@ public class Robot extends CommandRobot {
   private Optional<FuelSimulation> mFuelSim = Optional.empty();
   private Optional<HopperSimulation> mHopperSim = Optional.empty();
 
-  private final Auto mAuto = new Auto(mDrive);
+  // private final Auto mAuto = new Auto(mDrive);
   private final CommandXboxController mController;
 
   public Robot() {
@@ -132,12 +128,12 @@ public class Robot extends CommandRobot {
                 Meters.of(
                     Flags.kDriveConstants.getTrackWidthMeters()
                         + Flags.kDriveConstants.getBumperThicknessInches());
-            sim.registerRobot(
-                chassisWidth,
-                chassisWidth,
-                Inches.of(6),
-                mDrive::getPose2d,
-                mDrive::getFieldRelativeChassisSpeeds);
+            // sim.registerRobot(
+            //     chassisWidth,
+            //     chassisWidth,
+            //     Inches.of(6),
+            //     mDrive::getPose2d,
+            //     mDrive::getFieldRelativeChassisSpeeds);
 
             // Setup arena
             if (Flags.kSpawnStartingFuel) {
@@ -171,6 +167,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return mAuto.S1_N2_cycle();
+    return Commands.none();
   }
 }

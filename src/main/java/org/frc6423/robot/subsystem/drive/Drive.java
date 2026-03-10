@@ -56,16 +56,16 @@ public class Drive extends SubsystemBase {
     return (Robot.isReal())
         ? new Drive(
             new GyroIOPigeon2(kConstants.getGyroConfig()),
-            new SwerveModuleIOComp(kConstants.getFrontRightModuleConfig()),
-            new SwerveModuleIOComp(kConstants.getBackRightModuleConfig()),
             new SwerveModuleIOComp(kConstants.getFrontLeftModuleConfig()),
-            new SwerveModuleIOComp(kConstants.getBackLeftModuleConfig()))
+            new SwerveModuleIOComp(kConstants.getFrontRightModuleConfig()),
+            new SwerveModuleIOComp(kConstants.getBackLeftModuleConfig()),
+            new SwerveModuleIOComp(kConstants.getBackRightModuleConfig()))
         : new Drive(
             new GyroIONone(),
-            new SwerveModuleIOSim(kConstants.getFrontRightModuleConfig()),
-            new SwerveModuleIOSim(kConstants.getBackRightModuleConfig()),
             new SwerveModuleIOSim(kConstants.getFrontLeftModuleConfig()),
-            new SwerveModuleIOSim(kConstants.getBackLeftModuleConfig()));
+            new SwerveModuleIOSim(kConstants.getFrontRightModuleConfig()),
+            new SwerveModuleIOSim(kConstants.getBackLeftModuleConfig()),
+            new SwerveModuleIOSim(kConstants.getBackRightModuleConfig()));
   }
 
   // * ~~~~~~~~ CONSTANTS ~~~~~~~~
@@ -133,17 +133,17 @@ public class Drive extends SubsystemBase {
 
   private final GyroIO mGyro;
 
-  @Logged(name = "Front Right")
-  private final SwerveModuleIO mFrModule;
-
-  @Logged(name = "Back Right")
-  private final SwerveModuleIO mBrModule;
-
   @Logged(name = "Front Left")
   private final SwerveModuleIO mFlModule;
 
+  @Logged(name = "Front Right")
+  private final SwerveModuleIO mFrModule;
+
   @Logged(name = "Back Left")
   private final SwerveModuleIO mBlModule;
+
+  @Logged(name = "Back Right")
+  private final SwerveModuleIO mBrModule;
 
   private final SwerveModuleIO[] mModules;
 
@@ -165,18 +165,18 @@ public class Drive extends SubsystemBase {
 
   protected Drive(
       GyroIO gyro,
-      SwerveModuleIO frontRight,
-      SwerveModuleIO backRight,
       SwerveModuleIO frontLeft,
-      SwerveModuleIO backLeft) {
+      SwerveModuleIO frontRight,
+      SwerveModuleIO backLeft,
+      SwerveModuleIO backRight) {
     mGyro = gyro;
 
-    mFrModule = frontRight;
-    mBrModule = backRight;
     mFlModule = frontLeft;
+    mFrModule = frontRight;
     mBlModule = backLeft;
+    mBrModule = backRight;
 
-    mModules = new SwerveModuleIO[] {mFrModule, mBrModule, mFlModule, mBlModule};
+    mModules = new SwerveModuleIO[] {mFlModule, mFrModule, mBlModule, mBrModule};
 
     mTranslationalXController =
         new PIDController(kTranslationalKp.get(), kTranslationalKi.get(), kTranslationalKd.get());
@@ -195,6 +195,8 @@ public class Drive extends SubsystemBase {
     if (Robot.isSimulation())
       RobotState.getInstance()
           .resetPose(Flags.getRobotAlliancePose2d(Rebuilt.kRobotAllianceZone.getCenter()));
+
+    setDefaultCommand(brake());
   }
 
   @Override
@@ -212,6 +214,10 @@ public class Drive extends SubsystemBase {
                           : Optional.empty()));
           RobotState.getInstance().setChassisSpeeds(getChassisSpeeds());
         });
+
+    for (var module : mModules) {
+      module.periodic();
+    }
 
     // Update tunables if needed
     if (kTranslationalKp.hasChanged(hashCode())

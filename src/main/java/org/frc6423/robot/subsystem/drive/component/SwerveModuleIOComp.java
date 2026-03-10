@@ -96,6 +96,28 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
   }
 
   @Override
+  public void periodic() {
+    BaseStatusSignal.refreshAll(
+        mDriveAngle,
+        mDriveSpeed,
+        mPivotAngle,
+        mPivotSpeed,
+        mPivotVolts,
+        mPivotSupply,
+        mPivotTorque,
+        mPivotTemp,
+        mPivotAngle,
+        mPivotSpeed,
+        mDriveVolts,
+        mDriveSupply,
+        mDriveStator,
+        mDriveTorque,
+        mDriveTemp,
+        mDriveAngle,
+        mDriveSpeed);
+  }
+
+  @Override
   public double getPivotAppliedVolts() {
     return mPivotVolts.getValueAsDouble();
   }
@@ -137,7 +159,7 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
 
   @Override
   protected void setPivotAngleSetpoint(double angleRevs) {
-    mPivot.setControl(mPositionReq.withPosition(angleRevs));
+    mPivot.setControl(mPositionReq.withPosition(angleRevs).withSlot(0));
   }
 
   @Override
@@ -187,8 +209,8 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
 
   @Override
   protected void setDriveSpeedSetpoint(double speedRevsPerSec, boolean focEnabled) {
-    if (focEnabled) mDrive.setControl(mVelocityFocReq.withVelocity(speedRevsPerSec));
-    else mDrive.setControl(mVelocityReq.withVelocity(speedRevsPerSec));
+    if (focEnabled) mDrive.setControl(mVelocityFocReq.withVelocity(speedRevsPerSec).withSlot(0));
+    else mDrive.setControl(mVelocityReq.withVelocity(speedRevsPerSec).withSlot(1));
   }
 
   @Override
@@ -196,7 +218,8 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
     mDrive.setControl(
         mVelocityFocReq
             .withVelocity(speedRevsPerSec)
-            .withFeedForward(Flags.kDriveConstants.getDriveGearboxKt() / torqueNm));
+            .withFeedForward(Flags.kDriveConstants.getDriveGearboxKt() / torqueNm)
+            .withSlot(0));
   }
 
   @Override

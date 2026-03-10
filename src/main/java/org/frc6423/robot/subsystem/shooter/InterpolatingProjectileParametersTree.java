@@ -112,13 +112,10 @@ public class InterpolatingProjectileParametersTree {
   private ProjectileParameters interpolate(
       ProjectileParameters lowerParameters, ProjectileParameters higherParameters, double t) {
     return new ProjectileParameters(
+        MathUtil.interpolate(lowerParameters.exitPitchRads(), higherParameters.exitPitchRads(), t),
         MathUtil.interpolate(
-            lowerParameters.initialProjectilePitchRads(),
-            higherParameters.initialProjectilePitchRads(),
-            t),
-        MathUtil.interpolate(
-            lowerParameters.initialProjectileVelocityMps(),
-            higherParameters.initialProjectileVelocityMps(),
+            lowerParameters.exitVelocityMetersPerSec(),
+            higherParameters.exitVelocityMetersPerSec(),
             t),
         MathUtil.interpolate(
             lowerParameters.timeOfFlightSec(), higherParameters.timeOfFlightSec(), t));

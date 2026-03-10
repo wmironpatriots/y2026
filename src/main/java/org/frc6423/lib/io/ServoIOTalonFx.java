@@ -76,6 +76,7 @@ public class ServoIOTalonFx extends ServoIO {
         mStatorAmpsSignal,
         mTorqueAmpsSignal,
         mCelsiusSignal,
+        mRevsSignal,
         mRevsPerSecSignal,
         mRevsPerSecPerSecSignal);
   }
