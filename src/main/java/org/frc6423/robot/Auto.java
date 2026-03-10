@@ -136,6 +136,8 @@ public class Auto {
     return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
 
+
+  // NEUTRAL ZONE ROUTINES
   public Command S1_N2_cycle() {
 
     final var routine = mFactory.newRoutine("S1-N2-Cycle");
@@ -168,4 +170,139 @@ public class Auto {
     // return command
     return routine.cmd();
   }
+
+  public Command S1_N3_cycle() {
+
+    final var routine = mFactory.newRoutine("S1-N3-Cycle");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+
+    // define the route (Highlander style hehe)
+    String[] stops = {"S1", "N3", "S1"};
+
+    // load all trajectories automatically
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    // Running the actual start path
+    routine
+        .active()
+        .whileTrue(
+            Commands.sequence(
+                steps.get("S1_N3").resetOdometry(),
+                steps.get("S1_N3").cmd().alongWith(Commands.none()) // intake not defined yet
+                ));
+
+    // Running return path
+    routine.observe(steps.get("S1_N3").done()).onTrue(steps.get("N3_S1").cmd());
+
+    // Score (not defined yet)
+
+    // return command
+    return routine.cmd();
+  }
+
+  public Command S1_N4_cycle() {
+
+    final var routine = mFactory.newRoutine("S1-N4-Cycle");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+
+    // define the route (Highlander style hehe)
+    String[] stops = {"S1", "N4", "S1"};
+
+    // load all trajectories automatically
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    // Running the actual start path
+    routine
+        .active()
+        .whileTrue(
+            Commands.sequence(
+                steps.get("S1_N4").resetOdometry(),
+                steps.get("S1_N4").cmd().alongWith(Commands.none()) // intake not defined yet
+                ));
+
+    // Running return path
+    routine.observe(steps.get("S1_N4").done()).onTrue(steps.get("N4_S1").cmd());
+
+    // Score (not defined yet)
+
+    // return command
+    return routine.cmd();
+  }
+
+  public Command S1_N5_cycle() {
+
+    final var routine = mFactory.newRoutine("S1-N5-Cycle");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+
+    // define the route (Highlander style hehe)
+    String[] stops = {"S1", "N5", "S1"};
+
+    // load all trajectories automatically
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    // Running the actual start path
+    routine
+        .active()
+        .whileTrue(
+            Commands.sequence(
+                steps.get("S1_N5").resetOdometry(),
+                steps.get("S1_N5").cmd().alongWith(Commands.none()) // intake not defined yet
+                ));
+
+    // Running return path
+    routine.observe(steps.get("S1_N5").done()).onTrue(steps.get("N5_S1").cmd());
+
+    // Score (not defined yet)
+
+    // return command
+    return routine.cmd();
+  }
+
+  // DEPOT SHOT ROUTINES
+
+  public Command Depot_Shot_cycle() {
+
+    final var routine = mFactory.newRoutine("Depot_Shot_cycle");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+
+    // define the route (Highlander style hehe)
+    String[] stops = {"S2", "A1", "F"};
+
+    // load all trajectories automatically
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    // Running the actual start path
+    routine
+        .active()
+        .whileTrue(
+            Commands.sequence(
+                steps.get("S2_A1").resetOdometry(),
+                steps.get("S2_A1").cmd().alongWith(Commands.none()) // intake not defined yet
+                ));
+
+    // Running return path
+    routine.observe(steps.get("S2_A1").done()).onTrue(steps.get("A1_F").cmd());
+
+    // Score (at F)
+
+    // return command
+    return routine.cmd();
+  }
+
 }
