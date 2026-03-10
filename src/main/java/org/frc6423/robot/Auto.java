@@ -86,6 +86,12 @@ public class Auto {
     return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
 
+  public Command driveS1toF(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("S1_F");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
+  }
+
   // Starting S1 to Neutral Zone edges
   public Command driveS1toN2() {
     return drive
@@ -144,7 +150,7 @@ public class Auto {
     HashMap<String, AutoTrajectory> steps = new HashMap<>();
 
     // define the route (Highlander style hehe)
-    String[] stops = {"S1", "N2", "S1"};
+    String[] stops = {"S1", "N2", "S1", "F"};
 
     // load all trajectories automatically
     for (int i = 0; i < stops.length - 1; i++) {
@@ -164,6 +170,9 @@ public class Auto {
     // Running return path
     routine.observe(steps.get("S1_N2").done()).onTrue(steps.get("N2_S1").cmd());
 
+    // Running shooter path
+    routine.observe(steps.get("N2_S1").done()).onTrue(steps.get("S1_F").cmd());
+
     // Score (not defined yet)
 
     // return command
@@ -177,7 +186,7 @@ public class Auto {
     HashMap<String, AutoTrajectory> steps = new HashMap<>();
 
     // define the route (Highlander style hehe)
-    String[] stops = {"S1", "N3", "S1"};
+    String[] stops = {"S1", "N3", "S1", "F"};
 
     // load all trajectories automatically
     for (int i = 0; i < stops.length - 1; i++) {
@@ -197,6 +206,9 @@ public class Auto {
     // Running return path
     routine.observe(steps.get("S1_N3").done()).onTrue(steps.get("N3_S1").cmd());
 
+    // Running shooter path
+    routine.observe(steps.get("N3_S1").done()).onTrue(steps.get("S1_F").cmd());
+
     // Score (not defined yet)
 
     // return command
@@ -210,7 +222,7 @@ public class Auto {
     HashMap<String, AutoTrajectory> steps = new HashMap<>();
 
     // define the route (Highlander style hehe)
-    String[] stops = {"S1", "N4", "S1"};
+    String[] stops = {"S1", "N4", "S1", "F"};
 
     // load all trajectories automatically
     for (int i = 0; i < stops.length - 1; i++) {
@@ -230,6 +242,9 @@ public class Auto {
     // Running return path
     routine.observe(steps.get("S1_N4").done()).onTrue(steps.get("N4_S1").cmd());
 
+    // Running shooter path
+    routine.observe(steps.get("N4_S1").done()).onTrue(steps.get("S1_F").cmd());
+
     // Score (not defined yet)
 
     // return command
@@ -243,7 +258,7 @@ public class Auto {
     HashMap<String, AutoTrajectory> steps = new HashMap<>();
 
     // define the route (Highlander style hehe)
-    String[] stops = {"S1", "N5", "S1"};
+    String[] stops = {"S1", "N5", "S1", "F"};
 
     // load all trajectories automatically
     for (int i = 0; i < stops.length - 1; i++) {
@@ -263,6 +278,9 @@ public class Auto {
     // Running return path
     routine.observe(steps.get("S1_N5").done()).onTrue(steps.get("N5_S1").cmd());
 
+    // Running shooter path
+    routine.observe(steps.get("N5_S1").done()).onTrue(steps.get("S1_F").cmd());
+
     // Score (not defined yet)
 
     // return command
@@ -271,9 +289,42 @@ public class Auto {
 
   // DEPOT SHOT ROUTINES
 
-  public Command Depot_Shot_cycle() {
+  public Command Depot_Shot_cycle_S4() {
 
-    final var routine = mFactory.newRoutine("Depot_Shot_cycle");
+    final var routine = mFactory.newRoutine("Depot_Shot_cycle_S4");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+
+    // define the route (Highlander style hehe)
+    String[] stops = {"S4", "A1", "F"};
+
+    // load all trajectories automatically
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    // Running the actual start path
+    routine
+        .active()
+        .whileTrue(
+            Commands.sequence(
+                steps.get("S4_A1").resetOdometry(),
+                steps.get("S4_A1").cmd().alongWith(Commands.none()) // intake not defined yet
+                ));
+
+    // Running return path
+    routine.observe(steps.get("S4_A1").done()).onTrue(steps.get("A1_F").cmd());
+
+    // Score (at F)
+
+    // return command
+    return routine.cmd();
+  }
+
+  public Command Depot_Shot_cycle_S2() {
+
+    final var routine = mFactory.newRoutine("Depot_Shot_cycle_S2");
 
     HashMap<String, AutoTrajectory> steps = new HashMap<>();
 
@@ -303,4 +354,35 @@ public class Auto {
     // return command
     return routine.cmd();
   }
-}
+  public Command Depot_Shot_cycle_S3() {
+
+    final var routine = mFactory.newRoutine("Depot_Shot_cycle_S3");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+
+    // define the route (Highlander style hehe)
+    String[] stops = {"S3", "A1", "F"};
+
+    // load all trajectories automatically
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    // Running the actual start path
+    routine
+        .active()
+        .whileTrue(
+            Commands.sequence(
+                steps.get("S3_A1").resetOdometry(),
+                steps.get("S3_A1").cmd().alongWith(Commands.none()) // intake not defined yet
+                ));
+
+    // Running return path
+    routine.observe(steps.get("S3_A1").done()).onTrue(steps.get("A1_F").cmd());
+
+    // Score (at F)
+
+    // return command
+    return routine.cmd();
+  }
