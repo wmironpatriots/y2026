@@ -10,7 +10,6 @@ import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
@@ -43,7 +42,8 @@ public final class Constants {
     public static final Importance kLoggingLevel = Importance.DEBUG;
 
     /** {@link Alliance} Alliance robot is currently on */
-    public static final Alliance kRobotAlliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    public static final Alliance kRobotAlliance =
+        Alliance.Red; // DriverStation.getAlliance().orElse(Alliance.Blue);
 
     public static final boolean kSpawnStartingFuel = false;
 

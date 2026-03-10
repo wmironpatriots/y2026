@@ -104,7 +104,7 @@ public class Robot extends CommandRobot {
       mFuelSim.ifPresent(
           (sim) -> {
             // Initial Configuration
-            // sim.enableAirResistance();
+            sim.enableAirResistance();
 
             // Setup robot
             var chassisWidth =
@@ -159,17 +159,6 @@ public class Robot extends CommandRobot {
                         .repeatedly());
           });
     } else mFuelSim = Optional.empty();
-
-    RobotModeTriggers.teleop()
-        .whileTrue(
-            //         mDrive.drive(
-            //             () -> modifyJoystick(mController.getLeftY()),
-            //             () -> modifyJoystick(mController.getLeftX()),
-            //             () -> modifyJoystick(mController.getRightX())));
-            mDrive.driveWhileFacingTarget(
-                () -> modifyJoystick(mController.getLeftY()),
-                () -> modifyJoystick(mController.getLeftX()),
-                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation()));
   }
 
   public Optional<FuelSimulation> getFueldSimulation() {

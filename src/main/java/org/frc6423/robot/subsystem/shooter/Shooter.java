@@ -132,7 +132,6 @@ public class Shooter extends SubsystemBase {
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimit(40.0)
                   .withStatorCurrentLimitEnable(true))
-          .withMotionMagic(new MotionMagicConfigs().withMotionMagicAcceleration(100.0))
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(kPivotGearRatio));
 
   /** {@link TalonFXConfiguration} Hardware config of flywheel servos */
@@ -149,6 +148,7 @@ public class Shooter extends SubsystemBase {
                   .withStatorCurrentLimitEnable(true)
                   .withSupplyCurrentLimit(40.0)
                   .withSupplyCurrentLimitEnable(true))
+          .withMotionMagic(new MotionMagicConfigs().withMotionMagicAcceleration(100.0))
           .withFeedback(
               new FeedbackConfigs().withSensorToMechanismRatio(kFlywheelRotorToMechRatio));
 
@@ -353,9 +353,6 @@ public class Shooter extends SubsystemBase {
     if (Flags.kTuningModeEnabled) {
       SmartDashboard.putData(runCharacterizationSequence());
     }
-
-    setDefaultCommand(
-        Commands.sequence(runCurrentHoming().onlyIf(() -> !isHomed()), stowAndStop()));
   }
 
   @Override
@@ -403,10 +400,6 @@ public class Shooter extends SubsystemBase {
     if (kFlywheelTuningSpeedRevsPerSec.get() != -1.0) {
       setFlywheelSetpoint(kFlywheelTuningSpeedRevsPerSec.get() * 2 / kFlywheelRadiusMeters);
     }
-
-    setPivotSetpoint(Rotation2d.fromRadians(calculateParameters().initialProjectilePitchRads()));
-    setFlywheelSetpoint(
-        calculateParameters().initialProjectileVelocityMps() * 2 / kFlywheelRadiusMeters);
   }
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~
