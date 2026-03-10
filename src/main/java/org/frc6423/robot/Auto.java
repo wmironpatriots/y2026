@@ -136,7 +136,6 @@ public class Auto {
     return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
 
-
   // NEUTRAL ZONE ROUTINES
   public Command S1_N2_cycle() {
 
@@ -304,5 +303,4 @@ public class Auto {
     // return command
     return routine.cmd();
   }
-
 }
