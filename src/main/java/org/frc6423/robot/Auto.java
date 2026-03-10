@@ -157,14 +157,25 @@ public class Auto {
       String name = stops[i] + "_" + stops[i + 1];
       steps.put(name, routine.trajectory(name));
     }
+    
+// Event Markers from Choreo [Remember to change the Commands.none()]
 
+  steps.get("S1_N2").atTime("intake_start")
+  .onTrue(Commands.none());  
+
+  steps.get("S1_N2").atTime("intake_end")
+  .onTrue(Commands.none());
+
+  steps.get("S1_F").atTime("score")
+  .onTrue(Commands.none());
+   
     // Running the actual start path
     routine
         .active()
         .whileTrue(
             Commands.sequence(
                 steps.get("S1_N2").resetOdometry(),
-                steps.get("S1_N2").cmd().alongWith(Commands.none()) // intake not defined yet
+                steps.get("S1_N2").cmd()
                 ));
 
     // Running return path
@@ -172,8 +183,6 @@ public class Auto {
 
     // Running shooter path
     routine.observe(steps.get("N2_S1").done()).onTrue(steps.get("S1_F").cmd());
-
-    // Score (not defined yet)
 
     // return command
     return routine.cmd();
@@ -194,13 +203,24 @@ public class Auto {
       steps.put(name, routine.trajectory(name));
     }
 
+    // Event Markers from Choreo [Remember to change the Commands.none()]
+
+  steps.get("S1_N3").atTime("intake_start")
+  .onTrue(Commands.none());  
+
+  steps.get("S1_N3").atTime("intake_end")
+  .onTrue(Commands.none());
+
+  steps.get("S1_F").atTime("score")
+  .onTrue(Commands.none());
+
     // Running the actual start path
     routine
         .active()
         .whileTrue(
             Commands.sequence(
                 steps.get("S1_N3").resetOdometry(),
-                steps.get("S1_N3").cmd().alongWith(Commands.none()) // intake not defined yet
+                steps.get("S1_N3").cmd()
                 ));
 
     // Running return path
@@ -208,8 +228,6 @@ public class Auto {
 
     // Running shooter path
     routine.observe(steps.get("N3_S1").done()).onTrue(steps.get("S1_F").cmd());
-
-    // Score (not defined yet)
 
     // return command
     return routine.cmd();
@@ -230,13 +248,24 @@ public class Auto {
       steps.put(name, routine.trajectory(name));
     }
 
+    // Event Markers from Choreo [Remember to change the Commands.none()]
+
+  steps.get("S1_N4").atTime("intake_start")
+  .onTrue(Commands.none());  
+
+  steps.get("S1_N4").atTime("intake_end")
+  .onTrue(Commands.none());
+
+  steps.get("S1_F").atTime("score")
+  .onTrue(Commands.none());
+
     // Running the actual start path
     routine
         .active()
         .whileTrue(
             Commands.sequence(
                 steps.get("S1_N4").resetOdometry(),
-                steps.get("S1_N4").cmd().alongWith(Commands.none()) // intake not defined yet
+                steps.get("S1_N4").cmd()
                 ));
 
     // Running return path
@@ -244,8 +273,6 @@ public class Auto {
 
     // Running shooter path
     routine.observe(steps.get("N4_S1").done()).onTrue(steps.get("S1_F").cmd());
-
-    // Score (not defined yet)
 
     // return command
     return routine.cmd();
@@ -266,13 +293,24 @@ public class Auto {
       steps.put(name, routine.trajectory(name));
     }
 
+    // Event Markers from Choreo [Remember to change the Commands.none()]
+
+  steps.get("S1_N5").atTime("intake_start")
+  .onTrue(Commands.none());  
+
+  steps.get("S1_N5").atTime("intake_end")
+  .onTrue(Commands.none());
+
+  steps.get("S1_F").atTime("score")
+  .onTrue(Commands.none());
+
     // Running the actual start path
     routine
         .active()
         .whileTrue(
             Commands.sequence(
                 steps.get("S1_N5").resetOdometry(),
-                steps.get("S1_N5").cmd().alongWith(Commands.none()) // intake not defined yet
+                steps.get("S1_N5").cmd()
                 ));
 
     // Running return path
@@ -280,8 +318,6 @@ public class Auto {
 
     // Running shooter path
     routine.observe(steps.get("N5_S1").done()).onTrue(steps.get("S1_F").cmd());
-
-    // Score (not defined yet)
 
     // return command
     return routine.cmd();
@@ -304,19 +340,30 @@ public class Auto {
       steps.put(name, routine.trajectory(name));
     }
 
+
+    // Event Markers from Choreo [Remember to change the Commands.none()]
+
+  steps.get("S4_A1").atTime("intake_start")
+  .onTrue(Commands.none());  
+
+  steps.get("S4_A1").atTime("intake_end")
+  .onTrue(Commands.none());
+
+  steps.get("A1_F").atTime("score")
+  .onTrue(Commands.none());
+
+
     // Running the actual start path
     routine
         .active()
         .whileTrue(
             Commands.sequence(
                 steps.get("S4_A1").resetOdometry(),
-                steps.get("S4_A1").cmd().alongWith(Commands.none()) // intake not defined yet
+                steps.get("S4_A1").cmd()
                 ));
 
     // Running return path
     routine.observe(steps.get("S4_A1").done()).onTrue(steps.get("A1_F").cmd());
-
-    // Score (at F)
 
     // return command
     return routine.cmd();
@@ -337,23 +384,35 @@ public class Auto {
       steps.put(name, routine.trajectory(name));
     }
 
+
+    // Event Markers from Choreo [Remember to change the Commands.none()]
+
+  steps.get("S2_A1").atTime("intake_start")
+  .onTrue(Commands.none());  
+
+  steps.get("S2_A1").atTime("intake_end")
+  .onTrue(Commands.none());
+
+  steps.get("A1_F").atTime("score")
+  .onTrue(Commands.none());
+
+
     // Running the actual start path
     routine
         .active()
         .whileTrue(
             Commands.sequence(
                 steps.get("S2_A1").resetOdometry(),
-                steps.get("S2_A1").cmd().alongWith(Commands.none()) // intake not defined yet
+                steps.get("S2_A1").cmd()
                 ));
 
     // Running return path
     routine.observe(steps.get("S2_A1").done()).onTrue(steps.get("A1_F").cmd());
 
-    // Score (at F)
-
     // return command
     return routine.cmd();
   }
+
   public Command Depot_Shot_cycle_S3() {
 
     final var routine = mFactory.newRoutine("Depot_Shot_cycle_S3");
@@ -369,20 +428,33 @@ public class Auto {
       steps.put(name, routine.trajectory(name));
     }
 
+
+    // Event Markers from Choreo [Remember to change the Commands.none()]
+
+  steps.get("S3_A1").atTime("intake_start")
+  .onTrue(Commands.none());  
+
+  steps.get("S3_A1").atTime("intake_end")
+  .onTrue(Commands.none());
+
+  steps.get("A1_F").atTime("score")
+  .onTrue(Commands.none());
+
+
+
     // Running the actual start path
     routine
         .active()
         .whileTrue(
             Commands.sequence(
                 steps.get("S3_A1").resetOdometry(),
-                steps.get("S3_A1").cmd().alongWith(Commands.none()) // intake not defined yet
+                steps.get("S3_A1").cmd()
                 ));
 
     // Running return path
     routine.observe(steps.get("S3_A1").done()).onTrue(steps.get("A1_F").cmd());
 
-    // Score (at F)
-
     // return command
     return routine.cmd();
   }
+}
