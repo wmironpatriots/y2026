@@ -48,7 +48,7 @@ public class Indexer extends SubsystemBase {
    *
    * @return {@link Indexer}
    */
-  public Indexer create() {
+  public static Indexer create() {
     return (Robot.isReal())
         ? new Indexer(
             new ServoIOTalonFx("Servo", MotorType.KrakenX60, kCanBus, kCanDeviceId, kServoConfig))

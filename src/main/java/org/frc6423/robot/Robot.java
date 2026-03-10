@@ -6,10 +6,8 @@
 
 package org.frc6423.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.EpilogueConfiguration;
@@ -30,18 +28,27 @@ import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.Drive;
+// import org.frc6423.robot.subsystem.feeder.Feeder;
+// import org.frc6423.robot.subsystem.indexer.Indexer;
+// import org.frc6423.robot.subsystem.intake.Intake;
 import org.frc6423.robot.subsystem.shooter.Shooter;
-import org.frc6423.robot.util.FuelSimulation;
+import org.frc6423.robot.util.sim.FuelSimulation;
+import org.frc6423.robot.util.sim.HopperSimulation;
 
 @Logged
 public class Robot extends CommandRobot {
-  private final Optional<FuelSimulation> mFuelSim;
-
   private final RobotState mRobotState = RobotState.getInstance();
 
   private final Drive mDrive = Drive.create();
+  // private final Intake mIntake = Intake.create();
+  // private final Indexer mIndexer = Indexer.create();
+  // private final Feeder mFeeder = Feeder.create();
   private final Shooter mShooter = Shooter.create();
 
+  private Optional<FuelSimulation> mFuelSim = Optional.empty();
+  private Optional<HopperSimulation> mHopperSim = Optional.empty();
+
+  private final Auto mAuto = new Auto(mDrive);
   private final CommandXboxController mController;
 
   public Robot() {
@@ -65,9 +72,6 @@ public class Robot extends CommandRobot {
           if (Robot.isReal()) {
             DataLogManager.start();
           }
-
-          // TODO remove
-          DataLogManager.start();
 
           // Set error handling
           if (Robot.isSimulation()) {
@@ -97,9 +101,26 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
 
+    setupSimulation();
+    configureBindings();
+  }
+
+  /** Configure driver bindings */
+  public void configureBindings() {
+    RobotModeTriggers.teleop()
+        .whileTrue(
+            mDrive.drive(
+                () -> modifyJoystick(mController.getLeftY()),
+                () -> modifyJoystick(mController.getLeftX()),
+                () -> modifyJoystick(mController.getRightX())));
+  }
+
+  /** Setup simulation optionals if robot is simulated */
+  public void setupSimulation() {
     // Initialize Simulation
     if (Robot.isSimulation()) {
       mFuelSim = Optional.of(new FuelSimulation("Fuel Simulation"));
+      mHopperSim = Optional.of(new HopperSimulation());
 
       mFuelSim.ifPresent(
           (sim) -> {
@@ -137,32 +158,11 @@ public class Robot extends CommandRobot {
 
             // Start sim notifier
             addPeriodic(() -> sim.updateSim(), 0.002);
-
-            mController
-                .rightBumper()
-                .whileTrue(
-                    Commands.runOnce(
-                            () ->
-                                sim.launchFuel(
-                                    MetersPerSecond.of(
-                                        mShooter.getTargetMuzzleVelocityMetersPerSecond()),
-                                    mShooter.getTargetRotation2d().getMeasure(),
-                                    Degrees.zero(),
-                                    Meters.of(1)))
-                        // sim.launchFuel(
-                        //     MetersPerSecond.of(
-                        //         mShooter.getTargetMuzzleVelocityMetersPerSecond()),
-                        //     mShooter.getTargetRotation2d().getMeasure(),
-                        //     Degrees.zero(),
-                        //     Meters.of(1)))
-                        .andThen(Commands.waitSeconds(0.5))
-                        .repeatedly());
           });
-    } else mFuelSim = Optional.empty();
-  }
-
-  public Optional<FuelSimulation> getFueldSimulation() {
-    return mFuelSim;
+    } else {
+      mFuelSim = Optional.empty();
+      mHopperSim = Optional.empty();
+    }
   }
 
   private static double modifyJoystick(double value) {
@@ -171,6 +171,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return Commands.none();
+    return mAuto.S1_N2_cycle();
   }
 }

@@ -52,7 +52,7 @@ public class Feeder extends SubsystemBase {
    *
    * @return {@link Feeder}
    */
-  public Feeder create() {
+  public static Feeder create() {
     return (Robot.isReal())
         ? new Feeder(
             new ServoIOTalonFx("Servo", MotorType.KrakenX60, kCanBus, kCanDeviceId, kServoConfig))
