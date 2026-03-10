@@ -7,25 +7,30 @@
 package org.frc6423.robot;
 
 import choreo.auto.AutoFactory;
+import choreo.auto.AutoRoutine;
+import choreo.auto.AutoTrajectory;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.Drive;
 
 /** A manager class for building autonomous routines */
 public class Auto {
-  private final Drive mDrive;
+  private static final RobotState kRobotState = RobotState.getInstance();
+
+  private final Drive drive;
   private final AutoFactory mFactory;
 
   public Auto(Drive drive) {
-    this.mDrive = drive;
+    this.drive = drive;
 
     // Init Auto Factory
     mFactory =
         new AutoFactory(
-            () -> RobotState.getInstance().getEstimatedPosition(),
-            (pose) -> RobotState.getInstance().resetPose(pose),
+            kRobotState::getEstimatedPosition,
+            kRobotState::resetPose,
             drive.getChoreoSwerveSampleConsumer(),
             true,
             drive);
@@ -56,77 +61,77 @@ public class Auto {
 
   // Starting Depot Edges
   public Command driveS4toA1() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.S4.getPose2d()))
+    return drive
+        .runOnce(() -> kRobotState.resetPose(Node.S4.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S4_A1"));
   }
 
   public Command driveS2toA1() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.S2.getPose2d()))
+    return drive
+        .runOnce(() -> kRobotState.resetPose(Node.S2.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S2_A1"));
   }
 
   public Command driveS3toA1() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.S3.getPose2d()))
+    return drive
+        .runOnce(() -> kRobotState.resetPose(Node.S3.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S3_A1"));
   }
 
   // Starting Firing edge
-  public Command driveA1toF() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.A1.getPose2d()))
-        .andThen(mFactory.trajectoryCmd("A1_F"));
+  public Command driveA1toF(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("A1_F");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
 
   // Starting S1 to Neutral Zone edges
   public Command driveS1toN2() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.S1.getPose2d()))
+    return drive
+        .runOnce(() -> kRobotState.resetPose(Node.S1.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S1_N2"));
   }
 
   public Command driveS1toN3() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.S1.getPose2d()))
+    return drive
+        .runOnce(() -> kRobotState.resetPose(Node.S1.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S1_N3"));
   }
 
   public Command driveS1toN4() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.S1.getPose2d()))
+    return drive
+        .runOnce(() -> kRobotState.resetPose(Node.S1.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S1_N4"));
   }
 
   public Command driveS1toN5() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.S1.getPose2d()))
+    return drive
+        .runOnce(() -> kRobotState.resetPose(Node.S1.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S1_N5"));
   }
 
   // Starting Neutral Zone reverse edges
-  public Command driveN2toS1() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.N2.getPose2d()))
-        .andThen(mFactory.trajectoryCmd("N2_S1"));
+  public Command driveN2toS1(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("N2_S1");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
 
-  public Command driveN3toS1() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.N3.getPose2d()))
-        .andThen(mFactory.trajectoryCmd("N3_S1"));
+  public Command driveN3toS1(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("N3_S1");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
 
-  public Command driveN4toS1() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.N4.getPose2d()))
-        .andThen(mFactory.trajectoryCmd("N4_S1"));
+  public Command driveN4toS1(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("N4_S1");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
 
-  public Command driveN5toS1() {
-    return mDrive
-        .runOnce(() -> mDrive.resetPosition(Node.N5.getPose2d()))
-        .andThen(mFactory.trajectoryCmd("N5_S1"));
+  public Command driveN5toS1(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("N5_S1");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
 }
