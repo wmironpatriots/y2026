@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.Drive;
+import java.util.HashMap;
 
 /** A manager class for building autonomous routines */
 public class Auto {
@@ -134,4 +135,42 @@ public class Auto {
 
     return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
+
+
+  
+  public Command S1_N2_cycle() {
+
+    final var routine = mFactory.newRoutine("S1-N2-Cycle");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+
+    // define the route (Highlander style hehe)
+    String[] stops = {"S1", "N2", "S1"};
+
+    // load all trajectories automatically
+    for (int i = 0; i < stops.length - 1; i++) {
+        String name = stops[i] + "_" + stops[i + 1];
+        steps.put(name, routine.trajectory(name));
+    }
+
+    //Running the actual start path 
+    routine.active().whileTrue(
+        Commands.sequence(
+            steps.get("S1_N2").resetOdometry(),
+            steps.get("S1_N2").cmd().alongWith(Commands.none())  // intake not defined yet
+        )
+    );
+
+    // Running return path
+    routine.observe(steps.get("S1_N2").done())
+        .onTrue(steps.get("N2_S1").cmd());
+
+    // Score (not defined yet)
+    
+
+    // return command
+    return routine.cmd();
+  }
 }
+
+
