@@ -25,7 +25,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -183,56 +182,6 @@ public class Shooter extends SubsystemBase {
       new InterpolatingProjectileParametersTree();
 
   static {
-    kHubShotTree.addSample(
-        7.00, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        6.75, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        6.50, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        6.25, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        6.00, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        5.75, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        5.50, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        5.25, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        5.00, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        4.75, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        4.50, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        4.25, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        4.00, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        3.75, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        3.50, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        3.25, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        3.00, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        2.75, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        2.50, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        2.25, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        2.00, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        1.75, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        1.50, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        1.25, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
-    kHubShotTree.addSample(
-        1.00, new ProjectileParameters(Units.rotationsToRadians(kMaxAngleRevs), 0.0, 0.0));
   } // Add kHubShotTree samples
 
   static {
@@ -437,6 +386,12 @@ public class Shooter extends SubsystemBase {
     if (kFlywheelTuningSpeedMetersPerSec.get() != -1.0) {
       setFlywheelSetpoint(kFlywheelTuningSpeedMetersPerSec.get() * 2 / kFlywheelRadiusMeters);
     }
+
+    var setpoint = calculateParameters();
+
+    mTargetRotation2d = Rotation2d.fromRadians(setpoint.exitPitchRads());
+    mTargetFlywheelVelocityRevsPerSec =
+        setpoint.exitVelocityMetersPerSec() * kFlywheelRadiusMeters * 0.5;
   }
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~
@@ -497,7 +452,7 @@ public class Shooter extends SubsystemBase {
   public double getDistanceFromVirtualTargetMeters() {
     return Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)
         .getTranslation()
-        .getDistance(mCam.getUnreadMeasurements()[0].positionEstimate().getTranslation());
+        .getDistance(RobotState.getInstance().getEstimatedPosition().getTranslation());
   }
 
   /**
@@ -527,7 +482,7 @@ public class Shooter extends SubsystemBase {
    */
   @Logged(name = "Target Muzzle Velocity (meters per second)", importance = Importance.INFO)
   public double getTargetMuzzleVelocityMetersPerSecond() {
-    return getTargetFlywheelVelocityRevsPerSec() * kFlywheelRadiusMeters * 0.5;
+    return getTargetFlywheelVelocityRevsPerSec();
   }
 
   /**
@@ -551,43 +506,47 @@ public class Shooter extends SubsystemBase {
   }
 
   public ProjectileParameters calculateParameters() {
-    // Get current state
-    var position = RobotState.getInstance().getEstimatedPosition();
-    var fieldRelativeSpeeds = RobotState.getInstance().getFieldRelativeSpeeds();
-    var speeds = RobotState.getInstance().getChassisSpeeds();
+    // // Get current state
+    // var position = RobotState.getInstance().getEstimatedPosition();
+    // var fieldRelativeSpeeds = RobotState.getInstance().getFieldRelativeSpeeds();
+    // var speeds = RobotState.getInstance().getChassisSpeeds();
 
-    var target = Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d);
+    // var target = Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d);
 
-    // Compensate for predicted latency
-    var predictedPosition =
-        position.exp(
-            new Twist2d(
-                speeds.vxMetersPerSecond * kLatencyCompensationSec.get(),
-                speeds.vyMetersPerSecond * kLatencyCompensationSec.get(),
-                speeds.omegaRadiansPerSecond * kLatencyCompensationSec.get()));
+    // // Compensate for predicted latency
+    // var predictedPosition =
+    //     position.exp(
+    //         new Twist2d(
+    //             speeds.vxMetersPerSecond * kLatencyCompensationSec.get(),
+    //             speeds.vyMetersPerSecond * kLatencyCompensationSec.get(),
+    //             speeds.omegaRadiansPerSecond * kLatencyCompensationSec.get()));
 
-    // Calculate for a standstill shot at position for a tof approximation
-    var approximatedTof =
-        kHubShotTree
-            .get(predictedPosition.getTranslation().getDistance(target.getTranslation()))
-            .timeOfFlightSec();
+    // // Calculate for a standstill shot at position for a tof approximation
+    // var approximatedTof =
+    //     kHubShotTree
+    //         .get(predictedPosition.getTranslation().getDistance(target.getTranslation()))
+    //         .timeOfFlightSec();
 
-    // Calculate virtual target
-    mVirtualTarget =
-        target
-            .getTranslation()
-            .minus(
-                new Translation2d(
-                    fieldRelativeSpeeds.vxMetersPerSecond * approximatedTof,
-                    fieldRelativeSpeeds.vyMetersPerSecond * approximatedTof));
+    // // Calculate virtual target
+    // mVirtualTarget =
+    //     target
+    //         .getTranslation()
+    //         .minus(
+    //             new Translation2d(
+    //                 fieldRelativeSpeeds.vxMetersPerSecond * approximatedTof,
+    //                 fieldRelativeSpeeds.vyMetersPerSecond * approximatedTof));
 
-    // Calculate final shot
-    var parameters =
-        kHubShotTree.get(predictedPosition.getTranslation().getDistance(mVirtualTarget));
+    // // Calculate final shot
+    // var parameters =
+    //     kHubShotTree.get(predictedPosition.getTranslation().getDistance(mVirtualTarget));
 
-    if (parameters != null) {
-      return parameters;
-    } else return new ProjectileParameters(0.0, 0.0, 0.0);
+    // if (parameters != null) {
+    //   return parameters;
+    // } else return new ProjectileParameters(0.0, 0.0, 0.0);
+
+    return kHubShotTree.calculateProjectileParameters(
+        RobotState.getInstance().getEstimatedPosition().getTranslation(),
+        Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation());
   }
 
   // * ~~~~~~~~ SETTERS ~~~~~~~~

@@ -20,9 +20,9 @@ public class SwerveModuleIOSim extends SwerveModuleIO {
   private static final DCMotor kPivotModel = DCMotor.getKrakenX60Foc(1);
 
   private final DCMotorSim mPivotSim, mDriveSim;
-  private final PIDController mPivotController = new PIDController(10.0, 0.0, 0.0);
-  private final PIDController mDriveController = new PIDController(0.01, 0.0, 0.02);
-  private final SimpleMotorFeedforward mDriveFeedforward = new SimpleMotorFeedforward(0.014, 0.134);
+  private final PIDController mPivotController = new PIDController(0.0, 0.0, 0.0);
+  private final PIDController mDriveController = new PIDController(0.01, 0.0, 0.0);
+  private final SimpleMotorFeedforward mDriveFeedforward = new SimpleMotorFeedforward(0.0, 0.0);
 
   private double mPivotAppliedVolts, mDriveAppliedVolts, mDriveFeedforwardVolts;
 

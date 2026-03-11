@@ -6,7 +6,10 @@
 
 package org.frc6423.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.EpilogueConfiguration;
@@ -115,10 +118,10 @@ public class Robot extends CommandRobot {
     RobotModeTriggers.teleop()
         .and(mController.a().negate())
         .whileTrue(
-            mDrive.drive(
+            mDrive.driveWhileFacingTarget(
                 () -> modifyJoystick(mController.getLeftY()),
                 () -> modifyJoystick(mController.getLeftX()),
-                () -> modifyJoystick(mController.getRightX())));
+                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation()));
 
     mController.x().whileTrue(mFeeder.feed());
     mFeeder.setDefaultCommand(mFeeder.neutral());
@@ -141,12 +144,12 @@ public class Robot extends CommandRobot {
                 Meters.of(
                     Flags.kDriveConstants.getTrackWidthMeters()
                         + Flags.kDriveConstants.getBumperThicknessInches());
-            // sim.registerRobot(
-            //     chassisWidth,
-            //     chassisWidth,
-            //     Inches.of(6),
-            //     mDrive::getPose2d,
-            //     mDrive::getFieldRelativeChassisSpeeds);
+            sim.registerRobot(
+                chassisWidth,
+                chassisWidth,
+                Inches.of(6),
+                mDrive::getPose2d,
+                mDrive::getFieldRelativeChassisSpeeds);
 
             // Setup arena
             if (Flags.kSpawnStartingFuel) {
@@ -167,6 +170,26 @@ public class Robot extends CommandRobot {
 
             // Start sim notifier
             addPeriodic(() -> sim.updateSim(), 0.002);
+
+            mController
+                .rightBumper()
+                .whileTrue(
+                    Commands.runOnce(
+                            () ->
+                                sim.launchFuel(
+                                    MetersPerSecond.of(
+                                        mShooter.getTargetMuzzleVelocityMetersPerSecond()),
+                                    mShooter.getTargetRotation2d().getMeasure(),
+                                    Degrees.zero(),
+                                    Meters.of(1)))
+                        // sim.launchFuel(
+                        //     MetersPerSecond.of(
+                        //         mShooter.getTargetMuzzleVelocityMetersPerSecond()),
+                        //     mShooter.getTargetRotation2d().getMeasure(),
+                        //     Degrees.zero(),
+                        //     Meters.of(1)))
+                        .andThen(Commands.waitSeconds(0.5))
+                        .repeatedly());
           });
     } else {
       mFuelSim = Optional.empty();

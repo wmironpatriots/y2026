@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import org.frc6423.lib.util.TunableNumber;
+import org.frc6423.robot.Robot;
 import org.frc6423.robot.subsystem.drive.Drive;
 import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
 
@@ -52,6 +53,46 @@ public abstract class SwerveModuleIO {
       new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kP");
   public static final TunableNumber kDriveVoltKd =
       new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kD");
+
+  static {
+    if (Robot.isReal()) {
+      kPivotKs.initDefault(0.014);
+      kPivotKv.initDefault(10.0);
+      kPivotKa.initDefault(0.0);
+      kPivotKp.initDefault(600.0);
+      kPivotKd.initDefault(50.0);
+
+      kDriveTorqueKs.initDefault(0.2);
+      kDriveTorqueKv.initDefault(0.0);
+      kDriveTorqueKa.initDefault(0.0);
+      kDriveTorqueKp.initDefault(12.0);
+      kDriveTorqueKd.initDefault(0.0);
+
+      kDriveVoltKs.initDefault(10.0);
+      kDriveVoltKv.initDefault(5.0);
+      kDriveVoltKa.initDefault(0.0);
+      kDriveVoltKp.initDefault(300.0);
+      kDriveVoltKd.initDefault(0.0);
+    } else {
+      kPivotKs.initDefault(0.0);
+      kPivotKv.initDefault(0.0);
+      kPivotKa.initDefault(0.0);
+      kPivotKp.initDefault(10.0);
+      kPivotKd.initDefault(0.0);
+
+      kDriveTorqueKs.initDefault(0.014);
+      kDriveTorqueKv.initDefault(0.134);
+      kDriveTorqueKa.initDefault(0.0);
+      kDriveTorqueKp.initDefault(0.01);
+      kDriveTorqueKd.initDefault(0.02);
+
+      kDriveVoltKs.initDefault(0.0);
+      kDriveVoltKv.initDefault(0.0);
+      kDriveVoltKa.initDefault(0.0);
+      kDriveVoltKp.initDefault(0.0);
+      kDriveVoltKd.initDefault(0.0);
+    }
+  }
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
