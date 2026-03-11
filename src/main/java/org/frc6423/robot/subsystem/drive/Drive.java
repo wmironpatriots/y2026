@@ -449,14 +449,7 @@ public class Drive extends SubsystemBase {
   public Command driveWhileFacingTarget(
       DoubleSupplier vx, DoubleSupplier vy, Supplier<Translation2d> target) {
     return driveWhileFacingAngle(
-        vx,
-        vy,
-        () ->
-            target
-                .get()
-                .minus(getPose2d().getTranslation())
-                .getAngle()
-                .plus(Rotation2d.kCCW_90deg));
+        vx, vy, () -> target.get().minus(getPose2d().getTranslation()).getAngle());
   }
 
   /**

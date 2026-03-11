@@ -11,11 +11,47 @@ import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import org.frc6423.lib.util.TunableNumber;
+import org.frc6423.robot.subsystem.drive.Drive;
 import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
 
-// TODO acceleration?
 /** Interface for interacting with gyro hardware */
 public abstract class SwerveModuleIO {
+
+  // * ~~~~~~~~ TUNABLES ~~~~~~~~
+
+  public static final TunableNumber kPivotKs =
+      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kS");
+  public static final TunableNumber kPivotKv =
+      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kV");
+  public static final TunableNumber kPivotKa =
+      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kA");
+  public static final TunableNumber kPivotKp =
+      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kP");
+  public static final TunableNumber kPivotKd =
+      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kD");
+
+  public static final TunableNumber kDriveTorqueKs =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kS");
+  public static final TunableNumber kDriveTorqueKv =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kV");
+  public static final TunableNumber kDriveTorqueKa =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kA");
+  public static final TunableNumber kDriveTorqueKp =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kP");
+  public static final TunableNumber kDriveTorqueKd =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kD");
+
+  public static final TunableNumber kDriveVoltKs =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kS");
+  public static final TunableNumber kDriveVoltKv =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kV");
+  public static final TunableNumber kDriveVoltKa =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kA");
+  public static final TunableNumber kDriveVoltKp =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kP");
+  public static final TunableNumber kDriveVoltKd =
+      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kD");
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
@@ -133,7 +169,42 @@ public abstract class SwerveModuleIO {
 
   // * ~~~~~~~~ ABSTRACT ~~~~~~~~
 
-  public abstract void periodic();
+  /** Update all status signals */
+  public void periodic() {
+    if (kPivotKs.hasChanged(hashCode())
+        || kPivotKv.hasChanged(hashCode())
+        || kPivotKa.hasChanged(hashCode())
+        || kPivotKp.hasChanged(hashCode())
+        || kPivotKd.hasChanged(hashCode())) {
+      setPivotGains(kPivotKs.get(), kPivotKv.get(), kPivotKa.get(), kPivotKp.get(), kPivotKd.get());
+    }
+
+    if (kDriveTorqueKs.hasChanged(hashCode())
+        || kDriveTorqueKv.hasChanged(hashCode())
+        || kDriveTorqueKa.hasChanged(hashCode())
+        || kDriveTorqueKp.hasChanged(hashCode())
+        || kDriveTorqueKd.hasChanged(hashCode())) {
+      setDriveTorqueGains(
+          kDriveTorqueKs.get(),
+          kDriveTorqueKv.get(),
+          kDriveTorqueKa.get(),
+          kDriveTorqueKp.get(),
+          kDriveTorqueKd.get());
+    }
+
+    if (kDriveVoltKs.hasChanged(hashCode())
+        || kDriveVoltKv.hasChanged(hashCode())
+        || kDriveVoltKa.hasChanged(hashCode())
+        || kDriveVoltKp.hasChanged(hashCode())
+        || kDriveVoltKd.hasChanged(hashCode())) {
+      setDriveVoltGains(
+          kDriveVoltKs.get(),
+          kDriveVoltKv.get(),
+          kDriveVoltKa.get(),
+          kDriveVoltKp.get(),
+          kDriveVoltKd.get());
+    }
+  }
 
   @Logged(name = "Pivot Applied Voltage (volts)", importance = Importance.DEBUG)
   public abstract double getPivotAppliedVolts();
@@ -184,6 +255,13 @@ public abstract class SwerveModuleIO {
   protected abstract void setDriveSpeedSetpoint(double speedRevsPerSec, boolean focEnabled);
 
   protected abstract void setDriveSpeedSetpoint(double speedRevsPerSec, double torqueNm);
+
+  protected abstract void setPivotGains(double kS, double kV, double kA, double kP, double kD);
+
+  protected abstract void setDriveTorqueGains(
+      double kS, double kV, double kA, double kP, double kD);
+
+  protected abstract void setDriveVoltGains(double kS, double kV, double kA, double kP, double kD);
 
   /** Set all servos to neutral mode */
   public abstract void neutral();

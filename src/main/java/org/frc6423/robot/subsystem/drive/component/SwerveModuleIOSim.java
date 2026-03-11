@@ -48,7 +48,9 @@ public class SwerveModuleIOSim extends SwerveModuleIO {
   }
 
   @Override
-  public void periodic() {}
+  public void periodic() {
+    super.periodic();
+  }
 
   @Override
   public double getPivotAppliedVolts() {
@@ -162,4 +164,20 @@ public class SwerveModuleIOSim extends SwerveModuleIO {
     mPivotAppliedVolts = 0.0;
     mDriveAppliedVolts = 0.0;
   }
+
+  @Override
+  protected void setPivotGains(double kS, double kV, double kA, double kP, double kD) {
+    mPivotController.setPID(kP, 0.0, kD);
+  }
+
+  @Override
+  protected void setDriveTorqueGains(double kS, double kV, double kA, double kP, double kD) {
+    mDriveController.setPID(kP, 0.0, kD);
+    mDriveFeedforward.setKs(kS);
+    mDriveFeedforward.setKv(kV);
+    mDriveFeedforward.setKa(kA);
+  }
+
+  @Override
+  protected void setDriveVoltGains(double kS, double kV, double kA, double kP, double kD) {}
 }

@@ -178,23 +178,18 @@ public class RebuiltL2 extends SwerveConstants {
                     getMaxLinearAccelerationMetersPerSecondPerSecond() / getWheelRadiusMeters()))
         .withSlot0(
             new Slot0Configs() // Torque Based Motion Magic Velocity Controls
-                .withKS(5.0)
+                .withKS(0.2)
                 .withKV(0.0)
                 .withKA(0.0)
-                .withKP(35.0)
+                .withKP(12.0)
                 .withKD(0.0))
         .withSlot1(
             new Slot1Configs() // Voltage Based Motion Magic Velocity Controls
-                .withKS(0.0)
-                .withKV(0.0)
+                .withKS(10.0)
+                .withKV(5.0)
                 .withKA(0.0)
-                .withKP(0.0)
+                .withKP(300.0)
                 .withKD(0.0));
-    // .withKS(10.0)
-    // .withKV(5.0)
-    // .withKA(0.0)
-    // .withKP(300.0)
-    // .withKD(0.0));
   }
 
   @Override

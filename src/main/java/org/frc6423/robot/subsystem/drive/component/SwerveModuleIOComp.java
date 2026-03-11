@@ -16,19 +16,12 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 import org.frc6423.lib.util.PhoneixUtils;
-import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
 
 public class SwerveModuleIOComp extends SwerveModuleIO {
   protected final CANcoder mEncoder;
   protected final TalonFX mPivot, mDrive;
-
-  private static final TunableNumber kS = new TunableNumber("Drive/kS", 0.0);
-  private static final TunableNumber kV = new TunableNumber("Drive/kV", 0.0);
-  private static final TunableNumber kA = new TunableNumber("Drive/kA", 0.0);
-  private static final TunableNumber kP = new TunableNumber("Drive/kP", 0.0);
-  private static final TunableNumber kD = new TunableNumber("Drive/kD", 0.0);
 
   private final VoltageOut mVoltageReq = new VoltageOut(0.0);
   private final TorqueCurrentFOC mCurrentReq = new TorqueCurrentFOC(0.0);
@@ -106,25 +99,7 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
 
   @Override
   public void periodic() {
-    if (kS.hasChanged(hashCode())
-        || kV.hasChanged(hashCode())
-        || kA.hasChanged(hashCode())
-        || kP.hasChanged(hashCode())
-        || kD.hasChanged(hashCode())) {
-      new Thread(
-              () -> {
-                mConfig.driveConfig().Slot0.kS = kS.get();
-                mConfig.driveConfig().Slot0.kV = kV.get();
-                mConfig.driveConfig().Slot0.kA = kA.get();
-                mConfig.driveConfig().Slot0.kP = kP.get();
-                mConfig.driveConfig().Slot0.kD = kD.get();
-
-                PhoneixUtils.tryUntilOk(
-                    5, () -> mDrive.getConfigurator().apply(mConfig.driveConfig()));
-              })
-          .start();
-    }
-
+    super.periodic();
     BaseStatusSignal.refreshAll(
         mDriveAngle,
         mDriveSpeed,
@@ -248,6 +223,54 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
             .withVelocity(speedRevsPerSec)
             .withFeedForward(Flags.kDriveConstants.getDriveGearboxKt() / torqueNm)
             .withSlot(0));
+  }
+
+  @Override
+  protected void setPivotGains(double kS, double kV, double kA, double kP, double kD) {
+    new Thread(
+            () -> {
+              mConfig.pivotConfig().Slot0.kS = kS;
+              mConfig.pivotConfig().Slot0.kV = kV;
+              mConfig.pivotConfig().Slot0.kA = kA;
+              mConfig.pivotConfig().Slot0.kP = kP;
+              mConfig.pivotConfig().Slot0.kD = kD;
+
+              PhoneixUtils.tryUntilOk(
+                  5, () -> mPivot.getConfigurator().apply(mConfig.pivotConfig()));
+            })
+        .start();
+  }
+
+  @Override
+  protected void setDriveTorqueGains(double kS, double kV, double kA, double kP, double kD) {
+    new Thread(
+            () -> {
+              mConfig.driveConfig().Slot0.kS = kS;
+              mConfig.driveConfig().Slot0.kV = kV;
+              mConfig.driveConfig().Slot0.kA = kA;
+              mConfig.driveConfig().Slot0.kP = kP;
+              mConfig.driveConfig().Slot0.kD = kD;
+
+              PhoneixUtils.tryUntilOk(
+                  5, () -> mDrive.getConfigurator().apply(mConfig.driveConfig()));
+            })
+        .start();
+  }
+
+  @Override
+  protected void setDriveVoltGains(double kS, double kV, double kA, double kP, double kD) {
+    new Thread(
+            () -> {
+              mConfig.driveConfig().Slot1.kS = kS;
+              mConfig.driveConfig().Slot1.kV = kV;
+              mConfig.driveConfig().Slot1.kA = kA;
+              mConfig.driveConfig().Slot1.kP = kP;
+              mConfig.driveConfig().Slot1.kD = kD;
+
+              PhoneixUtils.tryUntilOk(
+                  5, () -> mDrive.getConfigurator().apply(mConfig.driveConfig()));
+            })
+        .start();
   }
 
   @Override
