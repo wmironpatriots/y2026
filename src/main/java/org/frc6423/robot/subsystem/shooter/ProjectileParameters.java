@@ -6,5 +6,4 @@
 
 package org.frc6423.robot.subsystem.shooter;
 
-public record ProjectileParameters(
-    double exitPitchRads, double exitVelocityMetersPerSec, double timeOfFlightSec) {}
+public record ProjectileParameters(double pitch, double velocity, double timeOfFlight) {}

@@ -49,22 +49,23 @@ import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.vision.CameraIOIronSight;
 import org.frc6423.robot.subsystem.vision.Vision;
 
-public class Shooter extends SubsystemBase {
+/** {@link SubsystemBase} Manager class for the shooter */
+public class ShooterSubsystem extends SubsystemBase {
   /**
-   * Create new {@link Shooter}
+   * Static Factory for automatically configuring and creating a {@link ShooterSubsystem}
    *
-   * @return {@link Shooter}
+   * @return {@link ShooterSubsystem}
    */
-  public static Shooter create() {
+  public static ShooterSubsystem create() {
     return (Robot.isReal())
-        ? new Shooter(
+        ? new ShooterSubsystem(
             new ServoIOTalonFx(
                 "Pivot", MotorType.KrakenX44, kCanBus, kPivotCanDeviceId, kPivotConfig),
             new ServoIOTalonFx(
                 "Left", MotorType.KrakenX60, kCanBus, kFlywheelLeftCanDeviceId, kFlywheelConfig),
             new ServoIOTalonFx(
                 "Right", MotorType.KrakenX60, kCanBus, kFlywheelRightCanDeviceId, kFlywheelConfig))
-        : new Shooter(
+        : new ShooterSubsystem(
             new ServoIOTalonFxPivotSim(
                 "Pivot",
                 MotorType.KrakenX44,
@@ -311,7 +312,7 @@ public class Shooter extends SubsystemBase {
 
   private final CameraIOIronSight mCam = new CameraIOIronSight(Vision.kCameraConfigs[0]);
 
-  protected Shooter(ServoIO pivot, ServoIO left, ServoIO right) {
+  protected ShooterSubsystem(ServoIO pivot, ServoIO left, ServoIO right) {
     mPivot = pivot;
     mLeft = left;
     mRight = right;
@@ -672,8 +673,8 @@ public class Shooter extends SubsystemBase {
 
   public Command runProjectileParametersSetpoint(Supplier<ProjectileParameters> parameters) {
     return adjustToAndAccelerateTo(
-        () -> Rotation2d.fromRadians(parameters.get().exitPitchRads()),
-        () -> parameters.get().exitVelocityMetersPerSec() * 2 / kFlywheelRadiusMeters);
+        () -> Rotation2d.fromRadians(parameters.get().pitch()),
+        () -> parameters.get().velocity() * 2 / kFlywheelRadiusMeters);
   }
 
   /**

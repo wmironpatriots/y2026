@@ -30,11 +30,7 @@ public class Auto {
     // Init Auto Factory
     mFactory =
         new AutoFactory(
-            kRobotState::getEstimatedPosition,
-            kRobotState::resetPose,
-            drive.getChoreoSwerveSampleConsumer(),
-            true,
-            drive);
+            kRobotState::getEstimatedPosition, kRobotState::resetPose, null, true, drive);
   }
 
   // Enum for key field nodes (starting poses)

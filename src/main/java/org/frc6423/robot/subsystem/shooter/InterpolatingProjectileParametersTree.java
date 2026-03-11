@@ -15,7 +15,7 @@ import java.util.TreeMap;
  * Interpolating Projectile Parameters Tree maps are used to get {@link ProjectileParameters} that
  * are not defined by linearly interpolating between defined {@link ProjectileParameters} samples
  *
- * <p>Each {@link ProjectileParameters} sample has a key (Distance in meters) & an entry (the actual
+ * <p>Each {@link ProjectileParameters} sample has a key (Distance) & an entry (the actual
  * parammeters)
  *
  * <p>To define a {@link ProjectileParameters}, use the {@link #addSammple(double,
@@ -32,7 +32,7 @@ public class InterpolatingProjectileParametersTree {
   /**
    * Add new {@link ProjectileParameters} sample to map
    *
-   * @param rMeters {@link Double} Distance from target in meters (key)
+   * @param rMeters {@link Double} Distance from target in (key)
    * @param sample {@link ProjectileParameters} Sample (entry)
    */
   public void addSample(double rMeters, ProjectileParameters sample) {
@@ -47,7 +47,7 @@ public class InterpolatingProjectileParametersTree {
   /**
    * Remove a sample from map
    *
-   * @param rMeters {@link Double} Distance from target in meters (key)
+   * @param rMeters {@link Double} Distance from target in (key)
    */
   public void remove(double rMeters) {
     map.remove(rMeters);
@@ -112,13 +112,9 @@ public class InterpolatingProjectileParametersTree {
   private ProjectileParameters interpolate(
       ProjectileParameters lowerParameters, ProjectileParameters higherParameters, double t) {
     return new ProjectileParameters(
-        MathUtil.interpolate(lowerParameters.exitPitchRads(), higherParameters.exitPitchRads(), t),
-        MathUtil.interpolate(
-            lowerParameters.exitVelocityMetersPerSec(),
-            higherParameters.exitVelocityMetersPerSec(),
-            t),
-        MathUtil.interpolate(
-            lowerParameters.timeOfFlightSec(), higherParameters.timeOfFlightSec(), t));
+        MathUtil.interpolate(lowerParameters.pitch(), higherParameters.pitch(), t),
+        MathUtil.interpolate(lowerParameters.velocity(), higherParameters.velocity(), t),
+        MathUtil.interpolate(lowerParameters.timeOfFlight(), higherParameters.timeOfFlight(), t));
   }
 
   private double inverseInterpolate(double upper, double query, double lower) {

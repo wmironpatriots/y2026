@@ -25,13 +25,13 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.command.DriveCommandFactory;
+import org.frc6423.robot.command.DriveTeleoperatedCommands;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 // import org.frc6423.robot.subsystem.feeder.Feeder;
 // import org.frc6423.robot.subsystem.indexer.Indexer;
 // import org.frc6423.robot.subsystem.intake.Intake;
-import org.frc6423.robot.subsystem.shooter.Shooter;
+import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
 import org.frc6423.robot.util.sim.FuelSimulation;
 import org.frc6423.robot.util.sim.HopperSimulation;
 
@@ -43,12 +43,12 @@ public class Robot extends CommandRobot {
   // private final Intake mIntake = Intake.create();
   // private final Indexer mIndexer = Indexer.create();
   // private final Feeder mFeeder = Feeder.create();
-  private final Shooter mShooter = Shooter.create();
+  private final ShooterSubsystem mShooter = ShooterSubsystem.create();
 
   private Optional<FuelSimulation> mFuelSim = Optional.empty();
   private Optional<HopperSimulation> mHopperSim = Optional.empty();
 
-  // private final Auto mAuto = new Auto(mDrive);
+  private final Auto mAuto = new Auto(mDrive);
   private final CommandXboxController mController;
 
   public Robot() {
@@ -109,7 +109,7 @@ public class Robot extends CommandRobot {
   public void configureBindings() {
     RobotModeTriggers.teleop()
         .whileTrue(
-            DriveCommandFactory.runTeleoperatedDriveWhileFacing(
+            DriveTeleoperatedCommands.runTeleoperatedDriveWhileFacing(
                 mDrive,
                 mController::getLeftY,
                 mController::getLeftX,
@@ -125,7 +125,7 @@ public class Robot extends CommandRobot {
     RobotModeTriggers.teleop()
         .and(mController.leftBumper())
         .whileTrue(
-            DriveCommandFactory.runTeleoperatedDrive(
+            DriveTeleoperatedCommands.runTeleoperatedDrive(
                 mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
   }
 
@@ -181,6 +181,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return Commands.none();
+    return mAuto.S1_N2_cycle();
   }
 }
