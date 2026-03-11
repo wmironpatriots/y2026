@@ -47,6 +47,8 @@ import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Rebuilt;
 import org.frc6423.robot.Robot;
 import org.frc6423.robot.subsystem.RobotState;
+import org.frc6423.robot.subsystem.vision.CameraIOIronSight;
+import org.frc6423.robot.subsystem.vision.Vision;
 
 public class Shooter extends SubsystemBase {
   /**
@@ -358,6 +360,8 @@ public class Shooter extends SubsystemBase {
 
   private final SysIdRoutine mSysIdRoutine;
 
+  private final CameraIOIronSight mCam = new CameraIOIronSight(Vision.kCameraConfigs[0]);
+
   protected Shooter(ServoIO pivot, ServoIO left, ServoIO right) {
     mPivot = pivot;
     mLeft = left;
@@ -491,8 +495,9 @@ public class Shooter extends SubsystemBase {
    */
   @Logged(name = "Distance from Virtual Target (meters)", importance = Importance.INFO)
   public double getDistanceFromVirtualTargetMeters() {
-    return mVirtualTarget.getDistance(
-        RobotState.getInstance().getEstimatedPosition().getTranslation());
+    return Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)
+        .getTranslation()
+        .getDistance(mCam.getUnreadMeasurements()[0].positionEstimate().getTranslation());
   }
 
   /**

@@ -42,7 +42,7 @@ public class Vision extends SubsystemBase {
   public static final CameraConfig[] kCameraConfigs =
       new CameraConfig[] {
         new CameraConfig(
-            "bessie",
+            "elsie",
             new Transform3d(
                 new Translation3d(-12.255, 0.0, 14.207), new Rotation3d(0.0, 1.0472, 0.0))),
         new CameraConfig(

@@ -368,10 +368,10 @@ public class Drive extends SubsystemBase {
         states, kConstants.getMaxLinearVelocityMetersPerSecond());
 
     // Auto FOC Toggle calculations
-    var focEnabled =
-        getSpeedMetersPerSecond()
-            > (kConstants.getMaxLinearVelocityMetersPerSecond()
-                * kConstants.getFocAutoToggleMagnitude());
+    var focEnabled = true;
+    // getSpeedMetersPerSecond()
+    //     < (kConstants.getMaxLinearVelocityMetersPerSecond()
+    //         * kConstants.getFocAutoToggleMagnitude());
 
     // Send setpoints
     for (int i = 0; i < mModules.length; i++) {
@@ -449,7 +449,14 @@ public class Drive extends SubsystemBase {
   public Command driveWhileFacingTarget(
       DoubleSupplier vx, DoubleSupplier vy, Supplier<Translation2d> target) {
     return driveWhileFacingAngle(
-        vx, vy, () -> target.get().minus(getPose2d().getTranslation()).getAngle());
+        vx,
+        vy,
+        () ->
+            target
+                .get()
+                .minus(getPose2d().getTranslation())
+                .getAngle()
+                .plus(Rotation2d.kCCW_90deg));
   }
 
   /**
@@ -490,7 +497,7 @@ public class Drive extends SubsystemBase {
                         vx.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
                         vy.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
                         omega.getAsDouble() * kConstants.getMaxAngularVelocityRadsPerSec(),
-                        getRotation2d().plus(Flags.getAllianceRotation()))))
+                        getRotation2d().minus(Flags.getAllianceRotation()))))
         .beforeStarting(() -> mControlMode = ControlMode.TELEOPERATED_FULL);
   }
 

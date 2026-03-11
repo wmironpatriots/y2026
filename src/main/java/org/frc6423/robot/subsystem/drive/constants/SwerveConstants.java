@@ -138,7 +138,7 @@ public abstract class SwerveConstants {
   /**
    * Get {@link SwerveDriveKinematics} for drivetrain arrangement
    *
-   * <p>FR, BR, FL, BL
+   * <p>FL, FR, BL, BR
    *
    * @return {@link SwerveDriveKinematics}
    */

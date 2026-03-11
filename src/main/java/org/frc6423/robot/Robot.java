@@ -27,6 +27,7 @@ import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.Drive;
+import org.frc6423.robot.subsystem.feeder.Feeder;
 import org.frc6423.robot.subsystem.shooter.Shooter;
 import org.frc6423.robot.util.sim.FuelSimulation;
 import org.frc6423.robot.util.sim.HopperSimulation;
@@ -38,7 +39,7 @@ public class Robot extends CommandRobot {
   private final Drive mDrive = Drive.create();
   // private final Intake mIntake = Intake.create();
   // private final Indexer mIndexer = Indexer.create();
-  // private final Feeder mFeeder = Feeder.create();
+  private final Feeder mFeeder = Feeder.create();
   private final Shooter mShooter = Shooter.create();
 
   private Optional<FuelSimulation> mFuelSim = Optional.empty();
@@ -104,11 +105,23 @@ public class Robot extends CommandRobot {
   /** Configure driver bindings */
   public void configureBindings() {
     RobotModeTriggers.teleop()
+        .and(mController.a())
+        .whileTrue(
+            mDrive.driveWhileFacingTarget(
+                () -> modifyJoystick(mController.getLeftY()),
+                () -> modifyJoystick(mController.getLeftX()),
+                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation()));
+
+    RobotModeTriggers.teleop()
+        .and(mController.a().negate())
         .whileTrue(
             mDrive.drive(
                 () -> modifyJoystick(mController.getLeftY()),
                 () -> modifyJoystick(mController.getLeftX()),
                 () -> modifyJoystick(mController.getRightX())));
+
+    mController.x().whileTrue(mFeeder.feed());
+    mFeeder.setDefaultCommand(mFeeder.neutral());
   }
 
   /** Setup simulation optionals if robot is simulated */
@@ -162,7 +175,7 @@ public class Robot extends CommandRobot {
   }
 
   private static double modifyJoystick(double value) {
-    return MathUtil.applyDeadband(Math.abs(Math.pow(value, 3)) * Math.signum(value), 0.02);
+    return MathUtil.applyDeadband(Math.abs(Math.pow(value, 2)) * Math.signum(value), 0.02);
   }
 
   @Override

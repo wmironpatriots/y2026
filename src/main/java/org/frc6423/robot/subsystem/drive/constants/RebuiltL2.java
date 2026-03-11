@@ -138,6 +138,7 @@ public class RebuiltL2 extends SwerveConstants {
             new FeedbackConfigs()
                 .withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
                 .withFeedbackRemoteSensorID(CANcoderId)
+                .withSensorToMechanismRatio(getPivotSensorToMechanismRatio())
                 .withRotorToSensorRatio(getPivotRotorToSensorRatio()))
         .withClosedLoopGeneral(new ClosedLoopGeneralConfigs().withContinuousWrap(true))
         .withMotionMagic(
@@ -159,13 +160,15 @@ public class RebuiltL2 extends SwerveConstants {
         .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
         .withMotorOutput(
             new MotorOutputConfigs()
-                .withInverted(InvertedValue.Clockwise_Positive)
+                .withInverted(InvertedValue.CounterClockwise_Positive)
                 .withNeutralMode(NeutralModeValue.Brake))
         .withCurrentLimits(
             new CurrentLimitsConfigs()
                 .withStatorCurrentLimit(120.0)
                 .withStatorCurrentLimitEnable(true))
         .withTorqueCurrent(new TorqueCurrentConfigs().withTorqueNeutralDeadband(10.0))
+        // .withPeakForwardTorqueCurrent(120.0)
+        // .withPeakReverseTorqueCurrent(120.0))
         .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(getDriveRotorToMechRatio()))
         .withMotionMagic(
             new MotionMagicConfigs()
@@ -182,11 +185,16 @@ public class RebuiltL2 extends SwerveConstants {
                 .withKD(0.0))
         .withSlot1(
             new Slot1Configs() // Voltage Based Motion Magic Velocity Controls
-                .withKS(10.0)
-                .withKV(5.0)
+                .withKS(0.0)
+                .withKV(0.0)
                 .withKA(0.0)
-                .withKP(300.0)
+                .withKP(0.0)
                 .withKD(0.0));
+    // .withKS(10.0)
+    // .withKV(5.0)
+    // .withKA(0.0)
+    // .withKP(300.0)
+    // .withKD(0.0));
   }
 
   @Override
@@ -201,8 +209,8 @@ public class RebuiltL2 extends SwerveConstants {
             new MagnetSensorConfigs()
                 .withSensorDirection(
                     getPivotInverted()
-                        ? SensorDirectionValue.CounterClockwise_Positive
-                        : SensorDirectionValue.Clockwise_Positive)
+                        ? SensorDirectionValue.Clockwise_Positive
+                        : SensorDirectionValue.CounterClockwise_Positive)
                 .withMagnetOffset(angularOffsetRevs));
   }
 
@@ -223,7 +231,7 @@ public class RebuiltL2 extends SwerveConstants {
         Matrix.kDriveFlEncoderId,
         getPivotServoConfig(Matrix.kDriveFlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(0.2763671875),
+        getCANcoderConfig(0.2763671875 + 0.25),
         getWheelRadiusMeters());
   }
 
@@ -237,7 +245,7 @@ public class RebuiltL2 extends SwerveConstants {
         Matrix.kDriveFrEncoderId,
         getPivotServoConfig(Matrix.kDriveFrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(0.363037109375),
+        getCANcoderConfig(0.363037109375 + 0.25),
         getWheelRadiusMeters());
   }
 
@@ -251,7 +259,7 @@ public class RebuiltL2 extends SwerveConstants {
         Matrix.kDriveBlEncoderId,
         getPivotServoConfig(Matrix.kDriveBlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(0.3701171875),
+        getCANcoderConfig(0.3701171875 + 0.25),
         getWheelRadiusMeters());
   }
 
@@ -265,7 +273,7 @@ public class RebuiltL2 extends SwerveConstants {
         Matrix.kDriveBrEncoderId,
         getPivotServoConfig(Matrix.kDriveBrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(0.39990234375),
+        getCANcoderConfig(0.39990234375 + 0.25),
         getWheelRadiusMeters());
   }
 }
