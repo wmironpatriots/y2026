@@ -386,12 +386,6 @@ public class Shooter extends SubsystemBase {
     if (kFlywheelTuningSpeedMetersPerSec.get() != -1.0) {
       setFlywheelSetpoint(kFlywheelTuningSpeedMetersPerSec.get() * 2 / kFlywheelRadiusMeters);
     }
-
-    var setpoint = calculateParameters();
-
-    mTargetRotation2d = Rotation2d.fromRadians(setpoint.exitPitchRads());
-    mTargetFlywheelVelocityRevsPerSec =
-        setpoint.exitVelocityMetersPerSec() * kFlywheelRadiusMeters * 0.5;
   }
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~

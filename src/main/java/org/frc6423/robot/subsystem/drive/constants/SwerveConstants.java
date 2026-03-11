@@ -128,10 +128,10 @@ public abstract class SwerveConstants {
   public Translation2d[] getModuleDisplacements() {
     var coord = getTrackWidthMeters() / 2;
     return new Translation2d[] {
-      new Translation2d(-coord, coord), // FL
       new Translation2d(coord, coord), // FR
-      new Translation2d(-coord, -coord), // BL
       new Translation2d(coord, -coord), // BR
+      new Translation2d(-coord, coord), // FL
+      new Translation2d(-coord, -coord), // BL
     };
   }
 

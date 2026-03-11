@@ -218,7 +218,8 @@ public class Intake extends SubsystemBase {
     mPivot = pivot;
     mRoller = roller;
 
-    setDefaultCommand(Commands.sequence(runCurrentHoming().unless(() -> mIsHomed), stow()));
+    setDefaultCommand(
+        Commands.sequence(runCurrentHoming().unless(() -> mIsHomed), stow()).repeatedly());
   }
 
   @Override

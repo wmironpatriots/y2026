@@ -6,10 +6,8 @@
 
 package org.frc6423.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.EpilogueConfiguration;
@@ -17,7 +15,6 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -28,9 +25,12 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
+import org.frc6423.robot.command.DriveCommandFactory;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
-import org.frc6423.robot.subsystem.feeder.Feeder;
+// import org.frc6423.robot.subsystem.feeder.Feeder;
+// import org.frc6423.robot.subsystem.indexer.Indexer;
+// import org.frc6423.robot.subsystem.intake.Intake;
 import org.frc6423.robot.subsystem.shooter.Shooter;
 import org.frc6423.robot.util.sim.FuelSimulation;
 import org.frc6423.robot.util.sim.HopperSimulation;
@@ -42,7 +42,7 @@ public class Robot extends CommandRobot {
   private final DriveSubsystem mDrive = DriveSubsystem.create();
   // private final Intake mIntake = Intake.create();
   // private final Indexer mIndexer = Indexer.create();
-  private final Feeder mFeeder = Feeder.create();
+  // private final Feeder mFeeder = Feeder.create();
   private final Shooter mShooter = Shooter.create();
 
   private Optional<FuelSimulation> mFuelSim = Optional.empty();
@@ -108,23 +108,25 @@ public class Robot extends CommandRobot {
   /** Configure driver bindings */
   public void configureBindings() {
     RobotModeTriggers.teleop()
-        .and(mController.a())
         .whileTrue(
-            mDrive.driveWhileFacingTarget(
-                () -> modifyJoystick(mController.getLeftY()),
-                () -> modifyJoystick(mController.getLeftX()),
-                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation()));
+            DriveCommandFactory.runTeleoperatedDriveWhileFacing(
+                mDrive,
+                mController::getLeftY,
+                mController::getLeftX,
+                () ->
+                    Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)
+                        .getTranslation(), // TODO replace placeholder for fcs target
+                true));
+
+    // mController
+    //       .leftBumper()
+    //       .whileTrue(mIntake.intake());
 
     RobotModeTriggers.teleop()
-        .and(mController.a().negate())
+        .and(mController.leftBumper())
         .whileTrue(
-            mDrive.driveWhileFacingTarget(
-                () -> modifyJoystick(mController.getLeftY()),
-                () -> modifyJoystick(mController.getLeftX()),
-                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation()));
-
-    mController.x().whileTrue(mFeeder.feed());
-    mFeeder.setDefaultCommand(mFeeder.neutral());
+            DriveCommandFactory.runTeleoperatedDrive(
+                mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
   }
 
   /** Setup simulation optionals if robot is simulated */
@@ -170,35 +172,11 @@ public class Robot extends CommandRobot {
 
             // Start sim notifier
             addPeriodic(() -> sim.updateSim(), 0.002);
-
-            mController
-                .rightBumper()
-                .whileTrue(
-                    Commands.runOnce(
-                            () ->
-                                sim.launchFuel(
-                                    MetersPerSecond.of(
-                                        mShooter.getTargetMuzzleVelocityMetersPerSecond()),
-                                    mShooter.getTargetRotation2d().getMeasure(),
-                                    Degrees.zero(),
-                                    Meters.of(1)))
-                        // sim.launchFuel(
-                        //     MetersPerSecond.of(
-                        //         mShooter.getTargetMuzzleVelocityMetersPerSecond()),
-                        //     mShooter.getTargetRotation2d().getMeasure(),
-                        //     Degrees.zero(),
-                        //     Meters.of(1)))
-                        .andThen(Commands.waitSeconds(0.5))
-                        .repeatedly());
           });
     } else {
       mFuelSim = Optional.empty();
       mHopperSim = Optional.empty();
     }
-  }
-
-  private static double modifyJoystick(double value) {
-    return MathUtil.applyDeadband(Math.abs(Math.pow(value, 2)) * Math.signum(value), 0.02);
   }
 
   @Override

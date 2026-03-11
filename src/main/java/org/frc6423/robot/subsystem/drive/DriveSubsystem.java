@@ -10,7 +10,6 @@ import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -18,7 +17,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -29,9 +27,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import org.frc6423.lib.util.Tracer;
-import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
+import org.frc6423.robot.command.DriveCommandFactory;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.RobotState.OdometryMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
@@ -75,50 +73,6 @@ public class DriveSubsystem extends SubsystemBase {
 
   /** {@link String} The directory to store tunables in NT */
   public static final String kTunablesPrefix = "/Drive";
-
-  // * ~~~~~~~~ TUNABLES ~~~~~~~~
-
-  /** {@link TunableNumber} Gain driving translational position error to 0 */
-  public static final TunableNumber kTranslationalKp =
-      new TunableNumber(kTunablesPrefix + "/Translational kP");
-
-  /** {@link TunableNumber} Gain driving the derivative of translational position error to 0 */
-  public static final TunableNumber kTranslationalKd =
-      new TunableNumber(kTunablesPrefix + "/Translational kD");
-
-  /** {@link TunableNumber} Max acceptable translational position error (centimeters) */
-  public static final TunableNumber kTranslationalToleranceCm =
-      new TunableNumber(kTunablesPrefix + "/Translational Tolernace (centimeters)");
-
-  /** {@link TunableNumber} Gain driving angular position error to 0 */
-  public static final TunableNumber kAngularKp = new TunableNumber(kTunablesPrefix + "/Angular kP");
-
-  /** {@link TunableNumber} Gain driving the derivative of angular position error to 0 */
-  public static final TunableNumber kAngularKd = new TunableNumber(kTunablesPrefix + "/Angular kD");
-
-  /** {@link TunableNumber} Max acceptable angular position error in (degrees) */
-  public static final TunableNumber kAngularToleranceDeg =
-      new TunableNumber(kTunablesPrefix + "/Angular Tolerance (degrees)");
-
-  static {
-    if (Robot.isReal()) {
-      kTranslationalKp.initDefault(4.0);
-      kTranslationalKd.initDefault(0.05);
-      kTranslationalToleranceCm.initDefault(1.0);
-
-      kAngularKp.initDefault(11.5);
-      kAngularKd.initDefault(0.05);
-      kAngularToleranceDeg.initDefault(2.0);
-    } else {
-      kTranslationalKp.initDefault(4.0);
-      kTranslationalKd.initDefault(0.05);
-      kTranslationalToleranceCm.initDefault(1.0);
-
-      kAngularKp.initDefault(4.5);
-      kAngularKd.initDefault(0.05);
-      kAngularToleranceDeg.initDefault(2.0);
-    }
-  }
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
@@ -166,21 +120,6 @@ public class DriveSubsystem extends SubsystemBase {
   /** {@link Field2d} Member for visualizing relevant positions on Elastic */
   private final Field2d mF2d;
 
-  /**
-   * {@link PIDController} Feedback controller for managing translational position error in the x
-   * direction (meters)
-   */
-  private final PIDController mTranslationalXController;
-
-  /**
-   * {@link PIDController} Feedback controller for managing translational position error in the y
-   * direction (meters)
-   */
-  private final PIDController mTranslationalYController;
-
-  /** {@link PIDController} Feedback controller for managing angular position error (meters) */
-  private final PIDController mAngularController;
-
   protected DriveSubsystem(
       GyroIO gyro,
       SwerveModuleIO frontRight,
@@ -198,18 +137,6 @@ public class DriveSubsystem extends SubsystemBase {
         new SwerveModuleIO[] {
           mFrontRightModule, mBackRightModule, mFrontLeftModule, mBackLeftModule
         };
-
-    mTranslationalXController =
-        new PIDController(kTranslationalKp.get(), 0.0, kTranslationalKd.get());
-    mTranslationalXController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
-
-    mTranslationalYController =
-        new PIDController(kTranslationalKp.get(), 0.0, kTranslationalKd.get());
-    mTranslationalYController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
-
-    mAngularController = new PIDController(kAngularKp.get(), 0.0, kAngularKd.get());
-    mAngularController.setTolerance(Units.degreesToRadians(kAngularToleranceDeg.get()));
-    mAngularController.enableContinuousInput(-Math.PI, Math.PI);
 
     mF2d = new Field2d();
 
@@ -239,22 +166,6 @@ public class DriveSubsystem extends SubsystemBase {
                           : Optional.empty()));
           RobotState.getInstance().setChassisSpeeds(getChassisSpeeds());
         });
-
-    // Update tunables if needed
-    if (kTranslationalKp.hasChanged(hashCode())
-        || kTranslationalKd.hasChanged(hashCode())
-        || kTranslationalToleranceCm.hasChanged(hashCode())) {
-      mTranslationalXController.setPID(kTranslationalKp.get(), 0.0, kTranslationalKd.get());
-      mTranslationalXController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
-      mTranslationalYController.setPID(kTranslationalKp.get(), 0.0, kTranslationalKd.get());
-      mTranslationalYController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
-    }
-
-    if (kAngularKp.hasChanged(hashCode()) || kAngularKd.hasChanged(hashCode())) {
-      mAngularController.setPID(kAngularKp.get(), 0.0, kAngularKd.get());
-    }
-
-    mF2d.setRobotPose(getPose2d());
   }
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~
@@ -266,7 +177,8 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @Logged(name = "Within Translational Tolerance (bool)", importance = Importance.INFO)
   public boolean isAtTranslationalTarget() {
-    return mTranslationalXController.atSetpoint() && mTranslationalYController.atSetpoint();
+    return DriveCommandFactory.kTranslationalXController.atSetpoint()
+        && DriveCommandFactory.kTranslationalYController.atSetpoint();
   }
 
   /**
@@ -276,7 +188,7 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @Logged(name = "Within Angular Tolerance (bool)", importance = Importance.INFO)
   public boolean isFacingAngularTarget() {
-    return mAngularController.atSetpoint();
+    return DriveCommandFactory.kAngularController.atSetpoint();
   }
 
   /**
@@ -413,9 +325,10 @@ public class DriveSubsystem extends SubsystemBase {
       var speeds = sample.getChassisSpeeds();
       var feedbackSpeeds =
           new ChassisSpeeds(
-              mTranslationalYController.calculate(getPose2d().getX(), sample.x),
-              mTranslationalYController.calculate(getPose2d().getY(), sample.y),
-              mAngularController.calculate(getRotation2d().getRadians(), sample.heading));
+              DriveCommandFactory.kTranslationalXController.calculate(getPose2d().getX(), sample.x),
+              DriveCommandFactory.kTranslationalYController.calculate(getPose2d().getY(), sample.y),
+              DriveCommandFactory.kAngularController.calculate(
+                  getRotation2d().getRadians(), sample.heading));
 
       // Create full velocities & convert to states
       speeds = speeds.plus(feedbackSpeeds);
