@@ -16,8 +16,6 @@ import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
-import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
@@ -144,14 +142,7 @@ public class RebuiltL2 extends SwerveConstants {
         .withMotionMagic(
             new MotionMagicConfigs()
                 .withMotionMagicCruiseVelocity((7368 / 60) / getPivotRotorToSensorRatio())
-                .withMotionMagicAcceleration((7368 / 60) / getPivotRotorToSensorRatio() * 0.005))
-        .withSlot0(
-            new Slot0Configs()
-                .withKS(0.014)
-                .withKV(10.0)
-                .withKA(0.0)
-                .withKP(600.0)
-                .withKD(50.0)); // Torque Based Motion Magic Position Controls
+                .withMotionMagicAcceleration((7368 / 60) / getPivotRotorToSensorRatio() * 0.005));
   }
 
   @Override
@@ -175,21 +166,7 @@ public class RebuiltL2 extends SwerveConstants {
                 .withMotionMagicCruiseVelocity(
                     getMaxLinearVelocityMetersPerSecond() / getWheelRadiusMeters())
                 .withMotionMagicAcceleration(
-                    getMaxLinearAccelerationMetersPerSecondPerSecond() / getWheelRadiusMeters()))
-        .withSlot0(
-            new Slot0Configs() // Torque Based Motion Magic Velocity Controls
-                .withKS(0.2)
-                .withKV(0.0)
-                .withKA(0.0)
-                .withKP(12.0)
-                .withKD(0.0))
-        .withSlot1(
-            new Slot1Configs() // Voltage Based Motion Magic Velocity Controls
-                .withKS(10.0)
-                .withKV(5.0)
-                .withKA(0.0)
-                .withKP(300.0)
-                .withKD(0.0));
+                    getMaxLinearAccelerationMetersPerSecondPerSecond() / getWheelRadiusMeters()));
   }
 
   @Override
