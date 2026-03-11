@@ -167,6 +167,10 @@ public class Auto {
     steps.get("S1_F").atTime("score").onTrue(Commands.none());
 
     // Running the actual start path
+<<<<<<< HEAD
+=======
+
+>>>>>>> 72ab214 (Updated auto routines)
     routine
         .active()
         .onTrue(Commands.sequence(steps.get("S1_N2").resetOdometry(), steps.get("S1_N2").cmd()));
@@ -206,8 +210,7 @@ public class Auto {
     // Running the actual start path
     routine
         .active()
-        .whileTrue(Commands.sequence(steps.get("S1_N3").resetOdometry(), steps.get("S1_N3").cmd()));
-
+        .onTrue(Commands.sequence(steps.get("S1_N3").resetOdometry(), steps.get("S1_N3").cmd()));
     // Running return path
     routine.observe(steps.get("S1_N3").done()).onTrue(steps.get("N3_S1").cmd());
 
@@ -244,7 +247,7 @@ public class Auto {
     // Running the actual start path
     routine
         .active()
-        .whileTrue(Commands.sequence(steps.get("S1_N4").resetOdometry(), steps.get("S1_N4").cmd()));
+        .onTrue(Commands.sequence(steps.get("S1_N4").resetOdometry(), steps.get("S1_N4").cmd()));
 
     // Running return path
     routine.observe(steps.get("S1_N4").done()).onTrue(steps.get("N4_S1").cmd());
@@ -282,7 +285,7 @@ public class Auto {
     // Running the actual start path
     routine
         .active()
-        .whileTrue(Commands.sequence(steps.get("S1_N5").resetOdometry(), steps.get("S1_N5").cmd()));
+        .onTrue(Commands.sequence(steps.get("S1_N5").resetOdometry(), steps.get("S1_N5").cmd()));
 
     // Running return path
     routine.observe(steps.get("S1_N5").done()).onTrue(steps.get("N5_S1").cmd());
@@ -322,8 +325,7 @@ public class Auto {
     // Running the actual start path
     routine
         .active()
-        .whileTrue(Commands.sequence(steps.get("S4_A1").resetOdometry(), steps.get("S4_A1").cmd()));
-
+        .onTrue(Commands.sequence(steps.get("S4_A1").resetOdometry(), steps.get("S4_A1").cmd()));
     // Running return path
     routine.observe(steps.get("S4_A1").done()).onTrue(steps.get("A1_F").cmd());
 
@@ -357,7 +359,7 @@ public class Auto {
     // Running the actual start path
     routine
         .active()
-        .whileTrue(Commands.sequence(steps.get("S2_A1").resetOdometry(), steps.get("S2_A1").cmd()));
+        .onTrue(Commands.sequence(steps.get("S2_A1").resetOdometry(), steps.get("S2_A1").cmd()));
 
     // Running return path
     routine.observe(steps.get("S2_A1").done()).onTrue(steps.get("A1_F").cmd());
@@ -392,8 +394,7 @@ public class Auto {
     // Running the actual start path
     routine
         .active()
-        .whileTrue(Commands.sequence(steps.get("S3_A1").resetOdometry(), steps.get("S3_A1").cmd()));
-
+        .onTrue(Commands.sequence(steps.get("S3_A1").resetOdometry(), steps.get("S3_A1").cmd()));
     // Running return path
     routine.observe(steps.get("S3_A1").done()).onTrue(steps.get("A1_F").cmd());
 
