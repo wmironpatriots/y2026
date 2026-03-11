@@ -71,7 +71,7 @@ public class PhoneixOdometryThread extends Thread {
   public Queue<Double> registerSignal(BaseStatusSignal signal) {
     Queue<Double> queue = new ArrayBlockingQueue<>(20);
     mLock.lock();
-    Drive.kLock.lock();
+    DriveSubsystem.kLock.lock();
     try {
       BaseStatusSignal[] newSignals = new BaseStatusSignal[mSignals.length + 1];
       System.arraycopy(mSignals, 0, newSignals, 0, mSignals.length);
@@ -79,7 +79,7 @@ public class PhoneixOdometryThread extends Thread {
       mSignals = newSignals;
       mPhoenixQueues.add(queue);
     } finally {
-      Drive.kLock.unlock();
+      DriveSubsystem.kLock.unlock();
       mLock.unlock();
     }
     return queue;
@@ -92,11 +92,11 @@ public class PhoneixOdometryThread extends Thread {
    */
   public Queue<Double> makeTimestampQueue() {
     Queue<Double> queue = new ArrayBlockingQueue<>(20);
-    Drive.kLock.lock();
+    DriveSubsystem.kLock.lock();
     try {
       mTimestampQueues.add(queue);
     } finally {
-      Drive.kLock.unlock();
+      DriveSubsystem.kLock.unlock();
     }
     return queue;
   }
@@ -129,7 +129,7 @@ public class PhoneixOdometryThread extends Thread {
       }
 
       // Save new data to queues
-      Drive.kLock.lock();
+      DriveSubsystem.kLock.lock();
       try {
         // Sample timestamp is current FPGA time minus average CAN latency
         //     Default timestamps from Phoenix are NOT compatible with
@@ -151,7 +151,7 @@ public class PhoneixOdometryThread extends Thread {
           mTimestampQueues.get(i).offer(timestamp);
         }
       } finally {
-        Drive.kLock.unlock();
+        DriveSubsystem.kLock.unlock();
       }
     }
   }

@@ -21,7 +21,6 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -29,12 +28,9 @@ import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.Rebuilt;
 import org.frc6423.robot.Robot;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.RobotState.OdometryMeasurement;
@@ -46,21 +42,22 @@ import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOComp;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOSim;
 import org.frc6423.robot.subsystem.drive.constants.SwerveConstants;
 
-public class Drive extends SubsystemBase {
+/** {@link SubsystemBase} Manager class for the swerve drivetrain */
+public class DriveSubsystem extends SubsystemBase {
   /**
-   * Create new {@link Drive}
+   * Static Factory for automatically configuring and creating a {@link DriveSubsystem}
    *
-   * @return {@link Drive}
+   * @return {@link DriveSubsystem}
    */
-  public static Drive create() {
+  public static DriveSubsystem create() {
     return (Robot.isReal())
-        ? new Drive(
+        ? new DriveSubsystem(
             new GyroIOPigeon2(kConstants.getGyroConfig()),
             new SwerveModuleIOComp(kConstants.getFrontLeftModuleConfig()),
             new SwerveModuleIOComp(kConstants.getFrontRightModuleConfig()),
             new SwerveModuleIOComp(kConstants.getBackLeftModuleConfig()),
             new SwerveModuleIOComp(kConstants.getBackRightModuleConfig()))
-        : new Drive(
+        : new DriveSubsystem(
             new GyroIONone(),
             new SwerveModuleIOSim(kConstants.getFrontLeftModuleConfig()),
             new SwerveModuleIOSim(kConstants.getFrontRightModuleConfig()),
@@ -79,51 +76,45 @@ public class Drive extends SubsystemBase {
   /** {@link String} The directory to store tunables in NT */
   public static final String kTunablesPrefix = "/Drive";
 
-  /** {@link Enum} Method of control drivetrain is currently being controlled by */
-  public static enum ControlMode {
-    BRAKE,
-    TELEOPERATED_FULL,
-    TELEOPERATED_ASSIST,
-    TELEOPERATED_ASSIST_ANGULAR,
-    AUTONOMOUS
-  }
-
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
+  /** {@link TunableNumber} Gain driving translational position error to 0 */
   public static final TunableNumber kTranslationalKp =
       new TunableNumber(kTunablesPrefix + "/Translational kP");
-  public static final TunableNumber kTranslationalKi =
-      new TunableNumber(kTunablesPrefix + "/Translational kI");
+
+  /** {@link TunableNumber} Gain driving the derivative of translational position error to 0 */
   public static final TunableNumber kTranslationalKd =
       new TunableNumber(kTunablesPrefix + "/Translational kD");
+
+  /** {@link TunableNumber} Max acceptable translational position error (centimeters) */
   public static final TunableNumber kTranslationalToleranceCm =
       new TunableNumber(kTunablesPrefix + "/Translational Tolernace (centimeters)");
 
+  /** {@link TunableNumber} Gain driving angular position error to 0 */
   public static final TunableNumber kAngularKp = new TunableNumber(kTunablesPrefix + "/Angular kP");
-  public static final TunableNumber kAngularKi = new TunableNumber(kTunablesPrefix + "/Angular kI");
+
+  /** {@link TunableNumber} Gain driving the derivative of angular position error to 0 */
   public static final TunableNumber kAngularKd = new TunableNumber(kTunablesPrefix + "/Angular kD");
+
+  /** {@link TunableNumber} Max acceptable angular position error in (degrees) */
   public static final TunableNumber kAngularToleranceDeg =
       new TunableNumber(kTunablesPrefix + "/Angular Tolerance (degrees)");
 
   static {
     if (Robot.isReal()) {
       kTranslationalKp.initDefault(4.0);
-      kTranslationalKi.initDefault(0.0);
       kTranslationalKd.initDefault(0.05);
       kTranslationalToleranceCm.initDefault(1.0);
 
       kAngularKp.initDefault(11.5);
-      kAngularKi.initDefault(0.0);
       kAngularKd.initDefault(0.05);
       kAngularToleranceDeg.initDefault(2.0);
     } else {
       kTranslationalKp.initDefault(4.0);
-      kTranslationalKi.initDefault(0.0);
       kTranslationalKd.initDefault(0.05);
       kTranslationalToleranceCm.initDefault(1.0);
 
       kAngularKp.initDefault(4.5);
-      kAngularKi.initDefault(0.0);
       kAngularKd.initDefault(0.05);
       kAngularToleranceDeg.initDefault(2.0);
     }
@@ -131,23 +122,40 @@ public class Drive extends SubsystemBase {
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
+  /** {@link GyroIO} Hardware Interface for the gyro */
   private final GyroIO mGyro;
 
-  @Logged(name = "Front Left")
-  private final SwerveModuleIO mFlModule;
-
+  /** {@link SwerveModuleIO} Hardware Interface for the front right swerve module */
   @Logged(name = "Front Right")
-  private final SwerveModuleIO mFrModule;
+  private final SwerveModuleIO mFrontRightModule;
 
-  @Logged(name = "Back Left")
-  private final SwerveModuleIO mBlModule;
-
+  /** {@link SwerveModuleIO} Hardware Interface for the back right swerve module */
   @Logged(name = "Back Right")
-  private final SwerveModuleIO mBrModule;
+  private final SwerveModuleIO mBackRightModule;
 
+  /** {@link SwerveModuleIO} Hardware Interface for the front left swerve module */
+  @Logged(name = "Front Left")
+  private final SwerveModuleIO mFrontLeftModule;
+
+  /** {@link SwerveModuleIO} Hardware Interface for the back left swerve module */
+  @Logged(name = "Back Left")
+  private final SwerveModuleIO mBackLeftModule;
+
+  /**
+   * {@link Array} of {@link SwerveModuleIO} Array storing all {@link SwerveModuleIO} hardware for
+   * easier manipulation
+   *
+   * <p>Order is Front Right, Back Right, Front Left, Back Left
+   */
   private final SwerveModuleIO[] mModules;
 
-  private SwerveModuleState[] mSetpointStates =
+  /**
+   * {@link Array} of {@link SwerveModuleState} Array for storing setpoint {@link SwerveModuleIO}
+   * states for logging
+   *
+   * <p>Order is Front Right, Back Right, Front Left, Back Left
+   */
+  private SwerveModuleState[] mSetpointWheelStates =
       new SwerveModuleState[] {
         new SwerveModuleState(),
         new SwerveModuleState(),
@@ -155,52 +163,69 @@ public class Drive extends SubsystemBase {
         new SwerveModuleState()
       };
 
+  /** {@link Field2d} Member for visualizing relevant positions on Elastic */
   private final Field2d mF2d;
 
-  private ControlMode mControlMode = ControlMode.BRAKE;
+  /**
+   * {@link PIDController} Feedback controller for managing translational position error in the x
+   * direction (meters)
+   */
+  private final PIDController mTranslationalXController;
 
-  private final PIDController mTranslationalXController,
-      mTranslationalYController,
-      mAngularController;
+  /**
+   * {@link PIDController} Feedback controller for managing translational position error in the y
+   * direction (meters)
+   */
+  private final PIDController mTranslationalYController;
 
-  protected Drive(
+  /** {@link PIDController} Feedback controller for managing angular position error (meters) */
+  private final PIDController mAngularController;
+
+  protected DriveSubsystem(
       GyroIO gyro,
-      SwerveModuleIO frontLeft,
       SwerveModuleIO frontRight,
-      SwerveModuleIO backLeft,
-      SwerveModuleIO backRight) {
+      SwerveModuleIO backRight,
+      SwerveModuleIO frontLeft,
+      SwerveModuleIO backLeft) {
     mGyro = gyro;
 
-    mFlModule = frontLeft;
-    mFrModule = frontRight;
-    mBlModule = backLeft;
-    mBrModule = backRight;
+    mFrontRightModule = frontRight;
+    mBackRightModule = backRight;
+    mFrontLeftModule = frontLeft;
+    mBackLeftModule = backLeft;
 
-    mModules = new SwerveModuleIO[] {mFlModule, mFrModule, mBlModule, mBrModule};
+    mModules =
+        new SwerveModuleIO[] {
+          mFrontRightModule, mBackRightModule, mFrontLeftModule, mBackLeftModule
+        };
 
     mTranslationalXController =
-        new PIDController(kTranslationalKp.get(), kTranslationalKi.get(), kTranslationalKd.get());
+        new PIDController(kTranslationalKp.get(), 0.0, kTranslationalKd.get());
     mTranslationalXController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
 
     mTranslationalYController =
-        new PIDController(kTranslationalKp.get(), kTranslationalKi.get(), kTranslationalKd.get());
+        new PIDController(kTranslationalKp.get(), 0.0, kTranslationalKd.get());
     mTranslationalYController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
 
-    mAngularController = new PIDController(kAngularKp.get(), kAngularKi.get(), kAngularKd.get());
+    mAngularController = new PIDController(kAngularKp.get(), 0.0, kAngularKd.get());
     mAngularController.setTolerance(Units.degreesToRadians(kAngularToleranceDeg.get()));
     mAngularController.enableContinuousInput(-Math.PI, Math.PI);
 
     mF2d = new Field2d();
 
-    if (Robot.isSimulation())
-      RobotState.getInstance()
-          .resetPose(Flags.getRobotAlliancePose2d(Rebuilt.kRobotAllianceZone.getCenter()));
-
-    setDefaultCommand(brake());
+    RobotState.getInstance()
+        .resetPose(new Pose2d(getPose2d().getTranslation(), Flags.getAllianceRotation()));
   }
 
   @Override
   public void periodic() {
+    Tracer.traceFunc(
+        "Update Hardware",
+        () -> {
+          mGyro.periodic();
+          Arrays.stream(mModules).forEach(SwerveModuleIO::periodic);
+        });
+
     Tracer.traceFunc(
         "Update Odometry",
         () -> {
@@ -215,27 +240,18 @@ public class Drive extends SubsystemBase {
           RobotState.getInstance().setChassisSpeeds(getChassisSpeeds());
         });
 
-    for (var module : mModules) {
-      module.periodic();
-    }
-
     // Update tunables if needed
     if (kTranslationalKp.hasChanged(hashCode())
-        || kTranslationalKi.hasChanged(hashCode())
         || kTranslationalKd.hasChanged(hashCode())
         || kTranslationalToleranceCm.hasChanged(hashCode())) {
-      mTranslationalXController.setPID(
-          kTranslationalKp.get(), kTranslationalKi.get(), kTranslationalKd.get());
+      mTranslationalXController.setPID(kTranslationalKp.get(), 0.0, kTranslationalKd.get());
       mTranslationalXController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
-      mTranslationalYController.setPID(
-          kTranslationalKp.get(), kTranslationalKi.get(), kTranslationalKd.get());
+      mTranslationalYController.setPID(kTranslationalKp.get(), 0.0, kTranslationalKd.get());
       mTranslationalYController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
     }
 
-    if (kAngularKp.hasChanged(hashCode())
-        || kAngularKi.hasChanged(hashCode())
-        || kAngularKd.hasChanged(hashCode())) {
-      mAngularController.setPID(kAngularKp.get(), kAngularKi.get(), kAngularKd.get());
+    if (kAngularKp.hasChanged(hashCode()) || kAngularKd.hasChanged(hashCode())) {
+      mAngularController.setPID(kAngularKp.get(), 0.0, kAngularKd.get());
     }
 
     mF2d.setRobotPose(getPose2d());
@@ -244,47 +260,46 @@ public class Drive extends SubsystemBase {
   // * ~~~~~~~~ GETTERS ~~~~~~~~
 
   /**
-   * Get {@link ControlMode} being used to control drivetrain
-   *
-   * @return {@link ControlMode}
-   */
-  @Logged(name = "Method of Control", importance = Importance.INFO)
-  public ControlMode getControlMode() {
-    return mControlMode;
-  }
-
-  /**
-   * Check if robot is facing towards current aim target
+   * Check if robot has approximately reached current setpoint translational position
    *
    * @return {@link Boolean}
    */
-  @Logged(name = "Is Facing Target (bool)", importance = Importance.INFO)
-  public boolean isFacingTarget() {
+  @Logged(name = "Within Translational Tolerance (bool)", importance = Importance.INFO)
+  public boolean isAtTranslationalTarget() {
+    return mTranslationalXController.atSetpoint() && mTranslationalYController.atSetpoint();
+  }
+
+  /**
+   * Check if robot has approximately reached current setpoint angular position
+   *
+   * @return {@link Boolean}
+   */
+  @Logged(name = "Within Angular Tolerance (bool)", importance = Importance.INFO)
+  public boolean isFacingAngularTarget() {
     return mAngularController.atSetpoint();
   }
 
   /**
-   * Get {@link RobotState} estimated yaw rotation of robot
+   * Get estimated yaw rotation of robot
    *
-   * @return {@link Rotation2d}
+   * @return {@link Rotation2dd}
    */
-  @Logged(name = "Rotation2d", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
     return getPose2d().getRotation();
   }
 
   /**
-   * Get {@link RobotState} estimated position of robot on field
+   * Get estimated position of robot in 2-Dimensional space (x, y)
    *
    * @return {@link Pose2d}
    */
-  @Logged(name = "Pose2d", importance = Importance.INFO)
+  @Logged(name = "Field Position (Pose2d)", importance = Importance.INFO)
   public Pose2d getPose2d() {
     return RobotState.getInstance().getEstimatedPosition();
   }
 
   /**
-   * Get measured speed of robot
+   * Get measured speed (meters per second)
    *
    * @return {@link Double}
    */
@@ -294,31 +309,32 @@ public class Drive extends SubsystemBase {
   }
 
   /**
-   * Get x, y, and rotational speeds of drivetrain relative to field view
+   * Get velocity components of robot WRT field (x, y, omega rate)
    *
    * @return {@link ChassisSpeeds}
    */
-  @Logged(name = "ChassisSpeeds (field relative)", importance = Importance.INFO)
-  public ChassisSpeeds getFieldRelativeChassisSpeeds() {
+  public ChassisSpeeds getChassisSpeedsWrtField() {
     return ChassisSpeeds.fromRobotRelativeSpeeds(getChassisSpeeds(), getRotation2d());
   }
 
   /**
-   * Get x, y, and rotational speeds of drivetrain
+   * Get velocity components of robot (dx, dy, omega rate)
    *
    * @return {@link ChassisSpeeds}
    */
-  @Logged(name = "ChassisSpeeds", importance = Importance.INFO)
+  @Logged(name = "Velocity Components (ChassisSpeeds)", importance = Importance.INFO)
   public ChassisSpeeds getChassisSpeeds() {
     return kConstants.getKinematics().toChassisSpeeds(getWheelStates());
   }
 
   /**
-   * Get the positions of drive wheels (distance vectors)
+   * Get array measured wheel positions
+   *
+   * <p>Order is Front Right, Back Right, Front Left, Back Left
    *
    * @return {@link Array} of {@link SwerveModulePosition}
    */
-  @Logged(name = "Swerve Module Positions", importance = Importance.INFO)
+  @Logged(name = "Wheel Positions (SwerveModulePosition)", importance = Importance.INFO)
   public SwerveModulePosition[] getWheelPositions() {
     return Arrays.stream(mModules)
         .map(SwerveModuleIO::getWheelPosition)
@@ -326,13 +342,13 @@ public class Drive extends SubsystemBase {
   }
 
   /**
-   * Get the states of drive wheels (velocity vectors)
+   * Get array measured wheel states (velocity vectors)
    *
    * <p>Order is Front Right, Back Right, Front Left, Back Left
    *
    * @return {@link Array} of {@link SwerveModuleState}
    */
-  @Logged(name = "Swerve Module States", importance = Importance.INFO)
+  @Logged(name = "Swerve Module Velocity States (SwerveModuleState)", importance = Importance.INFO)
   public SwerveModuleState[] getWheelStates() {
     return Arrays.stream(mModules)
         .map(SwerveModuleIO::getWheelState)
@@ -340,23 +356,25 @@ public class Drive extends SubsystemBase {
   }
 
   /**
-   * Get setpoint states of drive wheels
+   * Get array setpoint wheel states (velocity vectors)
    *
    * <p>Order is Front Right, Back Right, Front Left, Back Left
    *
    * @return {@link Array} of {@link SwerveModuleState}
    */
-  @Logged(name = "Setpoint Swerve Module States", importance = Importance.INFO)
+  @Logged(
+      name = "Setpoint Swerve Module Velocity States (SwerveModuleState)",
+      importance = Importance.INFO)
   public SwerveModuleState[] getWheelSetpointStates() {
-    return mSetpointStates;
+    return mSetpointWheelStates;
   }
 
   // * ~~~~~~~~ SETTERS ~~~~~~~~
 
   /**
-   * Set x, y, and rotational speed setpoints for drivetrain to achive
+   * Set setpoint {@link ChassisSpeeds} for drivetrain to follow
    *
-   * @param setpoint {@link ChassisSpeeds} Setpoint speeds
+   * @param setpoint {@link ChassisSpeeds} Desired drivetrain speeds
    */
   public void setChassisSpeedsSetpoint(ChassisSpeeds setpoint) {
     // Generate a time-specific setpoint from continous-time speeds
@@ -367,11 +385,13 @@ public class Drive extends SubsystemBase {
     SwerveDriveKinematics.desaturateWheelSpeeds(
         states, kConstants.getMaxLinearVelocityMetersPerSecond());
 
-    // Auto FOC Toggle calculations
-    var focEnabled = true;
-    // getSpeedMetersPerSecond()
-    //     < (kConstants.getMaxLinearVelocityMetersPerSecond()
-    //         * kConstants.getFocAutoToggleMagnitude());
+    // Auto FOC Toggle calculations;
+    // if drivetrain is under 90% of max speed, FOC should be enabled
+    // to maximize acceleration
+    var focEnabled =
+        getSpeedMetersPerSecond()
+            < (kConstants.getMaxLinearVelocityMetersPerSecond()
+                * kConstants.getFocAutoToggleMagnitude());
 
     // Send setpoints
     for (int i = 0; i < mModules.length; i++) {
@@ -379,11 +399,11 @@ public class Drive extends SubsystemBase {
     }
 
     // Log setpoints
-    mSetpointStates = states;
+    mSetpointWheelStates = states;
   }
 
   /**
-   * Get Choreo autonomous controller
+   * Get a {@link Consumer} for driving based off {@link SwerveSample}
    *
    * @return {@link Consumer} of {@link SwerveSample}
    */
@@ -424,8 +444,7 @@ public class Drive extends SubsystemBase {
       }
 
       // Log setpoints
-      mSetpointStates = states;
-      mControlMode = ControlMode.AUTONOMOUS;
+      mSetpointWheelStates = states;
     };
   }
 
@@ -434,72 +453,5 @@ public class Drive extends SubsystemBase {
     for (int i = 0; i < mModules.length; i++) {
       mModules[i].neutral();
     }
-  }
-
-  // * ~~~~~~~~ COMMANDS ~~~~~~~~
-
-  /**
-   * Drive robot from field relative x & y speeds while facing a specified target
-   *
-   * @param vx {@link DoubleSupplier} X speed stream
-   * @param vy {@link DoubleSupplier} Y speed stream
-   * @param target {@link Translation2d} Coordinates of target on field
-   * @return {@link Command}
-   */
-  public Command driveWhileFacingTarget(
-      DoubleSupplier vx, DoubleSupplier vy, Supplier<Translation2d> target) {
-    return driveWhileFacingAngle(
-        vx, vy, () -> target.get().minus(getPose2d().getTranslation()).getAngle());
-  }
-
-  /**
-   * Drive robot from field relative x & y speeds while facing a specified heading
-   *
-   * @param vx {@link DoubleSupplier} X speed stream
-   * @param vy {@link DoubleSupplier} Y speed stream
-   * @param heading {@link Supplier} of {@link Rotation2d} Heading stream
-   * @return {@link Command}
-   */
-  public Command driveWhileFacingAngle(
-      DoubleSupplier vx, DoubleSupplier vy, Supplier<Rotation2d> heading) {
-    return this.run(
-            () ->
-                setChassisSpeedsSetpoint(
-                    ChassisSpeeds.fromFieldRelativeSpeeds(
-                        vx.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                        vy.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                        mAngularController.calculate(
-                            getRotation2d().getRadians(), heading.get().getRadians()),
-                        getRotation2d().plus(Flags.getAllianceRotation()))))
-        .beforeStarting(mAngularController::reset);
-  }
-
-  /**
-   * Drive robot from field relative x, y, and omega speeds
-   *
-   * @param vx {@link DoubleSupplier} X speed stream
-   * @param vy {@link DoubleSupplier} Y speed stream
-   * @param omega {@link DoubleSupplier} omega speed stream
-   * @return {@link Command}
-   */
-  public Command drive(DoubleSupplier vx, DoubleSupplier vy, DoubleSupplier omega) {
-    return this.run(
-            () ->
-                setChassisSpeedsSetpoint(
-                    ChassisSpeeds.fromFieldRelativeSpeeds(
-                        vx.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                        vy.getAsDouble() * kConstants.getMaxLinearVelocityMetersPerSecond(),
-                        omega.getAsDouble() * kConstants.getMaxAngularVelocityRadsPerSec(),
-                        getRotation2d().minus(Flags.getAllianceRotation()))))
-        .beforeStarting(() -> mControlMode = ControlMode.TELEOPERATED_FULL);
-  }
-
-  /**
-   * Apply brake
-   *
-   * @return {@link Command}
-   */
-  public Command brake() {
-    return this.run(() -> stop()).beforeStarting(() -> mControlMode = ControlMode.BRAKE);
   }
 }

@@ -15,16 +15,16 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.HashMap;
 import org.frc6423.robot.subsystem.RobotState;
-import org.frc6423.robot.subsystem.drive.Drive;
+import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 
 /** A manager class for building autonomous routines */
 public class Auto {
   private static final RobotState kRobotState = RobotState.getInstance();
 
-  private final Drive drive;
+  private final DriveSubsystem drive;
   private final AutoFactory mFactory;
 
-  public Auto(Drive drive) {
+  public Auto(DriveSubsystem drive) {
     this.drive = drive;
 
     // Init Auto Factory

@@ -32,4 +32,9 @@ public class GyroIOPigeon2 extends GyroIO {
   public double getYawDegrees() {
     return mYawSignal.getValueAsDouble();
   }
+
+  @Override
+  public void periodic() {
+    BaseStatusSignal.refreshAll(mYawSignal);
+  }
 }

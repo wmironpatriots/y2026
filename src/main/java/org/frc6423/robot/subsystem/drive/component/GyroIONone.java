@@ -11,4 +11,7 @@ public class GyroIONone extends GyroIO {
   public double getYawDegrees() {
     return 0.0;
   }
+
+  @Override
+  public void periodic() {}
 }

@@ -13,7 +13,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Robot;
-import org.frc6423.robot.subsystem.drive.Drive;
+import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
 
 /** Interface for interacting with gyro hardware */
@@ -22,37 +22,37 @@ public abstract class SwerveModuleIO {
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
   public static final TunableNumber kPivotKs =
-      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kS");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/module/Pivot kS");
   public static final TunableNumber kPivotKv =
-      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kV");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/module/Pivot kV");
   public static final TunableNumber kPivotKa =
-      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kA");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/module/Pivot kA");
   public static final TunableNumber kPivotKp =
-      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kP");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/module/Pivot kP");
   public static final TunableNumber kPivotKd =
-      new TunableNumber(Drive.kTunablesPrefix + "/module/Pivot kD");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/module/Pivot kD");
 
   public static final TunableNumber kDriveTorqueKs =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kS");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Torque kS");
   public static final TunableNumber kDriveTorqueKv =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kV");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Torque kV");
   public static final TunableNumber kDriveTorqueKa =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kA");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Torque kA");
   public static final TunableNumber kDriveTorqueKp =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kP");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Torque kP");
   public static final TunableNumber kDriveTorqueKd =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Torque kD");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Torque kD");
 
   public static final TunableNumber kDriveVoltKs =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kS");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Volt kS");
   public static final TunableNumber kDriveVoltKv =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kV");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Volt kV");
   public static final TunableNumber kDriveVoltKa =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kA");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Volt kA");
   public static final TunableNumber kDriveVoltKp =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kP");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Volt kP");
   public static final TunableNumber kDriveVoltKd =
-      new TunableNumber(Drive.kTunablesPrefix + "/modules/Drive Volt kD");
+      new TunableNumber(DriveSubsystem.kTunablesPrefix + "/modules/Drive Volt kD");
 
   static {
     if (Robot.isReal()) {

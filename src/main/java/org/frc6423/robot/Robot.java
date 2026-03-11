@@ -29,7 +29,7 @@ import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.RobotState;
-import org.frc6423.robot.subsystem.drive.Drive;
+import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 import org.frc6423.robot.subsystem.feeder.Feeder;
 import org.frc6423.robot.subsystem.shooter.Shooter;
 import org.frc6423.robot.util.sim.FuelSimulation;
@@ -39,7 +39,7 @@ import org.frc6423.robot.util.sim.HopperSimulation;
 public class Robot extends CommandRobot {
   private final RobotState mRobotState = RobotState.getInstance();
 
-  private final Drive mDrive = Drive.create();
+  private final DriveSubsystem mDrive = DriveSubsystem.create();
   // private final Intake mIntake = Intake.create();
   // private final Indexer mIndexer = Indexer.create();
   private final Feeder mFeeder = Feeder.create();
@@ -149,7 +149,7 @@ public class Robot extends CommandRobot {
                 chassisWidth,
                 Inches.of(6),
                 mDrive::getPose2d,
-                mDrive::getFieldRelativeChassisSpeeds);
+                mDrive::getChassisSpeedsWrtField);
 
             // Setup arena
             if (Flags.kSpawnStartingFuel) {

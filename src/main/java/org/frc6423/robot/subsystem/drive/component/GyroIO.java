@@ -8,5 +8,7 @@ package org.frc6423.robot.subsystem.drive.component;
 
 /** Interface for interacting with gyro hardware */
 public abstract class GyroIO {
+  public abstract void periodic();
+
   public abstract double getYawDegrees();
 }
