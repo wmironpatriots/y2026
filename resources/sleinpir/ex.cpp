@@ -72,7 +72,7 @@ slp::VariableMatrix<double> f(const slp::VariableMatrix<double>& x) {
 
   // Per https://en.wikipedia.org/wiki/Drag_(physics)#The_drag_equation:
   //   F_D(v) = ½ρ|v|²C_D A
-  //   C_D is the drag coefficient (dimensionless)
+  //   C_D is the drag coefficient (dimensionless)}
   constexpr double C_D = 0.5;
   auto F_D = 0.5 * rho * v2 * C_D * A;
 
@@ -89,14 +89,17 @@ slp::VariableMatrix<double> f(const slp::VariableMatrix<double>& x) {
 #ifndef RUNNING_TESTS
 int main() {
   // Robot initial state
-  constexpr Vector6d robot_wrt_field{{0.0},
+  constexpr Vector6d robot_wrt_field{{4.0},
                                      {0.0},
                                      {0.0},
+                                    //  {0.0},
+                                    //  {0.0},
+                                    //  {0.0}};
                                      {1.524},
                                      {-1.524},
                                      {0.0}};
 
-  constexpr double max_initial_velocity = 0.0;  // m/s
+  constexpr double max_initial_velocity = 10.0;  // m/s
 
   Vector6d shooter_wrt_robot{{0.0}, {0.0}, {1.2}, {0.0}, {0.0}, {0.0}};
   Vector6d shooter_wrt_field = robot_wrt_field + shooter_wrt_robot;
@@ -149,8 +152,8 @@ int main() {
       (target_wrt_field.segment(0, 3) - shooter_wrt_field.segment(0, 3))
           .normalized();
   for (int k = 0; k < N; ++k) {
-    v.col(k).set_value(robot_wrt_field.segment(3, 3) +
-                       max_initial_velocity * uvec_shooter_to_target);
+    v.col(k).set_value(robot_wrt_field.segment(3, 3)
+                       + max_initial_velocity * uvec_shooter_to_target);
   }
 
   // Shooter initial position
@@ -165,6 +168,23 @@ int main() {
                          slp::pow(v_z[0] - robot_wrt_field[5], 2) <=
                      max_initial_velocity * max_initial_velocity);
 
+  auto& x_c = target_wrt_field[0, 0];
+  auto& y_c = target_wrt_field[1, 0];
+  auto z_c = target_wrt_field[2, 0] - target_radius / std::tan(cone_angle);
+  for (int k = 0; k < N; ++k) {
+    auto& x = p_x[k];
+    auto& y = p_y[k];
+    auto& z = p_z[k];
+
+    auto x2 = slp::pow(x - x_c, 2);
+    auto y2 = slp::pow(y - y_c, 2);
+    auto z2 = slp::pow(z - z_c, 2);
+    auto tan = std::tan(cone_angle);
+    auto cylinder = x2 + y2 - target_radius * target_radius;
+    auto cone = z2 * tan * tan - x2 - y2;
+
+    problem.subject_to(slp::max(cylinder, cone) >= 0);
+  }
 
   // Dynamics constraints - RK4 integration
   auto h = dt;

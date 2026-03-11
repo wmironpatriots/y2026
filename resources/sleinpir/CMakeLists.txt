@@ -22,9 +22,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(Sleipnir)
 
-# add_executable(lutGenerator LutGenerator.cc)
-# target_link_libraries(lutGenerator PRIVATE Sleipnir::Sleipnir)
-# set_target_properties(lutGenerator PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+add_executable(lutGenerator LutGenerator.cc)
+target_link_libraries(lutGenerator PRIVATE Sleipnir::Sleipnir)
+set_target_properties(lutGenerator PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 add_executable(ex ex.cpp)
 target_link_libraries(ex PRIVATE Sleipnir::Sleipnir)
