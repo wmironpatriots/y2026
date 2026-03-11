@@ -167,10 +167,6 @@ public class Auto {
     steps.get("S1_F").atTime("score").onTrue(Commands.none());
 
     // Running the actual start path
-<<<<<<< HEAD
-=======
-
->>>>>>> 72ab214 (Updated auto routines)
     routine
         .active()
         .onTrue(Commands.sequence(steps.get("S1_N2").resetOdometry(), steps.get("S1_N2").cmd()));
