@@ -167,19 +167,9 @@ public class Auto {
     steps.get("S1_F").atTime("score").onTrue(Commands.none());
 
     // Running the actual start path
-<<<<<<< HEAD
     routine
         .active()
-        .whileTrue(Commands.sequence(steps.get("S1_N2").resetOdometry(), steps.get("S1_N2").cmd()));
-
-=======
-    routine.active().onTrue(
-        Commands.sequence(
-            steps.get("S1_N2").resetOdometry(),
-            steps.get("S1_N2").cmd()
-        )
-    );
->>>>>>> b7c9998 (message)
+        .onTrue(Commands.sequence(steps.get("S1_N2").resetOdometry(), steps.get("S1_N2").cmd()));
     // Running return path
     routine.observe(steps.get("S1_N2").done()).onTrue(steps.get("N2_S1").cmd());
 
