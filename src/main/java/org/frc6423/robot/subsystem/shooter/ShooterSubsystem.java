@@ -171,6 +171,15 @@ public class ShooterSubsystem extends SubsystemBase {
       new Transform3d(
           Units.inchesToMeters(-8.3), 0.0, Units.inchesToMeters(24.6), Rotation3d.kZero);
 
+  public static final InterpolatingProjectileParametersTree kHubShotMap =
+      new InterpolatingProjectileParametersTree();
+
+  public static final InterpolatingProjectileParametersTree kAllianceShotMap =
+      new InterpolatingProjectileParametersTree();
+
+  static {
+  }
+
   /** {@link String} Nt directory to store tunables in */
   public static final String kTunablesPrefix = "/Shooter";
 

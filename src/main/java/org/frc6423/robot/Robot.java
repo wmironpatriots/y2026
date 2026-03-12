@@ -18,10 +18,12 @@ import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
@@ -34,12 +36,15 @@ import org.frc6423.robot.subsystem.indexer.Indexer;
 import org.frc6423.robot.subsystem.intake.Intake;
 import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
 import org.frc6423.robot.subsystem.vision.Vision;
+import org.frc6423.robot.util.HubShiftUtil;
 import org.frc6423.robot.util.sim.FuelSimulation;
 import org.frc6423.robot.util.sim.HopperSimulation;
 
 @Logged
 public class Robot extends CommandRobot {
   private final RobotState mRobotState = RobotState.getInstance();
+
+  // * ~~~~~~~~ SUBSYSTEMS ~~~~~~~~
 
   private final DriveSubsystem mDrive = DriveSubsystem.create();
   private final Vision mVision = Vision.create();
@@ -48,16 +53,21 @@ public class Robot extends CommandRobot {
   private final Feeder mFeeder = Feeder.create();
   private final ShooterSubsystem mShooter = ShooterSubsystem.create();
 
+  // * ~~~~~~~~ SIM SYSTEMS ~~~~~~~~
+
   private Optional<FuelSimulation> mFuelSim = Optional.empty();
   private Optional<HopperSimulation> mHopperSim = Optional.empty();
 
+  // * ~~~~~~~~ CONTROL ~~~~~~~~
+
   private final Auto mAuto = new Auto(mDrive);
-  private final CommandXboxController mController;
+
+  private final CommandXboxController mController = new CommandXboxController(0);
+  private final Trigger mIntakeRequest = mController.leftBumper();
+  private final Trigger mFireRequest =
+      mController.rightBumper().and(new Trigger(mShooter::isHoldingSetpoint));
 
   public Robot() {
-    // Initialize Devices
-    mController = new CommandXboxController(0);
-
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);
 
@@ -105,12 +115,32 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
 
     setupSimulation();
+    configureDashboardNotifiers();
     configureBindings();
+  }
+
+  public void configureDashboardNotifiers() {
+    addPeriodic(
+        () -> {
+          SmartDashboard.putNumber("Match Time", DriverStation.getMatchTime());
+          SmartDashboard.putString(
+              "Shifts/Current Shift",
+              HubShiftUtil.getOfficialShiftInfo().currentShift().toString());
+          SmartDashboard.putBoolean(
+              "Shifts/Is Active", HubShiftUtil.getOfficialShiftInfo().active());
+          SmartDashboard.putString(
+              "Shifts/Remaining Shift Time",
+              String.format(
+                  "%.1f", Math.max(HubShiftUtil.getOfficialShiftInfo().remainingTime(), 0.0), 0.0));
+        },
+        0.04);
   }
 
   /** Configure driver bindings */
   public void configureBindings() {
+    // Norm mode
     RobotModeTriggers.teleop()
+        .and(mIntakeRequest.negate())
         .whileTrue(
             DriveTeleoperatedCommands.runTeleoperatedDriveWhileFacing(
                 mDrive,
@@ -121,15 +151,18 @@ public class Robot extends CommandRobot {
                         .getTranslation(), // TODO replace placeholder for fcs target
                 true));
 
-    // mController
-    //       .leftBumper()
-    //       .whileTrue(mIntake.intake());
-
+    // Intake
     RobotModeTriggers.teleop()
-        .and(mController.leftBumper())
+        .and(mIntakeRequest)
         .whileTrue(
             DriveTeleoperatedCommands.runTeleoperatedDrive(
-                mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
+                mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX))
+        .whileTrue(mIntake.intake());
+
+    RobotModeTriggers.teleop().onTrue(Commands.runOnce(HubShiftUtil::initialize));
+    RobotModeTriggers.autonomous().onTrue(Commands.runOnce(HubShiftUtil::initialize));
+    RobotModeTriggers.disabled()
+        .onTrue(Commands.runOnce(HubShiftUtil::initialize).ignoringDisable(true));
   }
 
   /** Setup simulation optionals if robot is simulated */
