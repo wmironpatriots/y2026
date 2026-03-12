@@ -6,11 +6,13 @@
 
 package org.frc6423.robot.command;
 
+import choreo.auto.AutoChooser;
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.HashMap;
@@ -46,6 +48,7 @@ public class Auto {
 
   private final DriveSubsystem mDrive;
   private final AutoFactory mFactory;
+  private final AutoChooser mAutoChooser;
 
   public Auto(DriveSubsystem drive) {
     this.mDrive = drive;
@@ -58,6 +61,25 @@ public class Auto {
             drive.getChoreoSwerveSampleConsumer(),
             true,
             drive);
+    // Init Auto Chooser
+    mAutoChooser = new AutoChooser();
+
+    // Init neutral zone routines
+    mAutoChooser.addRoutine("S1 N2 cycle", this::S1_N2_cycle);
+    mAutoChooser.addRoutine("S1 N3 cycle", this::S1_N3_cycle);
+    mAutoChooser.addRoutine("S1 N4 cycle", this::S1_N4_cycle);
+    mAutoChooser.addRoutine("S1 N5 cycle", this::S1_N5_cycle);
+    // Init depot shot routines
+    mAutoChooser.addRoutine("Depot Shot S4", this::Depot_Shot_cycle_S4);
+    mAutoChooser.addRoutine("Depot Shot S3", this::Depot_Shot_cycle_S3);
+    mAutoChooser.addRoutine("Depot Shot S2", this::Depot_Shot_cycle_S2);
+    // Add autochooser to dashboard
+    SmartDashboard.putData("Auto Chooser", mAutoChooser);
+  }
+
+  // Give current selected auto
+  public Command getSelectedAuto() {
+    return mAutoChooser.selectedCommand();
   }
 
   // Starting Depot Edges
@@ -143,7 +165,7 @@ public class Auto {
   }
 
   // NEUTRAL ZONE ROUTINES
-  public Command S1_N2_cycle() {
+  public AutoRoutine S1_N2_cycle() {
 
     final var routine = mFactory.newRoutine("S1-N2-Cycle");
 
@@ -177,10 +199,10 @@ public class Auto {
     routine.observe(steps.get("N2_S1").done()).onTrue(steps.get("S1_F").cmd());
 
     // return command
-    return routine.cmd();
+    return routine;
   }
 
-  public Command S1_N3_cycle() {
+  public AutoRoutine S1_N3_cycle() {
 
     final var routine = mFactory.newRoutine("S1-N3-Cycle");
 
@@ -214,10 +236,10 @@ public class Auto {
     routine.observe(steps.get("N3_S1").done()).onTrue(steps.get("S1_F").cmd());
 
     // return command
-    return routine.cmd();
+    return routine;
   }
 
-  public Command S1_N4_cycle() {
+  public AutoRoutine S1_N4_cycle() {
 
     final var routine = mFactory.newRoutine("S1-N4-Cycle");
 
@@ -252,10 +274,10 @@ public class Auto {
     routine.observe(steps.get("N4_S1").done()).onTrue(steps.get("S1_F").cmd());
 
     // return command
-    return routine.cmd();
+    return routine;
   }
 
-  public Command S1_N5_cycle() {
+  public AutoRoutine S1_N5_cycle() {
 
     final var routine = mFactory.newRoutine("S1-N5-Cycle");
 
@@ -290,12 +312,12 @@ public class Auto {
     routine.observe(steps.get("N5_S1").done()).onTrue(steps.get("S1_F").cmd());
 
     // return command
-    return routine.cmd();
+    return routine;
   }
 
   // DEPOT SHOT ROUTINES
 
-  public Command Depot_Shot_cycle_S4() {
+  public AutoRoutine Depot_Shot_cycle_S4() {
 
     final var routine = mFactory.newRoutine("Depot_Shot_cycle_S4");
 
@@ -326,10 +348,10 @@ public class Auto {
     routine.observe(steps.get("S4_A1").done()).onTrue(steps.get("A1_F").cmd());
 
     // return command
-    return routine.cmd();
+    return routine;
   }
 
-  public Command Depot_Shot_cycle_S2() {
+  public AutoRoutine Depot_Shot_cycle_S2() {
 
     final var routine = mFactory.newRoutine("Depot_Shot_cycle_S2");
 
@@ -361,10 +383,10 @@ public class Auto {
     routine.observe(steps.get("S2_A1").done()).onTrue(steps.get("A1_F").cmd());
 
     // return command
-    return routine.cmd();
+    return routine;
   }
 
-  public Command Depot_Shot_cycle_S3() {
+  public AutoRoutine Depot_Shot_cycle_S3() {
 
     final var routine = mFactory.newRoutine("Depot_Shot_cycle_S3");
 
@@ -395,6 +417,6 @@ public class Auto {
     routine.observe(steps.get("S3_A1").done()).onTrue(steps.get("A1_F").cmd());
 
     // return command
-    return routine.cmd();
+    return routine;
   }
 }
