@@ -7,7 +7,7 @@
 package org.frc6423.robot.subsystem.vision;
 
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
@@ -16,7 +16,7 @@ import org.frc6423.robot.subsystem.RobotState.VisionEstimate;
 import org.frc6423.robot.subsystem.vision.Vision.CameraConfig;
 
 public class CameraIOIronSight extends CameraIO {
-  private final StructSubscriber<Pose2d> mEstimateSubscriber;
+  private final StructSubscriber<Pose3d> mEstimateSubscriber;
   private final DoubleSubscriber mTimestampSubscriber, mVarianceSubscriber, mLatencySubscriber;
 
   public CameraIOIronSight(CameraConfig config) {
@@ -25,9 +25,9 @@ public class CameraIOIronSight extends CameraIO {
     mEstimateSubscriber =
         NetworkTableInstance.getDefault()
             .getTable("iron-sight/estimates/" + mConfig.name())
-            .getStructTopic("Pose2d", Pose2d.struct)
+            .getStructTopic("Pose3d", Pose3d.struct)
             .subscribe(
-                new Pose2d(), PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
+                new Pose3d(), PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
 
     mTimestampSubscriber =
         NetworkTableInstance.getDefault()
@@ -58,7 +58,12 @@ public class CameraIOIronSight extends CameraIO {
   public VisionEstimate[] getUnreadMeasurements() {
     return new VisionEstimate[] {
       new VisionEstimate(
-          mTimestampSubscriber.get(), mEstimateSubscriber.get(), VecBuilder.fill(0.0, 0.0, 0.0))
+          mTimestampSubscriber.get(),
+          mEstimateSubscriber
+              .get()
+              .transformBy(mConfig.displacementWrtRobot().inverse())
+              .toPose2d(),
+          VecBuilder.fill(0.0, 0.0, 0.0))
     };
   }
 }
