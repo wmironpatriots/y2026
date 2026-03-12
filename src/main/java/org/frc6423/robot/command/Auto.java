@@ -448,13 +448,11 @@ public class Auto {
     return routine;
   }
 
-  
   public AutoRoutine S1_N2_F1_cycle() {
     final var routine = mFactory.newRoutine("S1-N2-F1-Cycle");
 
     HashMap<String, AutoTrajectory> steps = new HashMap<>();
 
-    
     String[] stops = {"S1", "N2", "F1"};
 
     for (int i = 0; i < stops.length - 1; i++) {
@@ -474,7 +472,6 @@ public class Auto {
     return routine;
   }
 
-  
   public AutoRoutine S1_N3_F1_cycle() {
     final var routine = mFactory.newRoutine("S1-N3-F1-Cycle");
 
@@ -498,7 +495,6 @@ public class Auto {
     return routine;
   }
 
-  
   public AutoRoutine S1_N4_F1_cycle() {
     final var routine = mFactory.newRoutine("S1-N4-F1-Cycle");
 
@@ -522,7 +518,6 @@ public class Auto {
     return routine;
   }
 
-  
   public AutoRoutine S1_N5_F1_cycle() {
     final var routine = mFactory.newRoutine("S1-N5-F1-Cycle");
 
