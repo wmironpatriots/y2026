@@ -20,7 +20,9 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -229,8 +231,8 @@ public class ShooterSubsystem extends SubsystemBase {
       new TunableNumber(kTunablesPrefix + "/Pivot/Testing Angle (degrees)");
 
   /** {@link TunableNumber} Max acceptable angular velocity error (degrees per second) */
-  public static TunableNumber kFlywheelEpsilonDegPerSec =
-      new TunableNumber(kTunablesPrefix + "/Flywheel/Epsilon (degrees per second)");
+  public static TunableNumber kFlywheelToleranceCmPerSec =
+      new TunableNumber(kTunablesPrefix + "/Flywheel/Epsilon (centimeters per second)");
 
   /** {@link TunableNumber} Gain acting against static friciton */
   public static TunableNumber kFlywheelKs = new TunableNumber(kTunablesPrefix + "/Flywheel/Ks");
@@ -266,7 +268,7 @@ public class ShooterSubsystem extends SubsystemBase {
       kPivotMaxAccelerationRevsPerSecPerSec.initDefault(3);
       kPivotTestingAngleDeg.initDefault(Units.rotationsToDegrees(kMinAngleRevs));
 
-      kFlywheelEpsilonDegPerSec.initDefault(1.0);
+      kFlywheelToleranceCmPerSec.initDefault(1.0);
       kFlywheelKs.initDefault(3.035);
       kFlywheelKv.initDefault(0.75631);
       kFlywheelKa.initDefault(7.4852);
@@ -284,7 +286,7 @@ public class ShooterSubsystem extends SubsystemBase {
       kPivotKd.initDefault(0.0);
       kPivotTestingAngleDeg.initDefault(Units.rotationsToDegrees(kMinAngleRevs));
 
-      kFlywheelEpsilonDegPerSec.initDefault(1.0);
+      kFlywheelToleranceCmPerSec.initDefault(1.0);
       kFlywheelKs.initDefault(4.8691);
       kFlywheelKv.initDefault(0.10515);
       kFlywheelKa.initDefault(1.729);
@@ -294,6 +296,26 @@ public class ShooterSubsystem extends SubsystemBase {
 
       kLatencyCompensationSec.initDefault(0.3);
     }
+  }
+
+  /**
+   * Convert a flywheel velocity (revolutions per second) to muzzle velocity (meters per second)
+   *
+   * @param flywheelVelocityRps {@link Double} Flywheel Velocity in revolutions per second
+   * @return {@link Double}
+   */
+  public static double flywheelVelocityRpsToMuzzleVelocityMps(double flywheelVelocityRps) {
+    return flywheelVelocityRps * Math.PI * 2 * kFlywheelRadiusMeters * 0.5;
+  }
+
+  /**
+   * Convert a muzzle velocity (meters per second) to flywheel velocity (revolutions per second)
+   *
+   * @param muzzleVelocityMps {@link Double} Muzzle Velocity in meters per second
+   * @return {@link Double}
+   */
+  public static double muzzleVelocityMpsToFlywheelVelocityRps(double muzzleVelocityMps) {
+    return muzzleVelocityMps * 2 / kFlywheelRadiusMeters / (2 * Math.PI);
   }
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
@@ -319,6 +341,8 @@ public class ShooterSubsystem extends SubsystemBase {
   /** {@link Boolean} Latch for checking if subsystem has been homed */
   @Logged(name = "Is Hood Homed (bool)")
   private boolean mIsHomed = false;
+
+  private Debouncer mIsHolding = new Debouncer(0.2);
 
   @Logged(name = "Target Muzzle Velocity (meters per second)")
   private double mTargetMuzzleVelocityMps = 0.0;
@@ -396,8 +420,92 @@ public class ShooterSubsystem extends SubsystemBase {
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~
 
+  /**
+   * Check if shooter is holding setpoint aka is ready to shoot
+   *
+   * @return {@link Boolean}
+   */
+  @Logged(name = "Is Holding Setpoint (bool)", importance = Importance.INFO)
+  public boolean isHoldingSetpoint() {
+    return mIsHolding.calculate(
+        MathUtil.isNear(
+                getTargetRotation2d().getDegrees(),
+                getRotation2d().getDegrees(),
+                kPivotToleranceDeg.getAsDouble())
+            && MathUtil.isNear(
+                getTargetMuzzleVelocityMetersPerSec(),
+                getApproximatedMuzzleVelocityMetersPerSec(),
+                kFlywheelToleranceCmPerSec.getAsDouble() / 100.0));
+  }
+
+  /**
+   * Get hood angle
+   *
+   * @return {@link Rotation2d}
+   */
+  @Logged(name = "Angle (Rotation2d)", importance = Importance.INFO)
+  public Rotation2d getRotation2d() {
+    return Rotation2d.fromRotations(mLeft.getAngularPositionRevs());
+  }
+
+  /**
+   * Get desired hood angle
+   *
+   * @return {@link Rotation2d}
+   */
+  @Logged(name = "Target Angle (Rotation2d)", importance = Importance.INFO)
+  public Rotation2d getTargetRotation2d() {
+    return mTargetRotation2d;
+  }
+
+  /**
+   * Get expected projectile exit velocity assuming no slippage (meters per second)
+   *
+   * @return {@link Double}
+   */
+  @Logged(name = "Approximated Muzzle Velocity (meters per second)", importance = Importance.INFO)
+  public double getApproximatedMuzzleVelocityMetersPerSec() {
+    return flywheelVelocityRpsToMuzzleVelocityMps(getFlywheelVelocityRevsPerSec());
+  }
+
+  /**
+   * Get flywheel angular velocity (revolutions per second)
+   *
+   * @return {@link Double}
+   */
+  @Logged(name = "Flywheel Velocity (revolutions per second)", importance = Importance.INFO)
+  public double getFlywheelVelocityRevsPerSec() {
+    return mLeft.getAngularVelocityRevsPerSec();
+  }
+
+  /**
+   * Get desired projectile exit velocity (meters per second)
+   *
+   * @return {@link Double}
+   */
+  @Logged(name = "Target Muzzle Velocity (meters per second)", importance = Importance.INFO)
+  public double getTargetMuzzleVelocityMetersPerSec() {
+    return mTargetMuzzleVelocityMps;
+  }
+
+  /**
+   * Get desired flywheel angular velocity (revolutions per second)
+   *
+   * @return {@link Double}
+   */
+  @Logged(name = "Target Flywheel Velocity (revolutions per second)", importance = Importance.INFO)
+  public double getTargetFlywheelVelocityRevsPerSec() {
+    return muzzleVelocityMpsToFlywheelVelocityRps(getTargetMuzzleVelocityMetersPerSec());
+  }
+
   // * ~~~~~~~~ COMMANDS ~~~~~~~~
 
+  /**
+   * Run flywheel System Identification (quasis forward, quasis reverse, dynamic forward, dynamic
+   * reverse)
+   *
+   * @return {@link Command}
+   */
   public Command runFlywheelCharacterizationSequence() {
     return Commands.sequence(
             Commands.print("Starting Quasistatic Forward"),
@@ -408,19 +516,12 @@ public class ShooterSubsystem extends SubsystemBase {
             mFlywheelCharacterization.dynamic(Direction.kForward),
             Commands.print("Starting Dynamic Forward"),
             mFlywheelCharacterization.dynamic(Direction.kReverse))
-        .beforeStarting(() -> mTargetMuzzleVelocityMps = 0.0);
-  }
-
-  /**
-   * Run shooter at setpoints given by tunables {@link #kFlywheelTestingSpeedMetersPerSec} & {@link
-   * #kPivotTestingAngleDeg}
-   *
-   * @return {@link Command}
-   */
-  public Command runTunablesSetpoint() {
-    return runSetpoint(
-        kFlywheelTestingSpeedMetersPerSec,
-        () -> Rotation2d.fromDegrees(kPivotTestingAngleDeg.get()));
+        .beforeStarting(
+            () -> {
+              mTargetMuzzleVelocityMps = 0.0;
+              mTargetRotation2d = Rotation2d.fromRotations(kMinAngleRevs);
+            })
+        .withName("Run Flywheel Characterization");
   }
 
   /**
@@ -437,7 +538,21 @@ public class ShooterSubsystem extends SubsystemBase {
                 .debounce(0.25))
         .andThen(
             this.run(() -> mPivot.resetRelativeEncoder()).alongWith(Commands.print("Hood Homed")))
-        .finallyDo((bool) -> mIsHomed = bool ? false : true);
+        .finallyDo((bool) -> mIsHomed = bool ? false : true)
+        .withName("Run Current Homing");
+  }
+
+  /**
+   * Run shooter at setpoints given by tunables {@link #kFlywheelTestingSpeedMetersPerSec} & {@link
+   * #kPivotTestingAngleDeg}
+   *
+   * @return {@link Command}
+   */
+  public Command runTunablesSetpoint() {
+    return runSetpoint(
+            kFlywheelTestingSpeedMetersPerSec,
+            () -> Rotation2d.fromDegrees(kPivotTestingAngleDeg.get()))
+        .withName("Run Tunables Setpoint");
   }
 
   /**
@@ -451,12 +566,49 @@ public class ShooterSubsystem extends SubsystemBase {
   public Command runSetpoint(
       DoubleSupplier desiredMuzzleVelMps, Supplier<Rotation2d> desiredAngle) {
     return this.run(
+            () -> {
+              // Clamp values
+              mTargetMuzzleVelocityMps = desiredMuzzleVelMps.getAsDouble();
+              mTargetRotation2d =
+                  Rotation2d.fromRotations(
+                      MathUtil.clamp(
+                          desiredAngle.get().getRotations(), kMinAngleRevs, kMaxAngleRevs));
+
+              mLeft.setProfiledVelocitySetpoint(getTargetFlywheelVelocityRevsPerSec());
+              mPivot.setProfiledPositionSetpoint(mTargetRotation2d.getRotations());
+            })
+        .withName("Run Shooter Setpoint");
+  }
+
+  /**
+   * Stow hood & let flywheel coast
+   *
+   * @return {@link Command}
+   */
+  public Command stowAndCoast() {
+    return this.run(
         () -> {
-          // Clamp values
-          mTargetMuzzleVelocityMps = desiredMuzzleVelMps.getAsDouble();
-          mTargetRotation2d =
-              Rotation2d.fromRotations(
-                  MathUtil.clamp(desiredAngle.get().getRotations(), kMinAngleRevs, kMaxAngleRevs));
+          mTargetMuzzleVelocityMps = getApproximatedMuzzleVelocityMetersPerSec();
+          mTargetRotation2d = Rotation2d.fromRotations(kMinAngleRevs);
+
+          mLeft.setNeutral();
+          mPivot.setProfiledPositionSetpoint(mTargetRotation2d.getRotations());
+        });
+  }
+
+  /**
+   * Stow hood & apply flywheel brake
+   *
+   * @return {@link Command}
+   */
+  public Command stowAndDeaccel() {
+    return this.run(
+        () -> {
+          mTargetMuzzleVelocityMps = 0.0;
+          mTargetRotation2d = Rotation2d.fromRotations(kMinAngleRevs);
+
+          mLeft.setVelocitySetpoint(getTargetFlywheelVelocityRevsPerSec());
+          mPivot.setProfiledPositionSetpoint(mTargetRotation2d.getRotations());
         });
   }
 
