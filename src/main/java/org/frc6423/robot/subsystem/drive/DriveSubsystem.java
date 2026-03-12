@@ -9,11 +9,9 @@ package org.frc6423.robot.subsystem.drive;
 import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -316,21 +314,9 @@ public class DriveSubsystem extends SubsystemBase {
    * @return {@link Consumer} of {@link SwerveSample}
    */
   public Consumer<SwerveSample> getChoreoSwerveSampleConsumer() {
-    final PIDController xController =
-        new PIDController(
-            DriveFeedbackControllers.kTranslationalKp.get(),
-            0.0,
-            DriveFeedbackControllers.kTranslationalKd.get());
-    final PIDController yController =
-        new PIDController(
-            DriveFeedbackControllers.kTranslationalKp.get(),
-            0.0,
-            DriveFeedbackControllers.kTranslationalKd.get());
-    final PIDController angularController =
-        new PIDController(
-            DriveFeedbackControllers.kAngularKp.get(),
-            0.0,
-            DriveFeedbackControllers.kAngularKd.get());
+    final PIDController xController = new PIDController(5.0, 0.0, 0.0);
+    final PIDController yController = new PIDController(5.0, 0.0, 0.0);
+    final PIDController angularController = new PIDController(6.0, 0.0, 0.0);
     angularController.enableContinuousInput(-Math.PI, Math.PI);
 
     return (sample) -> {
@@ -344,32 +330,33 @@ public class DriveSubsystem extends SubsystemBase {
 
       // Create full velocities & convert to states
       speeds = speeds.plus(feedbackSpeeds);
-      var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
+      setChassisSpeedsSetpoint(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getRotation2d()));
+      // var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
 
-      // Get desired Module forces
-      var xForces = sample.moduleForcesX();
-      var yForces = sample.moduleForcesY();
+      // // Get desired Module forces
+      // var xForces = sample.moduleForcesX();
+      // var yForces = sample.moduleForcesY();
 
-      for (int i = 0; i < mModules.length; i++) {
-        // Get desired angle of module
-        var angle = states[i].angle;
+      // for (int i = 0; i < mModules.length; i++) {
+      //   // Get desired angle of module
+      //   var angle = states[i].angle;
 
-        // Calculate desired force vector of module and account for chassis orientation
-        var force =
-            new Translation2d(xForces[i], yForces[i])
-                .rotateBy(Rotation2d.fromRadians(sample.heading).unaryMinus())
-                .toVector();
-        var forceDirection = VecBuilder.fill(angle.getCos(), angle.getSin());
+      //   // Calculate desired force vector of module and account for chassis orientation
+      //   var force =
+      //       new Translation2d(xForces[i], yForces[i])
+      //           .rotateBy(Rotation2d.fromRadians(sample.heading).unaryMinus())
+      //           .toVector();
+      //   var forceDirection = VecBuilder.fill(angle.getCos(), angle.getSin());
 
-        // Convert desired force vector into wheel torque
-        var torque = force.dot(forceDirection) * kConstants.getWheelRadiusMeters();
+      //   // Convert desired force vector into wheel torque
+      //   var torque = force.dot(forceDirection) * kConstants.getWheelRadiusMeters();
 
-        // Send setpoint
-        mModules[i].setSetpoint(states[i], torque);
-      }
+      //   // Send setpoint
+      //   mModules[i].setSetpoint(states[i], torque);
+      // }
 
-      // Log setpoints
-      mSetpointWheelStates = states;
+      // // Log setpoints
+      // mSetpointWheelStates = states;
     };
   }
 
