@@ -17,7 +17,7 @@ import org.frc6423.robot.subsystem.vision.Vision.CameraConfig;
 
 public class CameraIOIronSight extends CameraIO {
   private final StructSubscriber<Pose2d> mEstimateSubscriber;
-  private final DoubleSubscriber mTimestampSubscriber;
+  private final DoubleSubscriber mTimestampSubscriber, mVarianceSubscriber, mLatencySubscriber;
 
   public CameraIOIronSight(CameraConfig config) {
     super(config);
@@ -33,6 +33,18 @@ public class CameraIOIronSight extends CameraIO {
         NetworkTableInstance.getDefault()
             .getTable("iron-sight/estimates/" + mConfig.name())
             .getDoubleTopic("TimestampSeconds")
+            .subscribe(0.0, PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
+
+    mVarianceSubscriber =
+        NetworkTableInstance.getDefault()
+            .getTable("iron-sight/estimates/" + mConfig.name())
+            .getDoubleTopic("Variance")
+            .subscribe(0.0, PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
+
+    mLatencySubscriber =
+        NetworkTableInstance.getDefault()
+            .getTable("iron-sight/estimates/" + mConfig.name())
+            .getDoubleTopic("Latency")
             .subscribe(0.0, PubSubOption.keepDuplicates(true), PubSubOption.periodic(0.01));
   }
 

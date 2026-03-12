@@ -9,14 +9,10 @@ package org.frc6423.robot.subsystem.vision;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Optional;
 import org.frc6423.robot.subsystem.RobotState;
-import org.frc6423.robot.subsystem.RobotState.OdometryMeasurement;
 import org.frc6423.robot.subsystem.RobotState.VisionEstimate;
 
 /** {@link SubsystemBase} Manager subsystem for camera hardware */
@@ -48,6 +44,12 @@ public class Vision extends SubsystemBase {
         new CameraConfig(
             "elsie",
             new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0.0, 0.0, 0.0))),
+        new CameraConfig(
+            "beatrice",
+            new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0.0, 0.0, 0.0))),
+        new CameraConfig(
+            "belinda",
+            new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0.0, 0.0, 0.0))),
       };
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
@@ -64,18 +66,6 @@ public class Vision extends SubsystemBase {
     for (var estimate : estimates) {
       RobotState.getInstance().addVisionEstimate(estimate);
     }
-
-    RobotState.getInstance()
-        .addOdometryMeasurement(
-            new OdometryMeasurement(
-                Timer.getFPGATimestamp(),
-                new SwerveModulePosition[] {
-                  new SwerveModulePosition(),
-                  new SwerveModulePosition(),
-                  new SwerveModulePosition(),
-                  new SwerveModulePosition(),
-                },
-                Optional.empty()));
   }
 
   public VisionEstimate[] getUnreadMeasurements() {
