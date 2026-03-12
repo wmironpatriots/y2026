@@ -10,6 +10,7 @@ import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -315,17 +316,31 @@ public class DriveSubsystem extends SubsystemBase {
    * @return {@link Consumer} of {@link SwerveSample}
    */
   public Consumer<SwerveSample> getChoreoSwerveSampleConsumer() {
+    final PIDController xController =
+        new PIDController(
+            DriveFeedbackControllers.kTranslationalKp.get(),
+            0.0,
+            DriveFeedbackControllers.kTranslationalKd.get());
+    final PIDController yController =
+        new PIDController(
+            DriveFeedbackControllers.kTranslationalKp.get(),
+            0.0,
+            DriveFeedbackControllers.kTranslationalKd.get());
+    final PIDController angularController =
+        new PIDController(
+            DriveFeedbackControllers.kAngularKp.get(),
+            0.0,
+            DriveFeedbackControllers.kAngularKd.get());
+    angularController.enableContinuousInput(-Math.PI, Math.PI);
+
     return (sample) -> {
       // Get sample velocities & feedback velocities
       var speeds = sample.getChassisSpeeds();
       var feedbackSpeeds =
           new ChassisSpeeds(
-              DriveFeedbackControllers.kTranslationalXController.calculate(
-                  getPose2d().getX(), sample.x),
-              DriveFeedbackControllers.kTranslationalYController.calculate(
-                  getPose2d().getY(), sample.y),
-              DriveFeedbackControllers.kAngularController.calculate(
-                  getRotation2d().getRadians(), sample.heading));
+              xController.calculate(getPose2d().getX(), sample.x),
+              yController.calculate(getPose2d().getY(), sample.y),
+              angularController.calculate(getRotation2d().getRadians(), sample.heading));
 
       // Create full velocities & convert to states
       speeds = speeds.plus(feedbackSpeeds);
