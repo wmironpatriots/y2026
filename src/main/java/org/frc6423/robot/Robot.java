@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
+import org.frc6423.robot.command.Auto;
 import org.frc6423.robot.command.DriveTeleoperatedCommands;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
@@ -48,7 +49,7 @@ public class Robot extends CommandRobot {
   private Optional<FuelSimulation> mFuelSim = Optional.empty();
   private Optional<HopperSimulation> mHopperSim = Optional.empty();
 
-  // private final Auto mAuto = new Auto(mDrive);
+  private final Auto mAuto = new Auto(mDrive);
   private final CommandXboxController mController;
 
   public Robot() {
@@ -181,7 +182,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return Commands.none();
-    // return mAuto.S1_N2_cycle();
+    return mAuto.S1_N5_cycle();
   }
 }

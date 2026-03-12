@@ -108,10 +108,12 @@ public class DriveFeedbackControllers {
       kTranslationalXController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
       kTranslationalYController.setPID(kTranslationalKp.get(), 0.0, kTranslationalKd.get());
       kTranslationalYController.setTolerance(kTranslationalToleranceCm.get() / 100.0);
+      reset();
     }
 
     if (kAngularKp.hasChanged(drive.hashCode()) || kAngularKd.hasChanged(drive.hashCode())) {
       kAngularController.setPID(kAngularKp.get(), 0.0, kAngularKd.get());
+      reset();
     }
   }
 
