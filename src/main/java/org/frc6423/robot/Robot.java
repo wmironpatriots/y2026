@@ -48,7 +48,7 @@ public class Robot extends CommandRobot {
   private Optional<FuelSimulation> mFuelSim = Optional.empty();
   private Optional<HopperSimulation> mHopperSim = Optional.empty();
 
-  private final Auto mAuto = new Auto(mDrive);
+  // private final Auto mAuto = new Auto(mDrive);
   private final CommandXboxController mController;
 
   public Robot() {
@@ -181,6 +181,7 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return mAuto.S1_N2_cycle();
+    return Commands.none();
+    // return mAuto.S1_N2_cycle();
   }
 }

@@ -6,4 +6,8 @@
 
 package org.frc6423.robot.command;
 
-public class CollectionCommand {}
+/**
+ * Static {@link Command}s for processing fuel using the {@link Intake}, {@link Indexer}, & {@link
+ * Feeder}
+ */
+public class ProccessingCommands {}
