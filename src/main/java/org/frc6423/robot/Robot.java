@@ -73,7 +73,8 @@ public class Robot extends CommandRobot {
   private final Trigger mFireRequest =
       mController
           .rightBumper()
-          .and(mLockRequest); // .and(new Trigger(mShooter::isHoldingSetpoint));
+          .and(mLockRequest)
+          .and(new Trigger(() -> mShooter.isHoldingSetpoint() && mDrive.isFacingAngularTarget()));
   private final Trigger mInAllianceZone =
       new Trigger(
           () ->
@@ -179,6 +180,8 @@ public class Robot extends CommandRobot {
         .whileTrue(
             mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
+    RobotModeTriggers.teleop().whileTrue(mFeeder.feed().andThen(mIndexer.index()));
+
     // Intake
     RobotModeTriggers.teleop().and(mIntakeRequest).whileTrue(mIntake.intake());
 
@@ -237,7 +240,6 @@ public class Robot extends CommandRobot {
             sim.start();
 
             RobotModeTriggers.teleop()
-                .and(mInAllianceZone)
                 .and(mFireRequest)
                 .whileTrue(
                     Commands.runOnce(

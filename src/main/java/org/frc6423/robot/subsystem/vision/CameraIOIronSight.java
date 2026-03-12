@@ -59,10 +59,7 @@ public class CameraIOIronSight extends CameraIO {
     return new VisionEstimate[] {
       new VisionEstimate(
           mTimestampSubscriber.get(),
-          mEstimateSubscriber
-              .get()
-              .transformBy(mConfig.displacementWrtRobot().inverse())
-              .toPose2d(),
+          mEstimateSubscriber.get().transformBy(mConfig.displacementWrtRobot()).toPose2d(),
           VecBuilder.fill(0.0, 0.0, 0.0))
     };
   }
