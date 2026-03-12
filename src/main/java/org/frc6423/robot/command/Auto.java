@@ -4,7 +4,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.robot;
+package org.frc6423.robot.command;
 
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
@@ -17,23 +17,9 @@ import java.util.HashMap;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 
-/** A manager class for building autonomous routines */
 public class Auto {
   private static final RobotState kRobotState = RobotState.getInstance();
 
-  private final DriveSubsystem drive;
-  private final AutoFactory mFactory;
-
-  public Auto(DriveSubsystem drive) {
-    this.drive = drive;
-
-    // Init Auto Factory
-    mFactory =
-        new AutoFactory(
-            kRobotState::getEstimatedPosition, kRobotState::resetPose, null, true, drive);
-  }
-
-  // Enum for key field nodes (starting poses)
   public static enum Node {
     S1(new Pose2d(4.50, 0.65, Rotation2d.fromRadians(1 / 4 * Math.PI))),
     S2(new Pose2d(3.55, 4.00, Rotation2d.fromRadians(Math.PI))),
@@ -56,21 +42,39 @@ public class Auto {
     }
   }
 
+  // * ~~~~~~~~ MEMBERS ~~~~~~~~
+
+  private final DriveSubsystem mDrive;
+  private final AutoFactory mFactory;
+
+  public Auto(DriveSubsystem drive) {
+    this.mDrive = drive;
+
+    // Init Auto Factory
+    mFactory =
+        new AutoFactory(
+            kRobotState::getEstimatedPosition,
+            kRobotState::resetPose,
+            drive.getChoreoSwerveSampleConsumer(),
+            true,
+            drive);
+  }
+
   // Starting Depot Edges
   public Command driveS4toA1() {
-    return drive
+    return mDrive
         .runOnce(() -> kRobotState.resetPose(Node.S4.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S4_A1"));
   }
 
   public Command driveS2toA1() {
-    return drive
+    return mDrive
         .runOnce(() -> kRobotState.resetPose(Node.S2.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S2_A1"));
   }
 
   public Command driveS3toA1() {
-    return drive
+    return mDrive
         .runOnce(() -> kRobotState.resetPose(Node.S3.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S3_A1"));
   }
@@ -90,25 +94,25 @@ public class Auto {
 
   // Starting S1 to Neutral Zone edges
   public Command driveS1toN2() {
-    return drive
+    return mDrive
         .runOnce(() -> kRobotState.resetPose(Node.S1.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S1_N2"));
   }
 
   public Command driveS1toN3() {
-    return drive
+    return mDrive
         .runOnce(() -> kRobotState.resetPose(Node.S1.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S1_N3"));
   }
 
   public Command driveS1toN4() {
-    return drive
+    return mDrive
         .runOnce(() -> kRobotState.resetPose(Node.S1.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S1_N4"));
   }
 
   public Command driveS1toN5() {
-    return drive
+    return mDrive
         .runOnce(() -> kRobotState.resetPose(Node.S1.getPose2d()))
         .andThen(mFactory.trajectoryCmd("S1_N5"));
   }
