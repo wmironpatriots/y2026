@@ -69,6 +69,10 @@ public class Auto {
     mAutoChooser.addRoutine("S1 N3 cycle", this::S1_N3_cycle);
     mAutoChooser.addRoutine("S1 N4 cycle", this::S1_N4_cycle);
     mAutoChooser.addRoutine("S1 N5 cycle", this::S1_N5_cycle);
+    mAutoChooser.addRoutine("S1 N2 F1 cycle", this::S1_N2_F1_cycle);
+    mAutoChooser.addRoutine("S1 N3 F1 cycle", this::S1_N3_F1_cycle);
+    mAutoChooser.addRoutine("S1 N4 F1 cycle", this::S1_N4_F1_cycle);
+    mAutoChooser.addRoutine("S1 N5 F1 cycle", this::S1_N5_F1_cycle);
     // Init depot shot routines
     mAutoChooser.addRoutine("Depot Shot S4", this::Depot_Shot_cycle_S4);
     mAutoChooser.addRoutine("Depot Shot S3", this::Depot_Shot_cycle_S3);
@@ -160,6 +164,30 @@ public class Auto {
 
   public Command driveN5toS1(AutoRoutine routine) {
     final AutoTrajectory trajectory = routine.trajectory("N5_S1");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
+  }
+
+  public Command driveN2toF1(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("N2_F1");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
+  }
+
+  public Command driveN3toF1(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("N3_F1");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
+  }
+
+  public Command driveN4toF1(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("N4_F1");
+
+    return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
+  }
+
+  public Command driveN5toF1(AutoRoutine routine) {
+    final AutoTrajectory trajectory = routine.trajectory("N5_F1");
 
     return Commands.sequence(trajectory.resetOdometry(), trajectory.cmd().until(trajectory.done()));
   }
@@ -417,6 +445,104 @@ public class Auto {
     routine.observe(steps.get("S3_A1").done()).onTrue(steps.get("A1_F").cmd());
 
     // return command
+    return routine;
+  }
+
+  
+  public AutoRoutine S1_N2_F1_cycle() {
+    final var routine = mFactory.newRoutine("S1-N2-F1-Cycle");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+
+    
+    String[] stops = {"S1", "N2", "F1"};
+
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    steps.get("S1_N2").atTime("intake_start").onTrue(Commands.none());
+    steps.get("S1_N2").atTime("intake_end").onTrue(Commands.none());
+    steps.get("N2_F1").atTime("score").onTrue(Commands.none());
+
+    routine
+        .active()
+        .onTrue(Commands.sequence(steps.get("S1_N2").resetOdometry(), steps.get("S1_N2").cmd()));
+    routine.observe(steps.get("S1_N2").done()).onTrue(steps.get("N2_F1").cmd());
+
+    return routine;
+  }
+
+  
+  public AutoRoutine S1_N3_F1_cycle() {
+    final var routine = mFactory.newRoutine("S1-N3-F1-Cycle");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+    String[] stops = {"S1", "N3", "F1"};
+
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    steps.get("S1_N3").atTime("intake_start").onTrue(Commands.none());
+    steps.get("S1_N3").atTime("intake_end").onTrue(Commands.none());
+    steps.get("N3_F1").atTime("score").onTrue(Commands.none());
+
+    routine
+        .active()
+        .onTrue(Commands.sequence(steps.get("S1_N3").resetOdometry(), steps.get("S1_N3").cmd()));
+    routine.observe(steps.get("S1_N3").done()).onTrue(steps.get("N3_F1").cmd());
+
+    return routine;
+  }
+
+  
+  public AutoRoutine S1_N4_F1_cycle() {
+    final var routine = mFactory.newRoutine("S1-N4-F1-Cycle");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+    String[] stops = {"S1", "N4", "F1"};
+
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    steps.get("S1_N4").atTime("intake_start").onTrue(Commands.none());
+    steps.get("S1_N4").atTime("intake_end").onTrue(Commands.none());
+    steps.get("N4_F1").atTime("score").onTrue(Commands.none());
+
+    routine
+        .active()
+        .onTrue(Commands.sequence(steps.get("S1_N4").resetOdometry(), steps.get("S1_N4").cmd()));
+    routine.observe(steps.get("S1_N4").done()).onTrue(steps.get("N4_F1").cmd());
+
+    return routine;
+  }
+
+  
+  public AutoRoutine S1_N5_F1_cycle() {
+    final var routine = mFactory.newRoutine("S1-N5-F1-Cycle");
+
+    HashMap<String, AutoTrajectory> steps = new HashMap<>();
+    String[] stops = {"S1", "N5", "F1"};
+
+    for (int i = 0; i < stops.length - 1; i++) {
+      String name = stops[i] + "_" + stops[i + 1];
+      steps.put(name, routine.trajectory(name));
+    }
+
+    steps.get("S1_N5").atTime("intake_start").onTrue(Commands.none());
+    steps.get("S1_N5").atTime("intake_end").onTrue(Commands.none());
+    steps.get("N5_F1").atTime("score").onTrue(Commands.none());
+
+    routine
+        .active()
+        .onTrue(Commands.sequence(steps.get("S1_N5").resetOdometry(), steps.get("S1_N5").cmd()));
+    routine.observe(steps.get("S1_N5").done()).onTrue(steps.get("N5_F1").cmd());
+
     return routine;
   }
 }
