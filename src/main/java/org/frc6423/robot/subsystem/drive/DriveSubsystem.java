@@ -9,9 +9,11 @@ package org.frc6423.robot.subsystem.drive;
 import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -321,42 +323,44 @@ public class DriveSubsystem extends SubsystemBase {
 
     return (sample) -> {
       // Get sample velocities & feedback velocities
-      var speeds = sample.getChassisSpeeds();
-      var feedbackSpeeds =
+      var ffSpeedsWrtField = sample.getChassisSpeeds();
+      var fbSpeedsWrtField =
           new ChassisSpeeds(
               xController.calculate(getPose2d().getX(), sample.x),
               yController.calculate(getPose2d().getY(), sample.y),
               angularController.calculate(getRotation2d().getRadians(), sample.heading));
 
       // Create full velocities & convert to states
-      speeds = speeds.plus(feedbackSpeeds);
-      setChassisSpeedsSetpoint(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getRotation2d()));
-      // var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
+      var speeds =
+          ChassisSpeeds.fromFieldRelativeSpeeds(
+              ffSpeedsWrtField.plus(fbSpeedsWrtField), getRotation2d());
 
-      // // Get desired Module forces
-      // var xForces = sample.moduleForcesX();
-      // var yForces = sample.moduleForcesY();
+      var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
 
-      // for (int i = 0; i < mModules.length; i++) {
-      //   // Get desired angle of module
-      //   var angle = states[i].angle;
+      // Get desired Module forces
+      var xForces = sample.moduleForcesX();
+      var yForces = sample.moduleForcesY();
 
-      //   // Calculate desired force vector of module and account for chassis orientation
-      //   var force =
-      //       new Translation2d(xForces[i], yForces[i])
-      //           .rotateBy(Rotation2d.fromRadians(sample.heading).unaryMinus())
-      //           .toVector();
-      //   var forceDirection = VecBuilder.fill(angle.getCos(), angle.getSin());
+      for (int i = 0; i < mModules.length; i++) {
+        // Get desired angle of module
+        var angle = states[i].angle;
 
-      //   // Convert desired force vector into wheel torque
-      //   var torque = force.dot(forceDirection) * kConstants.getWheelRadiusMeters();
+        // Calculate desired force vector of module and account for chassis orientation
+        var force =
+            new Translation2d(xForces[i], yForces[i])
+                .rotateBy(Rotation2d.fromRadians(sample.heading).unaryMinus())
+                .toVector();
+        var forceDirection = VecBuilder.fill(angle.getCos(), angle.getSin());
 
-      //   // Send setpoint
-      //   mModules[i].setSetpoint(states[i], torque);
-      // }
+        // Convert desired force vector into wheel torque
+        var torque = force.dot(forceDirection) * kConstants.getWheelRadiusMeters();
 
-      // // Log setpoints
-      // mSetpointWheelStates = states;
+        // Send setpoint
+        mModules[i].setSetpoint(states[i], torque);
+      }
+
+      // Log setpoints
+      mSetpointWheelStates = states;
     };
   }
 
