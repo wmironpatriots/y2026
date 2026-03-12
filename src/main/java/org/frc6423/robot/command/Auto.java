@@ -16,7 +16,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.HashMap;
-
 import org.frc6423.robot.Rebuilt;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
@@ -225,7 +224,11 @@ public class Auto {
 
     steps.get("S1_N2").atTime("intake_end").onTrue(Commands.none());
 
-    steps.get("S1_F").atTime("score").whileTrue(mShooter.runSetpoint(()-> ShooterSubsystem.kHubShotMap, ()-> Rebuilt.kHubPose2d));
+    steps
+        .get("S1_F")
+        .atTime("score")
+        .whileTrue(
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     // Running the actual start path
     routine
@@ -262,7 +265,10 @@ public class Auto {
 
     steps.get("S1_N3").atTime("intake_end").onTrue(Commands.none());
 
-    steps.get("S1_F").atTime("score").onTrue(mShooter.runSetpoint(()-> ShooterSubsystem.kHubShotMap, ()-> Rebuilt.kHubPose2d));
+    steps
+        .get("S1_F")
+        .atTime("score")
+        .onTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     // Running the actual start path
     routine
@@ -299,8 +305,10 @@ public class Auto {
 
     steps.get("S1_N4").atTime("intake_end").onTrue(Commands.none());
 
-    steps.get("S1_F").atTime("score").onTrue(mShooter.runSetpoint(()-> ShooterSubsystem.kHubShotMap, ()-> Rebuilt.kHubPose2d));
-
+    steps
+        .get("S1_F")
+        .atTime("score")
+        .onTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     // Running the actual start path
     routine
@@ -338,8 +346,10 @@ public class Auto {
 
     steps.get("S1_N5").atTime("intake_end").onTrue(Commands.none());
 
-    steps.get("S1_F").atTime("score").onTrue(mShooter.runSetpoint(()-> ShooterSubsystem.kHubShotMap, ()-> Rebuilt.kHubPose2d));
-
+    steps
+        .get("S1_F")
+        .atTime("score")
+        .onTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     // Running the actual start path
     routine
@@ -379,7 +389,11 @@ public class Auto {
 
     steps.get("S4_A1").atTime("intake_end").onTrue(Commands.none());
 
-    steps.get("A1_F").atTime("score").whileTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+    steps
+        .get("A1_F")
+        .atTime("score")
+        .whileTrue(
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     // Running the actual start path
     routine
@@ -413,7 +427,11 @@ public class Auto {
 
     steps.get("S2_A1").atTime("intake_end").onTrue(Commands.none());
 
-    steps.get("A1_F").atTime("score").whileTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+    steps
+        .get("A1_F")
+        .atTime("score")
+        .whileTrue(
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     // Running the actual start path
     routine
@@ -448,7 +466,11 @@ public class Auto {
 
     steps.get("S3_A1").atTime("intake_end").onTrue(Commands.none());
 
-    steps.get("A1_F").atTime("score").whileTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+    steps
+        .get("A1_F")
+        .atTime("score")
+        .whileTrue(
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     // Running the actual start path
     routine
@@ -475,8 +497,16 @@ public class Auto {
 
     steps.get("S1_N2").atTime("intake_start").onTrue(Commands.none());
     steps.get("S1_N2").atTime("intake_end").onTrue(Commands.none());
-    steps.get("N2_F1").atTime("score").whileTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
-    steps.get("N2_F1").atTime("score").and(mShooter::isHoldingSetpoint).whileTrue(Commands.parallel(mIndexer.index(), mFeeder.feed()));
+    steps
+        .get("N2_F1")
+        .atTime("score")
+        .whileTrue(
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+    steps
+        .get("N2_F1")
+        .atTime("score")
+        .and(mShooter::isHoldingSetpoint)
+        .whileTrue(Commands.parallel(mIndexer.index(), mFeeder.feed()));
 
     routine
         .active()
@@ -499,7 +529,11 @@ public class Auto {
 
     steps.get("S1_N3").atTime("intake_start").onTrue(Commands.none());
     steps.get("S1_N3").atTime("intake_end").onTrue(Commands.none());
-    steps.get("N3_F1").atTime("score").whileTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+    steps
+        .get("N3_F1")
+        .atTime("score")
+        .whileTrue(
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     routine
         .active()
@@ -522,7 +556,11 @@ public class Auto {
 
     steps.get("S1_N4").atTime("intake_start").onTrue(Commands.none());
     steps.get("S1_N4").atTime("intake_end").onTrue(Commands.none());
-    steps.get("N4_F1").atTime("score").whileTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+    steps
+        .get("N4_F1")
+        .atTime("score")
+        .whileTrue(
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     routine
         .active()
@@ -545,7 +583,11 @@ public class Auto {
 
     steps.get("S1_N5").atTime("intake_start").onTrue(Commands.none());
     steps.get("S1_N5").atTime("intake_end").onTrue(Commands.none());
-    steps.get("N5_F1").atTime("score").whileTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+    steps
+        .get("N5_F1")
+        .atTime("score")
+        .whileTrue(
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
 
     routine
         .active()
