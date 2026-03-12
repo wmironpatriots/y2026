@@ -8,6 +8,7 @@ package org.frc6423.robot;
 
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.EpilogueConfiguration;
@@ -15,9 +16,11 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -63,9 +66,22 @@ public class Robot extends CommandRobot {
   private final Auto mAuto = new Auto(mDrive);
 
   private final CommandXboxController mController = new CommandXboxController(0);
+
   private final Trigger mIntakeRequest = mController.leftBumper();
+  private final Trigger mSpinupRequest = mController.leftTrigger(0.1);
+  private final Trigger mLockRequest = mController.leftTrigger(0.5);
   private final Trigger mFireRequest =
-      mController.rightBumper().and(new Trigger(mShooter::isHoldingSetpoint));
+      mController
+          .rightBumper()
+          .and(mLockRequest); // .and(new Trigger(mShooter::isHoldingSetpoint));
+  private final Trigger mInAllianceZone =
+      new Trigger(
+          () ->
+              Flags.kRobotAlliance == Alliance.Red
+                  ? Rebuilt.kRobotAllianceZone.contains(
+                      mRobotState.getEstimatedPosition().getTranslation())
+                  : Rebuilt.kOpposingAlliance.contains(
+                      mRobotState.getEstimatedPosition().getTranslation()));
 
   public Robot() {
     // Shut up DS
@@ -138,31 +154,45 @@ public class Robot extends CommandRobot {
 
   /** Configure driver bindings */
   public void configureBindings() {
-    // Norm mode
+    // Alliance Zone Triggers
     RobotModeTriggers.teleop()
-        .and(mIntakeRequest.negate())
+        .and(mInAllianceZone)
+        .and(mLockRequest.negate())
+        .or(mIntakeRequest)
+        .whileTrue(
+            DriveTeleoperatedCommands.runTeleoperatedDrive(
+                mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
+
+    RobotModeTriggers.teleop()
+        .and(mInAllianceZone)
+        .and(mLockRequest)
         .whileTrue(
             DriveTeleoperatedCommands.runTeleoperatedDriveWhileFacing(
                 mDrive,
                 mController::getLeftY,
                 mController::getLeftX,
-                () ->
-                    Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)
-                        .getTranslation(), // TODO replace placeholder for fcs target
+                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation(),
                 true));
 
-    // Intake
     RobotModeTriggers.teleop()
-        .and(mIntakeRequest)
+        .and(mSpinupRequest)
         .whileTrue(
-            DriveTeleoperatedCommands.runTeleoperatedDrive(
-                mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX))
-        .whileTrue(mIntake.intake());
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+
+    // Intake
+    RobotModeTriggers.teleop().and(mIntakeRequest).whileTrue(mIntake.intake());
 
     RobotModeTriggers.teleop().onTrue(Commands.runOnce(HubShiftUtil::initialize));
     RobotModeTriggers.autonomous().onTrue(Commands.runOnce(HubShiftUtil::initialize));
     RobotModeTriggers.disabled()
         .onTrue(Commands.runOnce(HubShiftUtil::initialize).ignoringDisable(true));
+
+    RobotModeTriggers.teleop()
+        .and(mInAllianceZone)
+        .whileTrue(
+            mShooter.runSetpoint(
+                () -> ShooterSubsystem.kHubShotMap,
+                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)));
   }
 
   /** Setup simulation optionals if robot is simulated */
@@ -205,6 +235,21 @@ public class Robot extends CommandRobot {
 
             // Start sim
             sim.start();
+
+            RobotModeTriggers.teleop()
+                .and(mInAllianceZone)
+                .and(mFireRequest)
+                .whileTrue(
+                    Commands.runOnce(
+                            () ->
+                                sim.launchFuel(
+                                    MetersPerSecond.of(
+                                        mShooter.getTargetMuzzleVelocityMetersPerSec()),
+                                    mShooter.getTargetRotation2d().getMeasure(),
+                                    Rotation2d.kZero.getMeasure(),
+                                    ShooterSubsystem.kRobotToShooter.getMeasureZ()))
+                        .andThen(Commands.waitSeconds(0.1))
+                        .repeatedly());
 
             // Start sim notifier
             addPeriodic(() -> sim.updateSim(), 0.002);

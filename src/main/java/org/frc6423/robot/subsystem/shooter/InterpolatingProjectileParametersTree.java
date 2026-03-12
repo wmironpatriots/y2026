@@ -6,6 +6,7 @@
 
 package org.frc6423.robot.subsystem.shooter;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -25,7 +26,13 @@ import java.util.TreeMap;
  * Translation2d)} or {@link #get(double)} methods
  */
 public class InterpolatingProjectileParametersTree {
-  private final TreeMap<Double, ProjectileParameters> map = new TreeMap<>();
+
+  private TreeMap<Double, ProjectileParameters> map = new TreeMap<>();
+
+  InterpolatingProjectileParametersTree(
+      @JsonProperty("map") TreeMap<Double, ProjectileParameters> map) {
+    this.map = map;
+  }
 
   public InterpolatingProjectileParametersTree() {}
 
