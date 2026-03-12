@@ -182,6 +182,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return mAuto.S1_N5_cycle();
+    return mAuto.S1_N2_cycle();
   }
 }
