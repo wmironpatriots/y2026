@@ -9,6 +9,7 @@ package org.frc6423.robot.subsystem.vision;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -38,18 +39,17 @@ public class Vision extends SubsystemBase {
   public static final CameraConfig[] kCameraConfigs =
       new CameraConfig[] {
         new CameraConfig(
-            "elsie",
-            new Transform3d(
-                new Translation3d(-12.255, 0.0, 14.207), new Rotation3d(0.0, 1.0472, 0.0))),
+            "bessie",
+            new Transform3d(new Translation3d(Units.inchesToMeters(-12.255), Units.inchesToMeters(0.0), Units.inchesToMeters(-14.207)), new Rotation3d(0.0, 1.0472, 0.0))),
         new CameraConfig(
             "elsie",
-            new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0.0, 0.0, 0.0))),
+            new Transform3d(new Translation3d(Units.inchesToMeters(-7.51), Units.inchesToMeters(-1.5), Units.inchesToMeters(-20.1)), new Rotation3d(0.0, 0.0, 0.0))),
         new CameraConfig(
             "beatrice",
-            new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0.0, 0.0, 0.0))),
+            new Transform3d(new Translation3d(Units.inchesToMeters(-7.897), Units.inchesToMeters(12.259), Units.inchesToMeters(-20.056)), new Rotation3d(0.0, 0.0, 0.0))),
         new CameraConfig(
             "belinda",
-            new Transform3d(new Translation3d(0.0, 0.0, 0.0), new Rotation3d(0.0, 0.0, 0.0))),
+            new Transform3d(new Translation3d(Units.inchesToMeters(-7.897), Units.inchesToMeters(-12.259), Units.inchesToMeters(-20.056)), new Rotation3d(0.0, 0.0, 0.0))),
       };
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
