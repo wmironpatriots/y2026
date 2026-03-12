@@ -29,10 +29,11 @@ import org.frc6423.robot.command.Auto;
 import org.frc6423.robot.command.DriveTeleoperatedCommands;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
-// import org.frc6423.robot.subsystem.feeder.Feeder;
-// import org.frc6423.robot.subsystem.indexer.Indexer;
-// import org.frc6423.robot.subsystem.intake.Intake;
+import org.frc6423.robot.subsystem.feeder.Feeder;
+import org.frc6423.robot.subsystem.indexer.Indexer;
+import org.frc6423.robot.subsystem.intake.Intake;
 import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
+import org.frc6423.robot.subsystem.vision.Vision;
 import org.frc6423.robot.util.sim.FuelSimulation;
 import org.frc6423.robot.util.sim.HopperSimulation;
 
@@ -41,9 +42,10 @@ public class Robot extends CommandRobot {
   private final RobotState mRobotState = RobotState.getInstance();
 
   private final DriveSubsystem mDrive = DriveSubsystem.create();
-  // private final Intake mIntake = Intake.create();
-  // private final Indexer mIndexer = Indexer.create();
-  // private final Feeder mFeeder = Feeder.create();
+  private final Vision mVision = Vision.create();
+  private final Intake mIntake = Intake.create();
+  private final Indexer mIndexer = Indexer.create();
+  private final Feeder mFeeder = Feeder.create();
   private final ShooterSubsystem mShooter = ShooterSubsystem.create();
 
   private Optional<FuelSimulation> mFuelSim = Optional.empty();

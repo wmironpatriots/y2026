@@ -20,6 +20,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -30,7 +31,7 @@ import java.util.function.Consumer;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
-import org.frc6423.robot.command.DriveFeedbackControllers;
+import org.frc6423.robot.command.DriveTeleoperatedCommands;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.RobotState.OdometryMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
@@ -140,6 +141,7 @@ public class DriveSubsystem extends SubsystemBase {
         };
 
     mF2d = new Field2d();
+    SmartDashboard.putData(mF2d);
 
     RobotState.getInstance()
         .resetPose(new Pose2d(getPose2d().getTranslation(), Flags.getAllianceRotation()));
@@ -167,6 +169,8 @@ public class DriveSubsystem extends SubsystemBase {
                           : Optional.empty()));
           RobotState.getInstance().setChassisSpeeds(getChassisSpeeds());
         });
+
+    mF2d.setRobotPose(getPose2d());
   }
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~
@@ -178,8 +182,8 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @Logged(name = "Within Translational Tolerance (bool)", importance = Importance.INFO)
   public boolean isAtTranslationalTarget() {
-    return DriveFeedbackControllers.kTranslationalXController.atSetpoint()
-        && DriveFeedbackControllers.kTranslationalYController.atSetpoint();
+    return DriveTeleoperatedCommands.kTranslationalXController.atSetpoint()
+        && DriveTeleoperatedCommands.kTranslationalYController.atSetpoint();
   }
 
   /**
@@ -189,7 +193,7 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @Logged(name = "Within Angular Tolerance (bool)", importance = Importance.INFO)
   public boolean isFacingAngularTarget() {
-    return DriveFeedbackControllers.kAngularController.atSetpoint();
+    return DriveTeleoperatedCommands.kAngularController.atSetpoint();
   }
 
   /**

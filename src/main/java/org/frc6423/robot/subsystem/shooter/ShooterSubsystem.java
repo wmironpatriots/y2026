@@ -171,27 +171,6 @@ public class ShooterSubsystem extends SubsystemBase {
       new Transform3d(
           Units.inchesToMeters(-8.3), 0.0, Units.inchesToMeters(24.6), Rotation3d.kZero);
 
-  /**
-   * {@link InterpolatingProjectileParametersTree} Interpolation table to use for calculating hub
-   * shots
-   */
-  public static final InterpolatingProjectileParametersTree kHubShotTree =
-      new InterpolatingProjectileParametersTree();
-
-  /**
-   * {@link InterpolatingProjectileParametersTree} Interpolation table to use for calculating
-   * ferrying
-   */
-  public static final InterpolatingProjectileParametersTree kFerryShotTree =
-      new InterpolatingProjectileParametersTree();
-
-  static {
-  } // Add kHubShotTree samples
-
-  static {
-    kFerryShotTree.addSample(0.0, new ProjectileParameters(0.0, 0.0, 0.0));
-  } // Add kFerryShotTree samples
-
   /** {@link String} Nt directory to store tunables in */
   public static final String kTunablesPrefix = "/Shooter";
 
