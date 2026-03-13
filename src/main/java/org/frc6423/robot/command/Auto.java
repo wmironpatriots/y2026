@@ -138,9 +138,9 @@ public class Auto {
   private void registerCommand(AutoTrajectory traj) {
     traj.atTime("intake_start").onTrue(mIntake.intake());
     traj.atTime("intake_end").onTrue(mIntake.stow());
-    traj.atTime("score")
-        .whileTrue(
-            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+    // traj.atTime("score")
+    //     .whileTrue(
+    //         mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
     traj.atTime("score")
         .whileTrue(
             mShooter.runSetpoint(
