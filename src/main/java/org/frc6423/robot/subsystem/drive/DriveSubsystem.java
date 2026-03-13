@@ -156,6 +156,16 @@ public class DriveSubsystem extends SubsystemBase {
           Arrays.stream(mModules).forEach(SwerveModuleIO::periodic);
         });
 
+    // Update odometry
+    RobotState.getInstance()
+        .addOdometryMeasurement(
+            new OdometryMeasurement(
+                Timer.getFPGATimestamp(),
+                getWheelPositions(),
+                Robot.isReal()
+                    ? Optional.of(Rotation2d.fromDegrees(mGyro.getYawDegrees()))
+                    : Optional.empty()));
+
     Tracer.traceFunc(
         "Update Odometry",
         () -> {

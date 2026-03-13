@@ -203,7 +203,7 @@ public class RebuiltL2 extends SwerveConstants {
         Matrix.kDriveFlEncoderId,
         getPivotServoConfig(Matrix.kDriveFlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(0.2763671875 + 0.25),
+        getCANcoderConfig(0.27783203125),
         getWheelRadiusMeters());
   }
 
@@ -217,7 +217,7 @@ public class RebuiltL2 extends SwerveConstants {
         Matrix.kDriveFrEncoderId,
         getPivotServoConfig(Matrix.kDriveFrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(0.363037109375 + 0.25),
+        getCANcoderConfig(0.36279296875),
         getWheelRadiusMeters());
   }
 
@@ -231,7 +231,7 @@ public class RebuiltL2 extends SwerveConstants {
         Matrix.kDriveBlEncoderId,
         getPivotServoConfig(Matrix.kDriveBlEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(0.3701171875 + 0.25),
+        getCANcoderConfig(0.371060546875),
         getWheelRadiusMeters());
   }
 
@@ -245,7 +245,7 @@ public class RebuiltL2 extends SwerveConstants {
         Matrix.kDriveBrEncoderId,
         getPivotServoConfig(Matrix.kDriveBrEncoderId),
         getDriveServoConfig(),
-        getCANcoderConfig(0.39990234375 + 0.25),
+        getCANcoderConfig(0.397705078125),
         getWheelRadiusMeters());
   }
 }
