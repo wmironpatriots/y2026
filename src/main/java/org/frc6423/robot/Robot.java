@@ -60,7 +60,7 @@ public class Robot extends CommandRobot {
 
   // * ~~~~~~~~ CONTROL ~~~~~~~~
 
-  private final Auto mAuto = new Auto(mDrive);
+  private final Auto mAuto = new Auto(mDrive, mShooter, mFeeder, mIndexer);
 
   private final CommandXboxController mController = new CommandXboxController(0);
   private final Trigger mIntakeRequest = mController.leftBumper();
