@@ -48,7 +48,6 @@ import org.frc6423.lib.io.ServoIOTalonFxPivotSim;
 import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
-import org.frc6423.robot.subsystem.RobotState;
 
 /** {@link SubsystemBase} Manager class for the shooter */
 public class ShooterSubsystem extends SubsystemBase {
@@ -635,7 +634,7 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   @Logged(name = "Angle (Rotation2d)", importance = Importance.INFO)
   public Rotation2d getRotation2d() {
-    return Rotation2d.fromRotations(mLeft.getAngularPositionRevs());
+    return Rotation2d.fromRotations(mPivot.getAngularPositionRevs());
   }
 
   /**
@@ -773,12 +772,13 @@ public class ShooterSubsystem extends SubsystemBase {
   public Command runSetpoint(
       Supplier<InterpolatingProjectileParametersTree> tree, Supplier<Pose2d> target) {
     return runSetpoint(
-        () -> calculateParameters(tree.get(), target.get()).velocity(),
-        () ->
-            Rotation2d.fromDegrees(90)
-                .minus(
-                    Rotation2d.fromRadians(calculateParameters(tree.get(), target.get()).pitch()))
-                .times(-1.0));
+        () -> calculateParameters(tree.get(), target.get()).velocity(), () -> Rotation2d.kZero);
+    // () -> Rotation2d.fromRadians(calculateParameters(tree.get(), target.get()).pitch()));
+    // Rotation2d.fromRadians(calculateParameters(tree.get(), target.get()).pitch())
+    //     .minus(Rotation2d.fromDegrees(90).times(-1)));
+    // Rotation2d.fromDegrees(90)
+    //     .minus(
+    //         Rotation2d.fromRadians(calculateParameters(tree.get(), target.get()).pitch())));
   }
 
   /**
@@ -853,10 +853,10 @@ public class ShooterSubsystem extends SubsystemBase {
     //     return parameters;
     //   } else return new ProjectileParameters(0.0, 0.0, 0.0);
 
-    var result =
-        tree.calculateProjectileParameters(
-            RobotState.getInstance().getEstimatedPosition().getTranslation(),
-            target.getTranslation());
+    var result = tree.get(2.3);
+    // tree.calculateProjectileParameters(
+    //     RobotState.getInstance().getEstimatedPosition().getTranslation(),
+    //     target.getTranslation());
 
     if (result != null) return result;
     else return new ProjectileParameters(Units.rotationsToRadians(kMinAngleRevs), 5.0, 0.0);

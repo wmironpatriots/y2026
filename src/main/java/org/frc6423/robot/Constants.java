@@ -43,7 +43,9 @@ public final class Constants {
     public static final Importance kLoggingLevel = Importance.DEBUG;
 
     /** {@link Alliance} Alliance robot is currently on */
-    public static final Alliance kRobotAlliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    public static Alliance getRobotAlliance() {
+      return DriverStation.getAlliance().orElse(Alliance.Blue);
+    }
 
     public static final boolean kSpawnStartingFuel = false;
 
@@ -53,7 +55,7 @@ public final class Constants {
      * @return {@link getAllianceRotation}
      */
     public static Rotation2d getAllianceRotation() {
-      return Rotation2d.fromRotations(kRobotAlliance == Alliance.Blue ? 0.0 : 0.5);
+      return Rotation2d.fromRotations(getRobotAlliance() == Alliance.Blue ? 0.0 : 0.5);
     }
 
     public static Pose2d getRobotAlliancePose2d(Pose2d pose) {

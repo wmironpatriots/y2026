@@ -46,30 +46,30 @@ public class Vision extends SubsystemBase {
                     Units.inchesToMeters(0.0),
                     Units.inchesToMeters(-14.207)),
                 new Rotation3d(0.0, -0.523599, 3.14159))),
-        new CameraConfig(
-            "elsie",
-            new Transform3d(
-                new Translation3d(
-                    Units.inchesToMeters(-7.51),
-                    Units.inchesToMeters(-1.5),
-                    Units.inchesToMeters(-20.1)),
-                new Rotation3d(0.0, 0.523599, 0.0))),
-        new CameraConfig(
-            "beatrice",
-            new Transform3d(
-                new Translation3d(
-                    Units.inchesToMeters(-7.897),
-                    Units.inchesToMeters(12.259),
-                    Units.inchesToMeters(-20.056)),
-                new Rotation3d(0.0, 0.261799, 0.261799))),
-        new CameraConfig(
-            "belinda",
-            new Transform3d(
-                new Translation3d(
-                    Units.inchesToMeters(-7.897),
-                    Units.inchesToMeters(-12.259),
-                    Units.inchesToMeters(-20.056)),
-                new Rotation3d(0.0, 0.261799, -0.261799))),
+        // new CameraConfig(
+        //     "elsie",
+        //     new Transform3d(
+        //         new Translation3d(
+        //             Units.inchesToMeters(-7.51),
+        //             Units.inchesToMeters(-1.5),
+        //             Units.inchesToMeters(-20.1)),
+        //         new Rotation3d(0.0, -0.2617993877991494, 0.0))),
+        // new CameraConfig(
+        //     "beatrice",
+        //     new Transform3d(
+        //         new Translation3d(
+        //             Units.inchesToMeters(-7.897),
+        //             Units.inchesToMeters(12.259),
+        //             Units.inchesToMeters(-20.056)),
+        //         new Rotation3d(0.0, -0.2617993877991494, 0.261799))),
+        // new CameraConfig(
+        //     "belinda",
+        //     new Transform3d(
+        //         new Translation3d(
+        //             Units.inchesToMeters(-7.897),
+        //             Units.inchesToMeters(-12.259),
+        //             Units.inchesToMeters(-20.056)),
+        //         new Rotation3d(0.0, -0.2617993877991494, -0.261799))),
       };
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~

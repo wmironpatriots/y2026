@@ -280,17 +280,6 @@ public class Intake extends SubsystemBase {
   }
 
   /**
-   * Check if subsystem roller is trying to move but is unable to
-   *
-   * @return {@link Boolean}
-   */
-  @Logged(name = "Roller Is Stuck (bool)", importance = Importance.INFO)
-  public boolean isStuck() {
-    return mIsStuck.calculate(
-        mIsRunning && MathUtil.isNear(0.0, mRoller.getAngularVelocityRevsPerSec(), 0.1));
-  }
-
-  /**
    * Check if subsystem has reached setpoint (pivot)
    *
    * @return {@link Boolean}
@@ -336,7 +325,8 @@ public class Intake extends SubsystemBase {
   }
 
   public Command stow() {
-    return runSetpoints(kPivotStowedPositionDeg.get(), kStowingSpeedVolts.get());
+    return runSetpoints(
+        Units.degreesToRotations(kPivotStowedPositionDeg.get()), kStowingSpeedVolts.get());
   }
 
   public Command intake() {

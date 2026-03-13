@@ -60,8 +60,8 @@ public class DriveTeleoperatedCommands {
       kTranslationalKd.initDefault(0.0);
       kTranslationalToleranceCm.initDefault(1.0);
 
-      kAngularKp.initDefault(11.5);
-      kAngularKd.initDefault(0.05);
+      kAngularKp.initDefault(4.0);
+      kAngularKd.initDefault(0.0);
       kAngularToleranceDeg.initDefault(2.0);
     } else {
       kTranslationalKp.initDefault(8.0);

@@ -138,7 +138,8 @@ public class Auto {
     traj.atTime("intake_start").onTrue(mIntake.intake());
     traj.atTime("intake_end").onTrue(mIntake.stow());
     traj.atTime("score")
-        .onTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+        .whileTrue(
+            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
     traj.atTime("score")
         .and(mShooter::isHoldingSetpoint)
         .whileTrue(Commands.parallel(mIndexer.index(), mFeeder.feed()));

@@ -21,7 +21,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -31,7 +30,6 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.command.Auto;
 import org.frc6423.robot.command.DriveTeleoperatedCommands;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
@@ -39,7 +37,6 @@ import org.frc6423.robot.subsystem.feeder.Feeder;
 import org.frc6423.robot.subsystem.indexer.Indexer;
 import org.frc6423.robot.subsystem.intake.Intake;
 import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
-import org.frc6423.robot.subsystem.vision.Vision;
 import org.frc6423.robot.util.HubShiftUtil;
 import org.frc6423.robot.util.sim.FuelSimulation;
 import org.frc6423.robot.util.sim.HopperSimulation;
@@ -51,7 +48,7 @@ public class Robot extends CommandRobot {
   // * ~~~~~~~~ SUBSYSTEMS ~~~~~~~~
 
   private final DriveSubsystem mDrive = DriveSubsystem.create();
-  private final Vision mVision = Vision.create();
+  // private final Vision mVision = Vision.create();
   private final Intake mIntake = Intake.create();
   private final Indexer mIndexer = Indexer.create();
   private final Feeder mFeeder = Feeder.create();
@@ -64,7 +61,7 @@ public class Robot extends CommandRobot {
 
   // * ~~~~~~~~ CONTROL ~~~~~~~~
 
-  private final Auto mAuto = new Auto(mDrive, mShooter, mFeeder, mIndexer);
+  //   private final Auto mAuto = new Auto(mDrive, mShooter, mFeeder, mIndexer, mIntake);
 
   private final CommandXboxController mController = new CommandXboxController(0);
 
@@ -73,14 +70,9 @@ public class Robot extends CommandRobot {
   private final Trigger mLockRequest = mController.rightTrigger(0.8);
   private final Trigger mFireRequest = mController.rightBumper();
 
-  private final Trigger mInAllianceZone =
-      new Trigger(
-          () ->
-              Flags.kRobotAlliance == Alliance.Red
-                  ? Rebuilt.kRobotAllianceZone.contains(
-                      mRobotState.getEstimatedPosition().getTranslation())
-                  : Rebuilt.kOpposingAlliance.contains(
-                      mRobotState.getEstimatedPosition().getTranslation()));
+  //   private final Trigger mInAllianceZone =
+  //       new Trigger(() ->
+  // Rebuilt.kRobotAllianceZone.contains(mDrive.getPose2d().getTranslation()));
 
   public Robot() {
     // Shut up DS
@@ -162,49 +154,56 @@ public class Robot extends CommandRobot {
 
     RobotModeTriggers.teleop()
         .and(mLockRequest)
-        .and(mInAllianceZone)
+        // .and(mInAllianceZone)
         .whileTrue(
-            DriveTeleoperatedCommands.runTeleoperatedDriveWhileFacing(
-                mDrive,
-                mController::getLeftY,
-                mController::getLeftX,
-                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation(),
-                true));
+            DriveTeleoperatedCommands.runTeleoperatedDrive(
+                mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
+    // .whileTrue(
+    //     DriveTeleoperatedCommands.runTeleoperatedDriveWhileFacing(
+    //         mDrive,
+    //         mController::getLeftY,
+    //         mController::getLeftX,
+    //         () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation(),
+    //         true));
 
-    RobotModeTriggers.teleop()
-        .and(mLockRequest)
-        .and(mInAllianceZone.negate())
-        .whileTrue(
-            DriveTeleoperatedCommands.runTeleoperatedDriveWithAngularAssist(
-                mDrive, mController::getLeftY, mController::getLeftX, () -> Rotation2d.k180deg));
+    // RobotModeTriggers.teleop()
+    //     .and(mLockRequest)
+    //     .and(mInAllianceZone.negate())
+    //     .whileTrue(
+    //         DriveTeleoperatedCommands.runTeleoperatedDriveWithAngularAssist(
+    //             mDrive, mController::getLeftY, mController::getLeftX, () -> Rotation2d.k180deg));
 
     RobotModeTriggers.teleop().and(mIntakeRequest).whileTrue(mIntake.intake());
 
     RobotModeTriggers.teleop()
         .and(mSpinupRequest)
-        .and(mInAllianceZone)
+        // .and(mInAllianceZone)
         .whileTrue(
             mShooter.runSetpoint(
                 () -> ShooterSubsystem.kHubShotMap,
                 () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)));
 
-    RobotModeTriggers.teleop()
-        .and(mSpinupRequest)
-        .and(mInAllianceZone.negate())
-        .whileTrue(
-            mShooter.runSetpoint(
-                () -> ShooterSubsystem.kGroundShotMap,
-                () -> {
-                  var targetLine =
-                      Flags.getRobotAlliancePose2d(Rebuilt.kRobotAllianceZone.getCenter())
-                          .getMeasureX();
+    // RobotModeTriggers.teleop()
+    //     .and(mSpinupRequest)
+    // .and(mInAllianceZone.negate())
+    // .whileTrue(
+    //     mShooter.runSetpoint(
+    //         () -> ShooterSubsystem.kGroundShotMap,
+    //         () -> {
+    //           var targetLine =
+    //               Flags.getRobotAlliancePose2d(Rebuilt.kRobotAllianceZone.getCenter())
+    //                   .getMeasureX();
 
-                  return new Pose2d(targetLine, Meters.zero(), Rotation2d.kZero);
-                }));
+    //           return new Pose2d(targetLine, Meters.zero(), Rotation2d.kZero);
+    //         }));
 
     RobotModeTriggers.teleop()
         .and(mFireRequest)
         .whileTrue(mFeeder.feed().alongWith(mIndexer.index()));
+
+    mController
+        .x()
+        .whileTrue(Commands.runOnce(() -> RobotState.getInstance().resetPose(new Pose2d())));
 
     // RobotModeTriggers.teleop()
     //     .and(mSpinupRequest)
@@ -295,6 +294,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return mAuto.getSelectedAuto();
+    return Commands.none();
   }
 }
