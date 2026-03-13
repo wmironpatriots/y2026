@@ -16,10 +16,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.HashMap;
+import org.frc6423.robot.Rebuilt;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 import org.frc6423.robot.subsystem.feeder.Feeder;
 import org.frc6423.robot.subsystem.indexer.Indexer;
+import org.frc6423.robot.subsystem.intake.Intake;
 import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
 
 public class Auto {
@@ -54,13 +56,20 @@ public class Auto {
   private final AutoChooser mAutoChooser;
   private final ShooterSubsystem mShooter;
   private final Feeder mFeeder;
+  private final Intake mIntake;
   private final Indexer mIndexer;
 
-  public Auto(DriveSubsystem drive, ShooterSubsystem shooter, Feeder feeder, Indexer indexer) {
+  public Auto(
+      DriveSubsystem drive,
+      ShooterSubsystem shooter,
+      Feeder feeder,
+      Indexer indexer,
+      Intake intake) {
     this.mDrive = drive;
     this.mShooter = shooter;
     this.mFeeder = feeder;
     this.mIndexer = indexer;
+    this.mIntake = intake;
 
     // Init Auto Factory
     mFactory =
@@ -126,8 +135,10 @@ public class Auto {
   }
 
   private void registerCommand(AutoTrajectory traj) {
-    traj.atTime("intake_start").onTrue(Commands.none());
-    traj.atTime("intake_end").onTrue(Commands.none());
+    traj.atTime("intake_start").onTrue(mIntake.intake());
+    traj.atTime("intake_end").onTrue(mIntake.stow());
+    traj.atTime("score")
+        .onTrue(mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
     traj.atTime("score")
         .and(mShooter::isHoldingSetpoint)
         .whileTrue(Commands.parallel(mIndexer.index(), mFeeder.feed()));
