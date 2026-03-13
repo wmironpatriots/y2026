@@ -16,6 +16,7 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -67,14 +68,11 @@ public class Robot extends CommandRobot {
 
   private final CommandXboxController mController = new CommandXboxController(0);
 
-  private final Trigger mIntakeRequest = mController.leftBumper();
-  private final Trigger mSpinupRequest = mController.leftTrigger(0.1);
-  private final Trigger mLockRequest = mController.leftTrigger(0.5);
-  private final Trigger mFireRequest =
-      mController
-          .rightBumper()
-          .and(mLockRequest)
-          .and(new Trigger(() -> mShooter.isHoldingSetpoint() && mDrive.isFacingAngularTarget()));
+  private final Trigger mIntakeRequest = mController.leftTrigger(0.1);
+  private final Trigger mSpinupRequest = mController.rightTrigger(0.1);
+  private final Trigger mLockRequest = mController.rightTrigger(0.8);
+  private final Trigger mFireRequest = mController.rightBumper();
+
   private final Trigger mInAllianceZone =
       new Trigger(
           () ->
@@ -157,16 +155,14 @@ public class Robot extends CommandRobot {
   public void configureBindings() {
     // Alliance Zone Triggers
     RobotModeTriggers.teleop()
-        .and(mInAllianceZone)
         .and(mLockRequest.negate())
-        .or(mIntakeRequest)
         .whileTrue(
             DriveTeleoperatedCommands.runTeleoperatedDrive(
                 mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
 
     RobotModeTriggers.teleop()
-        .and(mInAllianceZone)
         .and(mLockRequest)
+        .and(mInAllianceZone)
         .whileTrue(
             DriveTeleoperatedCommands.runTeleoperatedDriveWhileFacing(
                 mDrive,
@@ -176,26 +172,61 @@ public class Robot extends CommandRobot {
                 true));
 
     RobotModeTriggers.teleop()
-        .and(mSpinupRequest)
+        .and(mLockRequest)
+        .and(mInAllianceZone.negate())
         .whileTrue(
-            mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+            DriveTeleoperatedCommands.runTeleoperatedDriveWithAngularAssist(
+                mDrive, mController::getLeftY, mController::getLeftX, () -> Rotation2d.k180deg));
 
-    RobotModeTriggers.teleop().whileTrue(mFeeder.feed().andThen(mIndexer.index()));
-
-    // Intake
     RobotModeTriggers.teleop().and(mIntakeRequest).whileTrue(mIntake.intake());
 
-    RobotModeTriggers.teleop().onTrue(Commands.runOnce(HubShiftUtil::initialize));
-    RobotModeTriggers.autonomous().onTrue(Commands.runOnce(HubShiftUtil::initialize));
-    RobotModeTriggers.disabled()
-        .onTrue(Commands.runOnce(HubShiftUtil::initialize).ignoringDisable(true));
-
     RobotModeTriggers.teleop()
+        .and(mSpinupRequest)
         .and(mInAllianceZone)
         .whileTrue(
             mShooter.runSetpoint(
                 () -> ShooterSubsystem.kHubShotMap,
                 () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)));
+
+    RobotModeTriggers.teleop()
+        .and(mSpinupRequest)
+        .and(mInAllianceZone.negate())
+        .whileTrue(
+            mShooter.runSetpoint(
+                () -> ShooterSubsystem.kGroundShotMap,
+                () -> {
+                  var targetLine =
+                      Flags.getRobotAlliancePose2d(Rebuilt.kRobotAllianceZone.getCenter())
+                          .getMeasureX();
+
+                  return new Pose2d(targetLine, Meters.zero(), Rotation2d.kZero);
+                }));
+
+    RobotModeTriggers.teleop()
+        .and(mFireRequest)
+        .whileTrue(mFeeder.feed().alongWith(mIndexer.index()));
+
+    // RobotModeTriggers.teleop()
+    //     .and(mSpinupRequest)
+    //     .whileTrue(
+    //         mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+
+    // RobotModeTriggers.teleop().whileTrue(mFeeder.feed().andThen(mIndexer.index()));
+
+    // // Intake
+    // RobotModeTriggers.teleop().and(mIntakeRequest).whileTrue(mIntake.intake());
+
+    // RobotModeTriggers.teleop().onTrue(Commands.runOnce(HubShiftUtil::initialize));
+    // RobotModeTriggers.autonomous().onTrue(Commands.runOnce(HubShiftUtil::initialize));
+    // RobotModeTriggers.disabled()
+    //     .onTrue(Commands.runOnce(HubShiftUtil::initialize).ignoringDisable(true));
+
+    // RobotModeTriggers.teleop()
+    //     .and(mInAllianceZone)
+    //     .whileTrue(
+    //         mShooter.runSetpoint(
+    //             () -> ShooterSubsystem.kHubShotMap,
+    //             () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)));
   }
 
   /** Setup simulation optionals if robot is simulated */

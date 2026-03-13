@@ -26,13 +26,12 @@ from sleipnir.optimization import ExitStatus, Problem
 # Physical characteristics
 shooter_dist = 8.3 * 0.0254
 shooter_height = 24.6 * 0.0254  # m
-min_pitch = np.deg2rad(90 - 45.812)  # rad
+min_pitch = np.deg2rad(90 - 43.812)  # rad
 max_pitch = np.deg2rad(90 - 14.703759)  # rad
 g = np.array([[0], [0], [9.81]])  # m/s²
 max_shooter_velocity = 14.5  # m/s
 ball_mass = 0.5 / 2.205  # kg
 ball_diameter = 5.91 * 0.0254  # m
-
 
 # Solve settings
 printResults = True

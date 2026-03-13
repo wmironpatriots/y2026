@@ -92,10 +92,10 @@ public class Intake extends SubsystemBase {
   public static final double kEpsilonRevs = Units.degreesToRadians(0.3);
 
   /** {@link Double} Lower limit on pivot angular position */
-  public static final double kMinAngleRevs = Units.radiansToRotations(1.15);
+  public static final double kMinAngleRevs = Units.degreesToRotations(98);
 
   /** {@link Double} Upper limit on pivot angular position */
-  public static final double kMaxAngleRevs = Units.radiansToDegrees(2.16);
+  public static final double kMaxAngleRevs = Units.degreesToRotations(145);
 
   /** {@link Double} Gear ratio between pivot servo rotor and the abs encoder shaft */
   public static final double kPivotSensorToMechRatio =
@@ -187,18 +187,18 @@ public class Intake extends SubsystemBase {
     kPivotKg.initDefault(0.0);
     kPivotKv.initDefault(0.0);
     kPivotKa.initDefault(0.0);
-    kPivotKp.initDefault(0.0);
-    kPivotKd.initDefault(0.0);
+    kPivotKp.initDefault(250.0);
+    kPivotKd.initDefault(30.0);
 
-    kPivotMaxVelocityRevsPerSec.initDefault(0.0);
-    kPivotMaxAccelerationRevsPerSecPerSec.initDefault(0.0);
+    kPivotMaxVelocityRevsPerSec.initDefault(2.0);
+    kPivotMaxAccelerationRevsPerSecPerSec.initDefault(3.0);
 
     kPivotStowedPositionDeg.initDefault(Units.rotationsToDegrees(kMinAngleRevs));
     kPivotDeployedPositionDeg.initDefault(Units.rotationsToDegrees(kMaxAngleRevs));
 
     kStowedSpeedVolts.initDefault(0.0);
     kStowingSpeedVolts.initDefault(4.5);
-    kIntakingSpeedVolts.initDefault(8.3);
+    kIntakingSpeedVolts.initDefault(4.5);
     kOutakingSpeedVolts.initDefault(-9.0);
   }
 
@@ -218,8 +218,9 @@ public class Intake extends SubsystemBase {
     mPivot = pivot;
     mRoller = roller;
 
-    setDefaultCommand(
-        Commands.sequence(runCurrentHoming().unless(() -> mIsHomed), stow()).repeatedly());
+    mPivot.resetRelativeEncoder(kMinAngleRevs);
+
+    setDefaultCommand(stow().repeatedly());
   }
 
   @Override
@@ -335,12 +336,7 @@ public class Intake extends SubsystemBase {
   }
 
   public Command stow() {
-    return runSetpoints(
-            Units.degreesToRotations(kPivotStowedPositionDeg.get()), kStowingSpeedVolts.get())
-        .until(this::hasReachedSetpoint)
-        .andThen(
-            runSetpoints(
-                Units.degreesToRotations(kPivotStowedPositionDeg.get()), kStowedSpeedVolts.get()));
+    return runSetpoints(kPivotStowedPositionDeg.get(), kStowingSpeedVolts.get());
   }
 
   public Command intake() {
@@ -357,8 +353,8 @@ public class Intake extends SubsystemBase {
     return this.run(
         () -> {
           mTargetAngleRevs = MathUtil.clamp(angleRevs, kMinAngleRevs, kMaxAngleRevs);
-          mPivot.setProfiledPositionSetpoint(mTargetAngleRevs);
-          mRoller.setVoltageOutput(speedVolts, true);
+          mPivot.setProfiledPositionSetpoint(angleRevs);
+          mRoller.setVoltageOutput(speedVolts, false);
         });
   }
 }

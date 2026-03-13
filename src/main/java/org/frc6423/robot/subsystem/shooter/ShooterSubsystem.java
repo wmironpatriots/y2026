@@ -111,7 +111,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public static final double kMinAngleRevs = Units.degreesToRotations(14.703759);
 
   /** {@link Double} Upper limit on pivot angular position */
-  public static final double kMaxAngleRevs = Units.degreesToRotations(45.812);
+  public static final double kMaxAngleRevs = Units.degreesToRotations(43);
 
   /** {@link Double} Gear ratio between pivot servo rotor and the mech output */
   public static final double kPivotGearRatio = 2.57142857143 * 10.83;
@@ -151,7 +151,7 @@ public class ShooterSubsystem extends SubsystemBase {
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(kFlywheelGearRatio));
 
   /** {@link Double} Min filtered stator current value to be considered homed */
-  public static final double kPivotCurrentZeroThreshold = 30.0;
+  public static final double kPivotCurrentZeroThreshold = 10.0;
 
   /** {@link Double} Moment of Inertia of pivot system */
   public static final double kPivotRotationalInertiaKgSquaredMeters = 402.290096 * 0.0002926397;
@@ -183,192 +183,192 @@ public class ShooterSubsystem extends SubsystemBase {
     // Hub Shot Map (Least Velocity Points)
     kHubShotMap.addSample(
         0.901563,
-        new ProjectileParameters(1.2771938761619435, 5.264705389924427, 0.6206088677805777));
+        new ProjectileParameters(1.2771938761619444, 5.264705389924421, 0.6206088677805742));
     kHubShotMap.addSample(
         1.401563,
-        new ProjectileParameters(1.135879199917164, 5.579475449166682, 0.6275603975218643));
+        new ProjectileParameters(1.1358791999216864, 5.579475449166665, 0.627560397528039));
     kHubShotMap.addSample(
         1.901563,
-        new ProjectileParameters(1.000684790858761, 6.008474088255548, 0.6195579230923949));
+        new ProjectileParameters(1.0006847908587537, 6.008474088255557, 0.619557923092387));
     kHubShotMap.addSample(
         2.401562,
-        new ProjectileParameters(1.0108323646589263, 6.34871789818229, 0.7579363533332415));
+        new ProjectileParameters(1.01083236466515, 6.3487178981822865, 0.7579363533409061));
     kHubShotMap.addSample(
         2.901562,
-        new ProjectileParameters(1.010832364882256, 6.7533617978499425, 0.867059867402536));
+        new ProjectileParameters(1.0108323648882775, 6.753361797855045, 0.8670598674104143));
     kHubShotMap.addSample(
         3.401562,
-        new ProjectileParameters(0.9462509437861253, 7.121430398521272, 0.8798182289385804));
+        new ProjectileParameters(0.9462509437974365, 7.121430398521264, 0.8798182289527228));
     kHubShotMap.addSample(
         3.901562,
-        new ProjectileParameters(0.9462509441380763, 7.502604987136057, 0.964554296248994));
+        new ProjectileParameters(0.946250944149243, 7.502604987141412, 0.9645542962636728));
     kHubShotMap.addSample(
         4.401562,
-        new ProjectileParameters(0.9074351347966203, 7.865648092275609, 0.9909486303053117));
+        new ProjectileParameters(0.9074351348150194, 7.865648092275598, 0.9909486303293451));
     kHubShotMap.addSample(
         4.901562,
-        new ProjectileParameters(0.9074351353321379, 8.228548440911803, 1.062102894571096));
+        new ProjectileParameters(0.9074351353097425, 8.228548440909341, 1.0621028945410949));
     kHubShotMap.addSample(
         5.401562,
-        new ProjectileParameters(0.8814159193489058, 8.57981596403389, 1.0929262758118252));
+        new ProjectileParameters(0.8814159193754088, 8.579815964033871, 1.0929262758482317));
     kHubShotMap.addSample(
         5.901562,
-        new ProjectileParameters(0.8814159199434793, 8.928074317288537, 1.1553502334257695));
+        new ProjectileParameters(0.8814159199659383, 8.928074317294639, 1.1553502334578851));
     kHubShotMap.addSample(
         6.401562,
-        new ProjectileParameters(0.8814159202433496, 9.272319737622105, 1.2149800936782031));
+        new ProjectileParameters(0.881415920265334, 9.272319737632214, 1.2149800937106772));
     kHubShotMap.addSample(
-        6.714062,
-        new ProjectileParameters(0.8814159204647035, 9.485433286201078, 1.2510075539492866));
+        6.776562,
+        new ProjectileParameters(0.8567412757904819, 9.52036706622863, 1.2212615359110726));
     kHubShotMap.addSample(
-        7.214062,
-        new ProjectileParameters(0.881415920627142, 9.823266829648812, 1.3068944304270302));
+        7.276562,
+        new ProjectileParameters(0.8567412766468879, 9.853178654062324, 1.275686707608683));
     kHubShotMap.addSample(
-        7.714062,
-        new ProjectileParameters(0.8442597763364307, 10.13959915425813, 1.3024169831870787));
+        7.776562,
+        new ProjectileParameters(0.8567412770123607, 10.182609393714808, 1.3282310625945843));
     kHubShotMap.addSample(
-        8.214063,
-        new ProjectileParameters(0.8442597782147648, 10.464331693573957, 1.3529187556400193));
+        8.276563,
+        new ProjectileParameters(0.856741277257644, 10.508893479539905, 1.3791079622775493));
     kHubShotMap.addSample(
-        8.714063,
-        new ProjectileParameters(0.8442597786093823, 10.78622667415449, 1.4019183236841237));
+        8.776563,
+        new ProjectileParameters(0.85674127743473, 10.83229443393307, 1.4284939003591837));
     kHubShotMap.addSample(
-        9.214063,
-        new ProjectileParameters(0.8286785978771181, 11.102164011093215, 1.4237253319140029));
+        9.276563,
+        new ProjectileParameters(0.8281159586028316, 11.14164955317965, 1.4285808177123847));
     kHubShotMap.addSample(
-        9.714063,
-        new ProjectileParameters(0.8286785988546391, 11.41713166201366, 1.4694801952332337));
+        9.776563,
+        new ProjectileParameters(0.8281159595725861, 11.456281513897284, 1.4741680116253943));
     kHubShotMap.addSample(
-        10.214063,
-        new ProjectileParameters(0.82867859927272, 11.73007070357567, 1.514129005333057));
+        10.276563,
+        new ProjectileParameters(0.8281159599822888, 11.76891585415174, 1.5186618975680894));
     kHubShotMap.addSample(
-        10.714063,
-        new ProjectileParameters(0.8286785995634579, 12.04121187991649, 1.5577650357805204));
+        10.776563,
+        new ProjectileParameters(0.8281159602720778, 12.079781908944472, 1.562154058854181));
     kHubShotMap.addSample(
-        11.214063,
-        new ProjectileParameters(0.8286785998306486, 12.350777203142819, 1.6004692523477007));
+        11.276563,
+        new ProjectileParameters(0.8126419973303874, 12.38542060700912, 1.5768771688967491));
     kHubShotMap.addSample(
-        11.714063,
-        new ProjectileParameters(0.8097753085233649, 12.653370273929207, 1.6076776544896374));
+        11.776563,
+        new ProjectileParameters(0.812641998355039, 12.691721387866053, 1.6179792869430203));
     kHubShotMap.addSample(
-        12.214063,
-        new ProjectileParameters(0.8097753098325355, 12.958388634263239, 1.6479790809103854));
+        12.276563,
+        new ProjectileParameters(0.8126419988147486, 12.996898117395801, 1.6582972339730058));
     kHubShotMap.addSample(
-        12.714063,
-        new ProjectileParameters(0.8097753103252616, 13.262446153114029, 1.6875450462658614));
+        12.776563,
+        new ProjectileParameters(0.8126419991232069, 13.301134496893718, 1.6978848761605236));
     kHubShotMap.addSample(
-        13.214063,
-        new ProjectileParameters(0.8097753106397666, 13.565717543929013, 1.7264240839669738));
+        13.276563,
+        new ProjectileParameters(0.8061326757140431, 13.602676925461624, 1.7242066233299556));
     kHubShotMap.addSample(
-        13.714063,
-        new ProjectileParameters(0.8097753108687454, 13.868368793525852, 1.7646595200452424));
+        13.776563,
+        new ProjectileParameters(0.8061326759329653, 13.90490870358001, 1.7622279991279937));
     kHubShotMap.addSample(
-        14.214063,
-        new ProjectileParameters(0.809775311048684, 14.170557606278848, 1.8022901935962452));
+        14.276563,
+        new ProjectileParameters(0.8061326759329572, 14.206696629908983, 1.7996505127895444));
     kHubShotMap.addSample(
         14.500000,
-        new ProjectileParameters(0.8097753112079698, 14.343222063394848, 1.8235520311867575));
+        new ProjectileParameters(0.8061326759329395, 14.341453965847178, 1.8161893018317163));
 
     // Ground Shot Map (Least Velocity Points)
     kGroundShotMap.addSample(
         0.500000,
-        new ProjectileParameters(0.7712260909550862, 1.4723075194833641, 0.48970245351992014));
+        new ProjectileParameters(0.8061326758573387, 1.5014777613384982, 0.49740117291738195));
     kGroundShotMap.addSample(
         1.000000,
-        new ProjectileParameters(0.7712260915485003, 2.4659495687332034, 0.5881177865116137));
+        new ProjectileParameters(0.8061326763413506, 2.5000647846631634, 0.6009549214504335));
     kGroundShotMap.addSample(
         1.500000,
-        new ProjectileParameters(0.7712260915664654, 3.252701625119686, 0.6729058016401774));
+        new ProjectileParameters(0.8061326763412355, 3.287598994786462, 0.6897828674599029));
     kGroundShotMap.addSample(
         2.000000,
-        new ProjectileParameters(0.7712260915658992, 3.9223872842710037, 0.7486971638559885));
+        new ProjectileParameters(0.8061326763409928, 3.9570778982213755, 0.76899240886175));
     kGroundShotMap.addSample(
         2.500000,
-        new ProjectileParameters(0.7712260915656677, 4.516149204744708, 0.8179902046267702));
+        new ProjectileParameters(0.8061326763407864, 4.55043647424551, 0.8412987789459383));
     kGroundShotMap.addSample(
         3.000000,
-        new ProjectileParameters(0.7712260915645953, 5.0564212388699055, 0.8823134082542846));
+        new ProjectileParameters(0.8061326763401685, 5.090348726931933, 0.9083482950519163));
     kGroundShotMap.addSample(
         3.500000,
-        new ProjectileParameters(0.7712260915636562, 5.556864975720356, 0.9426817820758525));
+        new ProjectileParameters(0.8061326763395368, 5.590552739822466, 0.9712275575117884));
     kGroundShotMap.addSample(
         4.000000,
-        new ProjectileParameters(0.7712260915633454, 6.026463136242423, 0.9998095939110685));
+        new ProjectileParameters(0.8061326764814627, 6.060052242744736, 1.0306978308410377));
     kGroundShotMap.addSample(
         4.500000,
-        new ProjectileParameters(0.7712260901285651, 6.4714651196505715, 1.054221718148657));
+        new ProjectileParameters(0.8061326766115153, 6.505097676026233, 1.0873166410955286));
     kGroundShotMap.addSample(
         5.000000,
-        new ProjectileParameters(0.7712260904948162, 6.896411371897313, 1.1063170399933058));
+        new ProjectileParameters(0.8061326767312846, 6.930223494141052, 1.1415065590060443));
     kGroundShotMap.addSample(
         5.500000,
-        new ProjectileParameters(0.7712260906676979, 7.30471604211547, 1.1564069395429808));
+        new ProjectileParameters(0.8061326770087112, 7.33883583203188, 1.193596750694068));
     kGroundShotMap.addSample(
         6.000000,
-        new ProjectileParameters(0.7712260907749824, 7.699019089982665, 1.20473988714985));
+        new ProjectileParameters(0.8061326772657605, 7.733566571178354, 1.2438494115918257));
     kGroundShotMap.addSample(
         6.500000,
-        new ProjectileParameters(0.7712260908294982, 8.08140969104444, 1.2515178091209416));
+        new ProjectileParameters(0.8061326775040609, 8.116497483198323, 1.2924773048761222));
     kGroundShotMap.addSample(
         7.000000,
-        new ProjectileParameters(0.7712260908293382, 8.453573795850017, 1.296907361493089));
+        new ProjectileParameters(0.8061326777265486, 8.489308013272046, 1.3396558075554792));
     kGroundShotMap.addSample(
         7.500000,
-        new ProjectileParameters(0.7712260908291001, 8.816894928266528, 1.3410479218828322));
+        new ProjectileParameters(0.8061326779334276, 8.853376091204954, 1.3855314298330175));
     kGroundShotMap.addSample(
-        8.000000,
-        new ProjectileParameters(0.7712260908288933, 9.172525040855598, 1.384057395683421));
+        7.781250,
+        new ProjectileParameters(0.8061326781323375, 9.054760983420483, 1.4108111795695923));
     kGroundShotMap.addSample(
-        8.500000,
-        new ProjectileParameters(0.7712260908288668, 9.521435564980514, 1.4260365253209846));
+        8.281250,
+        new ProjectileParameters(0.806132678317774, 9.40739647381529, 1.4548919824766078));
     kGroundShotMap.addSample(
-        9.000000,
-        new ProjectileParameters(0.7712260900363459, 9.864454988284965, 1.467072147235331));
+        8.781250,
+        new ProjectileParameters(0.8061326749990918, 9.75388379579816, 1.4979522608846767));
     kGroundShotMap.addSample(
-        9.375000,
-        new ProjectileParameters(0.7712260900278651, 10.118286553363303, 1.49727543908539));
+        9.281250,
+        new ProjectileParameters(0.8061326749935412, 10.094980872332522, 1.5400760344765734));
     kGroundShotMap.addSample(
-        9.875000,
-        new ProjectileParameters(0.7712260900206828, 10.452657206873178, 1.536835700160861));
+        9.781250,
+        new ProjectileParameters(0.8061326749882719, 10.431344149958079, 1.581336524794682));
     kGroundShotMap.addSample(
-        10.375000,
-        new ProjectileParameters(0.7712260900123494, 10.782885278400324, 1.5756381113238087));
+        10.281250,
+        new ProjectileParameters(0.8061326749836809, 10.763547127700239, 1.621797978820751));
     kGroundShotMap.addSample(
-        10.875000,
-        new ProjectileParameters(0.7712260900044462, 11.109465893100408, 1.6137356497304385));
+        10.781250,
+        new ProjectileParameters(0.8061326750838044, 11.092094786205088, 1.661517098657199));
     kGroundShotMap.addSample(
-        11.375000,
-        new ProjectileParameters(0.7712260899971641, 11.432838604535604, 1.6511753862414793));
+        11.281250,
+        new ProjectileParameters(0.8061326751257867, 11.41743498535687, 1.7005441931264826));
     kGroundShotMap.addSample(
-        11.875000,
-        new ProjectileParameters(0.7712260901764371, 11.753396177144202, 1.6879993398969604));
+        11.781250,
+        new ProjectileParameters(0.8061326751392676, 11.739967569534112, 1.7389241135910487));
     kGroundShotMap.addSample(
-        12.375000,
-        new ProjectileParameters(0.7712260902938077, 12.07149168844565, 1.7242451782330446));
+        12.281250,
+        new ProjectileParameters(0.8061326751392665, 12.060051715515346, 1.776697019561604));
     kGroundShotMap.addSample(
-        12.875000,
-        new ProjectileParameters(0.7712260899762937, 12.387444327243445, 1.7599467982840178));
+        12.781250,
+        new ProjectileParameters(0.806132675139262, 12.37801191967606, 1.8138990113678308));
     kGroundShotMap.addSample(
-        13.375000,
-        new ProjectileParameters(0.7712260901235072, 12.701544168395213, 1.7951348132376408));
+        13.281250,
+        new ProjectileParameters(0.8061326749616289, 12.694142918365802, 1.8505626564267807));
     kGroundShotMap.addSample(
-        13.875000,
-        new ProjectileParameters(0.7712260899643963, 13.014056130809209, 1.8298369541205401));
+        13.781250,
+        new ProjectileParameters(0.8061326750317377, 13.008713766143941, 1.8867174321444584));
     kGroundShotMap.addSample(
-        14.375000,
-        new ProjectileParameters(0.7712260900936939, 13.325223290890198, 1.8640784188088009));
+        14.281250,
+        new ProjectileParameters(0.8061326750615371, 13.321971235645846, 1.9223900960763556));
     kGroundShotMap.addSample(
-        14.875000,
-        new ProjectileParameters(0.7712260901480218, 13.635269665830352, 1.8978821602971423));
+        14.781250,
+        new ProjectileParameters(0.8061326750715261, 13.634142678661064, 1.9576050040279231));
     kGroundShotMap.addSample(
-        15.375000,
-        new ProjectileParameters(0.7712260901660354, 13.94440257364283, 1.9312691390732795));
+        15.281250,
+        new ProjectileParameters(0.8061326750719175, 13.945438443383933, 1.9923843795136933));
     kGroundShotMap.addSample(
-        15.875000,
-        new ProjectileParameters(0.7712260901660345, 14.252814641562498, 1.964258537220472));
+        15.781250,
+        new ProjectileParameters(0.8061326750719169, 14.256053931251111, 2.026748545531309));
     kGroundShotMap.addSample(
         16.000000,
-        new ProjectileParameters(0.7712260901660318, 14.329826343789406, 1.9724458586344125));
+        new ProjectileParameters(0.8061326750719161, 14.391781281482015, 2.0416571188032537));
   }
 
   /** {@link String} Nt directory to store tunables in */
@@ -550,11 +550,12 @@ public class ShooterSubsystem extends SubsystemBase {
 
     mPivot.resetRelativeEncoder(kMinAngleRevs);
 
-    setDefaultCommand(
-        runCurrentHoming()
-            .unless(new Trigger(() -> isHomed()))
-            .andThen(stowAndDeaccel())
-            .repeatedly());
+    setDefaultCommand(stowAndDeaccel());
+    // setDefaultCommand(
+    //     runCurrentHoming()
+    //         .unless(new Trigger(() -> isHomed()))
+    //         .andThen(stowAndDeaccel())
+    //         .repeatedly());
   }
 
   @Override
@@ -773,7 +774,11 @@ public class ShooterSubsystem extends SubsystemBase {
       Supplier<InterpolatingProjectileParametersTree> tree, Supplier<Pose2d> target) {
     return runSetpoint(
         () -> calculateParameters(tree.get(), target.get()).velocity(),
-        () -> Rotation2d.fromRadians(calculateParameters(tree.get(), target.get()).pitch()));
+        () ->
+            Rotation2d.fromDegrees(90)
+                .minus(
+                    Rotation2d.fromRadians(calculateParameters(tree.get(), target.get()).pitch()))
+                .times(-1.0));
   }
 
   /**
