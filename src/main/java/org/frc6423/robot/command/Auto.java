@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import java.util.HashMap;
+import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Rebuilt;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
@@ -140,6 +141,11 @@ public class Auto {
     traj.atTime("score")
         .whileTrue(
             mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
+    traj.atTime("score")
+        .whileTrue(
+            mShooter.runSetpoint(
+                () -> ShooterSubsystem.kHubShotMap,
+                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)));
     traj.atTime("score")
         .and(mShooter::isHoldingSetpoint)
         .whileTrue(Commands.parallel(mIndexer.index(), mFeeder.feed()));
