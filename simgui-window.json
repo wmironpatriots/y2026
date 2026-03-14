@@ -1,0 +1,142 @@
+{
+  "Docking": {
+    "Data": [
+      "DockNode          ID=0x00000009 Pos=-10,40 Size=3840,1990 Split=Y",
+      "DockNode        ID=0x00000001 Parent=0x00000009 SizeRef=3585,468 Split=X",
+      "DockNode      ID=0x00000004 Parent=0x00000001 SizeRef=1226,469 Split=X Selected=0x39AD1970",
+      "DockNode    ID=0x0000000E Parent=0x00000004 SizeRef=278,652 Split=X Selected=0x39AD1970",
+      "DockNode  ID=0x00000010 Parent=0x0000000E SizeRef=400,652 Selected=0x39AD1970",
+      "DockNode  ID=0x00000011 Parent=0x0000000E SizeRef=2088,652 Selected=0x3E3C37F1",
+      "DockNode    ID=0x0000000F Parent=0x00000004 SizeRef=2210,652 Selected=0xB5CBE9F0",
+      "DockNode      ID=0x00000005 Parent=0x00000001 SizeRef=664,469 Split=X Selected=0xC8493FD8",
+      "DockNode    ID=0x00000002 Parent=0x00000005 SizeRef=830,652 Selected=0xC8493FD8",
+      "DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=516,652 Selected=0xD58031C5",
+      "DockNode        ID=0x0000000B Parent=0x00000009 SizeRef=3585,960 Split=Y",
+      "DockNode      ID=0x0000000A Parent=0x0000000B SizeRef=3585,853 Split=X Selected=0x2D9B9756",
+      "DockNode    ID=0x0000000C Parent=0x0000000A SizeRef=2549,1042 Selected=0x2D9B9756",
+      "DockNode    ID=0x0000000D Parent=0x0000000A SizeRef=1289,1042 Selected=0xF5CC1934",
+      "DockNode      ID=0x00000006 Parent=0x0000000B SizeRef=3585,481 Split=X",
+      "DockNode    ID=0x00000007 Parent=0x00000006 SizeRef=492,320 Selected=0x6AE6D891",
+      "DockNode    ID=0x00000008 Parent=0x00000006 SizeRef=1562,320 Selected=0x138219D4"
+    ]
+  },
+  "MainWindow": {
+    "GLOBAL": {
+      "font": "Fira Code Retina",
+      "fps": "120",
+      "height": "1101",
+      "maximized": "1",
+      "style": "1",
+      "userScale": "6",
+      "width": "958",
+      "xpos": "0",
+      "ypos": "29"
+    }
+  },
+  "Table": {
+    "0x542B5671,2": {
+      "Column 0  Width": "797",
+      "Column 1  Width": "1396",
+      "RefScale": "34"
+    },
+    "0xE56EC1C2,4": {
+      "Column 0  Weight": "1.0000",
+      "Column 1  Weight": "1.0000",
+      "Column 2  Weight": "1.0000",
+      "Column 3  Weight": "1.0000"
+    }
+  },
+  "Window": {
+    "###/SmartDashboard/Alerts": {
+      "Collapsed": "0",
+      "Pos": "60,60",
+      "Size": "378,150"
+    },
+    "###/SmartDashboard/Auto Chooser": {
+      "Collapsed": "0",
+      "Pos": "369,443",
+      "Size": "524,84"
+    },
+    "###/SmartDashboard/Field": {
+      "Collapsed": "0",
+      "DockId": "0x0000000F,0",
+      "Pos": "270,40",
+      "Size": "2210,652"
+    },
+    "###FMS": {
+      "Collapsed": "0",
+      "DockId": "0x00000002,0",
+      "Pos": "2482,40",
+      "Size": "830,652"
+    },
+    "###Joysticks": {
+      "Collapsed": "0",
+      "DockId": "0x00000008,0",
+      "Pos": "911,1549",
+      "Size": "2919,481"
+    },
+    "###Keyboard 0 Settings": {
+      "Collapsed": "0",
+      "DockId": "0x00000011,0",
+      "Pos": "70,39",
+      "Size": "363,652"
+    },
+    "###NetworkTables": {
+      "Collapsed": "0",
+      "DockId": "0x0000000C,0",
+      "Pos": "-10,694",
+      "Size": "2549,853"
+    },
+    "###NetworkTables Info": {
+      "Collapsed": "0",
+      "DockId": "0x0000000C,1",
+      "Pos": "-10,694",
+      "Size": "2549,853"
+    },
+    "###Other Devices": {
+      "Collapsed": "0",
+      "Pos": "1634,63",
+      "Size": "500,1390"
+    },
+    "###Plot <0>": {
+      "Collapsed": "0",
+      "DockId": "0x0000000D,0",
+      "Pos": "2541,694",
+      "Size": "1289,853"
+    },
+    "###Plot <1>": {
+      "Collapsed": "0",
+      "DockId": "0x0000000D,1",
+      "Pos": "2541,694",
+      "Size": "1289,853"
+    },
+    "###RoboRIO": {
+      "Collapsed": "0",
+      "Pos": "5,125",
+      "Size": "279,272"
+    },
+    "###System Joysticks": {
+      "Collapsed": "0",
+      "DockId": "0x00000007,0",
+      "Pos": "-10,1549",
+      "Size": "919,481"
+    },
+    "###Timing": {
+      "Collapsed": "0",
+      "DockId": "0x00000003,0",
+      "Pos": "3314,40",
+      "Size": "516,652"
+    },
+    "Debug##Default": {
+      "Collapsed": "0",
+      "Pos": "60,60",
+      "Size": "400,400"
+    },
+    "Robot State": {
+      "Collapsed": "0",
+      "DockId": "0x00000010,0",
+      "Pos": "-10,40",
+      "Size": "278,652"
+    }
+  }
+}
