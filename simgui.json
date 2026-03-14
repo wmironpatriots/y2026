@@ -55,8 +55,10 @@
     "types": {
       "/FMSInfo": "FMSInfo",
       "/SmartDashboard/Alerts": "Alerts",
+      "/SmartDashboard/Auto Chooser": "String Chooser",
       "/SmartDashboard/Choreo Alerts": "Alerts",
-      "/SmartDashboard/Field": "Field2d"
+      "/SmartDashboard/Field": "Field2d",
+      "/SmartDashboard/Flywheel Characterization": "Command"
     },
     "windows": {
       "/SmartDashboard/Field": {
@@ -74,6 +76,15 @@
   },
   "NetworkTables": {
     "transitory": {
+      "SmartDashboard": {
+        "Auto Chooser": {
+          "open": true
+        },
+        "Field": {
+          "open": true
+        },
+        "open": true
+      },
       "Telemetry": {
         "io": {
           "open": true
@@ -93,8 +104,7 @@
           },
           "mGyro": {
             "open": true
-          },
-          "open": true
+          }
         },
         "mIntake": {
           "mPivot": {
@@ -175,10 +185,16 @@
           },
           "open": true
         }
+      },
+      "Tuning": {
+        "open": true
       }
     }
   },
   "NetworkTables Info": {
+    "Connections": {
+      "open": true
+    },
     "visible": true
   },
   "Plot": {
@@ -191,7 +207,7 @@
             0.05999999865889549,
             0.9399999976158142
           ],
-          "height": 749,
+          "height": 761,
           "series": [
             {
               "color": [
@@ -218,7 +234,7 @@
             0.05999999865889549,
             0.9399999976158142
           ],
-          "height": 749
+          "height": 761
         }
       ],
       "window": {

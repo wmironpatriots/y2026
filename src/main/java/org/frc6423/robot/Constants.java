@@ -8,9 +8,13 @@ package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.epilogue.Logged.Importance;
-import org.frc6423.robot.subsystem.drive.constants.DriveConstants;
-import org.frc6423.robot.subsystem.drive.constants.RebuiltL1;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import org.frc6423.lib.util.GeometryUtil;
 import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
+import org.frc6423.robot.subsystem.drive.constants.SwerveConstants;
 
 /**
  * This is a globally accessible class for storing immutable values.
@@ -23,8 +27,8 @@ import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
 public final class Constants {
   /** Runtime flags determining the robots initialization */
   public static final class Flags {
-    /** {@link RobotType} representing the robot chassis being used */
-    public static final RobotType kRobotType = RobotType.Y2026_L2;
+    /** {@link SwerveConstants} Drivetrain characterization */
+    public static final SwerveConstants kDriveConstants = new RebuiltL2();
 
     /** When true, subsystems will not be initialized */
     public static final boolean kSubsystemDisabled = false;
@@ -37,27 +41,47 @@ public final class Constants {
 
     /** {@link Importance} Minimum Epilogue importance to be logged */
     public static final Importance kLoggingLevel = Importance.DEBUG;
+
+    /** {@link Alliance} Alliance robot is currently on */
+    public static Alliance getRobotAlliance() {
+      return DriverStation.getAlliance().orElse(Alliance.Blue);
+    }
+
+    public static final boolean kSpawnStartingFuel = false;
+
+    /**
+     * Get yaw offset based on {@link #kRobotAlliance}
+     *
+     * @return {@link getAllianceRotation}
+     */
+    public static Rotation2d getAllianceRotation() {
+      return Rotation2d.fromRotations(getRobotAlliance() == Alliance.Blue ? 0.0 : 0.5);
+    }
+
+    public static Pose2d getRobotAlliancePose2d(Pose2d pose) {
+      return GeometryUtil.allianceFlipPose2d(Rebuilt.kMidPose, pose);
+    }
   }
 
   /** The matrix contains the CAN identification information for all devices */
   public static final class Matrix {
     public static final CANBus kDriveCanBus = new CANBus("DRIVE");
 
-    public static final int kDriveBrPivotId = 1;
-    public static final int kDriveBrEncoderId = 2;
-    public static final int kDriveBrDriveId = 3;
+    public static final int kDriveFrPivotId = 1;
+    public static final int kDriveFrEncoderId = 9;
+    public static final int kDriveFrDriveId = 2;
 
-    public static final int kDriveFrPivotId = 4;
-    public static final int kDriveFrEncoderId = 5;
-    public static final int kDriveFrDriveId = 6;
+    public static final int kDriveBrPivotId = 7;
+    public static final int kDriveBrEncoderId = 12;
+    public static final int kDriveBrDriveId = 8;
 
-    public static final int kDriveFlPivotId = 7;
-    public static final int kDriveFlEncoderId = 8;
-    public static final int kDriveFlDriveId = 9;
+    public static final int kDriveFlPivotId = 3;
+    public static final int kDriveFlEncoderId = 10;
+    public static final int kDriveFlDriveId = 4;
 
-    public static final int kDriveBlPivotId = 10;
+    public static final int kDriveBlPivotId = 5;
     public static final int kDriveBlEncoderId = 11;
-    public static final int kDriveBlDriveId = 12;
+    public static final int kDriveBlDriveId = 6;
 
     public static final int kDriveGyroId = 13;
 
@@ -79,21 +103,5 @@ public final class Constants {
 
     public static final int kIntakeBeamBreakDio = 0;
     public static final int kFeederBeamBreakDio = 1;
-  }
-
-  /** Represents the type of robot codebase is running on */
-  public static enum RobotType {
-    /** {@link RobotType} representing the 2026 competition robot chassis /w L1 Ratio */
-    Y2026_L1(new RebuiltL1()),
-    /** {@link RobotType} representing the 2026 competition robot chassis /w L2 Ratio */
-    Y2026_L2(new RebuiltL2()),
-    /** {@link RobotType} representing the 2026 competition robot chassis /w L3 Ratio */
-    Y2026_L3(new RebuiltL2());
-
-    public final DriveConstants mDriveConstants;
-
-    private RobotType(DriveConstants drivetrainConstants) {
-      this.mDriveConstants = drivetrainConstants;
-    }
   }
 }

@@ -7,52 +7,34 @@
 package org.frc6423.robot.subsystem.drive.component;
 
 import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.CANBus;
-import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.Pigeon2Configuration;
+import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.Pigeon2;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.units.measure.LinearAcceleration;
+import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.GyroConfig;
 
 /** Interface for interacting with {@link Pigeon2} gyro hardware */
 public class GyroIOPigeon2 extends GyroIO {
   private final Pigeon2 mPigeon;
 
-  private final StatusSignal<LinearAcceleration> mAccelXSig, mAccelYSig, mAccelZSig;
+  private final BaseStatusSignal mYawSignal;
 
-  public GyroIOPigeon2(int canDeviceId, CANBus canBus, Pigeon2Configuration config) {
-    mPigeon = new Pigeon2(canDeviceId, canBus);
-    mPigeon.getConfigurator().apply(config);
+  public GyroIOPigeon2(GyroConfig config) {
+    mPigeon = new Pigeon2(config.deviceId(), config.canBus());
+    mPigeon.getConfigurator().apply(config.config());
+    mPigeon.getConfigurator().setYaw(0.0);
 
-    mAccelXSig = mPigeon.getAccelerationX();
-    mAccelYSig = mPigeon.getAccelerationY();
-    mAccelZSig = mPigeon.getAccelerationZ();
+    mYawSignal = mPigeon.getYaw();
+    mYawSignal.setUpdateFrequency(50.0);
 
-    BaseStatusSignal.setUpdateFrequencyForAll(50.0, mAccelXSig, mAccelYSig, mAccelZSig);
+    ParentDevice.optimizeBusUtilizationForAll(mPigeon);
+  }
+
+  @Override
+  public double getYawDegrees() {
+    return mYawSignal.getValueAsDouble();
   }
 
   @Override
   public void periodic() {
-    BaseStatusSignal.refreshAll(mAccelXSig, mAccelYSig, mAccelZSig);
-  }
-
-  @Override
-  public Rotation3d getRotation3d() {
-    return mPigeon.getRotation3d();
-  }
-
-  @Override
-  public LinearAcceleration getAccelerationX() {
-    return mAccelXSig.getValue();
-  }
-
-  @Override
-  public LinearAcceleration getAccelerationY() {
-    return mAccelYSig.getValue();
-  }
-
-  @Override
-  public LinearAcceleration getAccelerationZ() {
-    return mAccelZSig.getValue();
+    BaseStatusSignal.refreshAll(mYawSignal);
   }
 }

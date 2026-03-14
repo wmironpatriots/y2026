@@ -10,6 +10,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.geometry.Twist3d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 /**
  * Utility class for interacting with classes related to the Field Coordinate System
@@ -17,6 +19,11 @@ import edu.wpi.first.math.geometry.Twist3d;
  * @see https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
  */
 public class GeometryUtil {
+  public static Pose2d applyForAlliance(Pose2d fieldMidpoint, Pose2d pose) {
+    if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue) return pose;
+    else return allianceFlipPose2d(fieldMidpoint, pose);
+  }
+
   /**
    * Convert specified {@link Pose2d} to its opposing alliance equivalent
    *

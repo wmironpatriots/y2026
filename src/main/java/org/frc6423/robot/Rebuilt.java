@@ -139,6 +139,8 @@ public class Rebuilt {
   /** {@link Pose2d} representing the location of the opposing alliance hub */
   public static final Pose2d kOpposingAllianceHubPose2d = allianceFlipPose2d(kHubPose2d);
 
+  public static final Distance kHubHeight = Inches.of(72.0);
+
   /** {@link Rectangle2d} representing the area of the robot alliance hub */
   public static final Rectangle2d kHub =
       new Rectangle2d(kHubPose2d, kHubSideLength, kHubSideLength);

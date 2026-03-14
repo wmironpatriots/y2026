@@ -6,172 +6,107 @@
 
 package org.frc6423.lib.io;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Celsius;
-import static edu.wpi.first.units.Units.NewtonMeters;
-import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
-import static edu.wpi.first.units.Units.Revolution;
-import static edu.wpi.first.units.Units.RevolutionsPerSecond;
-import static edu.wpi.first.units.Units.Volts;
-
-import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import edu.wpi.first.units.CurrentUnit;
-import edu.wpi.first.units.TorqueUnit;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularAcceleration;
-import edu.wpi.first.units.measure.AngularVelocity;
-import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Per;
-import edu.wpi.first.units.measure.Temperature;
-import edu.wpi.first.units.measure.Torque;
-import edu.wpi.first.units.measure.Voltage;
 
-/** Blank {@link ServoIO} extension for simulation */
 public class ServoIONone extends ServoIO {
   public ServoIONone(String name) {
-    super(name, CANBus.roboRIO(), 0, new TalonFXConfiguration());
+    super(name, 0, new TalonFXConfiguration());
   }
 
   @Override
   public void periodic() {}
 
   @Override
-  public Per<TorqueUnit, CurrentUnit> getMotorKt() {
-    return NewtonMeters.zero().per(Amps);
+  public double getMotorKtNewtonMetersPerAmps() {
+    return 0.0;
   }
 
   @Override
-  public Voltage getSupplyVoltage() {
-    return Volts.zero();
+  public double getAppliedVolts() {
+    return 0.0;
   }
 
   @Override
-  public Voltage getStatorVoltage() {
-    return Volts.zero();
+  public double getSupplyCurrentAmps() {
+    return 0.0;
   }
 
   @Override
-  public Current getSupplyCurrent() {
-    return Amps.zero();
+  public double getStatorCurrentAmps() {
+    return 0.0;
   }
 
   @Override
-  public Current getStatorCurrent() {
-    return Amps.zero();
+  public double getTorqueCurrentAmps() {
+    return 0.0;
   }
 
   @Override
-  public Current getTorqueCurrent() {
-    return Amps.zero();
+  public double getTemperatureCelsius() {
+    return 0.0;
   }
 
   @Override
-  public Angle getAngle() {
-    return Revolution.zero();
+  public double getAngularPositionRevs() {
+    return 0.0;
   }
 
   @Override
-  public AngularVelocity getAngularVelocity() {
-    return RevolutionsPerSecond.zero();
+  public double getAngularVelocityRevsPerSec() {
+    return 0.0;
   }
 
   @Override
-  public AngularAcceleration getAngularAcceleration() {
-    return RadiansPerSecondPerSecond.zero();
-  }
-
-  @Override
-  public Temperature getTemperature() {
-    return Celsius.zero();
+  public double getAngularAccelerationRevsPerSecPerSec() {
+    return 0.0;
   }
 
   @Override
   public void setLeader(ServoIO leader, boolean flipped) {}
 
   @Override
-  public void setGainsSlot(int slot) {}
+  public void setBrakeModeStatus(boolean brakeEnabled) {}
 
   @Override
-  public void setBrakeStatus(boolean active) {}
+  public void setGains(double kP, double kD, double kS, double kG, double kV, double kA) {}
 
   @Override
-  public void resetEncoder(Angle angle) {}
+  public void setProfilingConstraints(
+      double angularVelocityLimitRevsPerSec, double angularAccelerationLimitRevsPerSecPerSec) {}
 
   @Override
-  public void stop() {}
+  public void resetRelativeEncoder(double positionRevs) {}
 
   @Override
-  public void setVoltageSetpoint(Voltage voltage, boolean withFoc) {}
+  public void setNeutral() {}
 
   @Override
-  public void setVoltagePositionSetpoint(Angle angle, boolean withFoc) {}
+  public void setVoltageOutput(double volts, boolean focEnabled) {}
 
   @Override
-  public void setVoltagePositionSetpoint(Angle angle, Voltage feedforward, boolean withFoc) {}
+  public void setTorqueCurrentOutput(double torqueNewtonMeters) {}
 
   @Override
-  public void setVoltageVelocitySetpoint(AngularVelocity velocity, boolean withFoc) {}
+  public void setPositionSetpoint(double positionRevs) {}
 
   @Override
-  public void setVoltageVelocitySetpoint(
-      AngularVelocity velocity, Voltage feedforward, boolean withFoc) {}
+  public void setPositionSetpoint(double positionRevs, double feedforward) {}
 
   @Override
-  public void setVoltageMotionProfiledPositionSetpoint(Angle angle, boolean withFoc) {}
+  public void setVelocitySetpoint(double velocityRevsPerSec) {}
 
   @Override
-  public void setVoltageMotionProfiledPositionSetpoint(
-      Angle angle, Voltage feedforward, boolean withFoc) {}
+  public void setVelocitySetpoint(double velocityRevsPerSec, double feedforward) {}
 
   @Override
-  public void setVoltageMotionProfiledVelocitySetpoint(AngularVelocity velocity, boolean withFoc) {}
+  public void setProfiledPositionSetpoint(double positionRevs) {}
 
   @Override
-  public void setTorqueCurrentSetpoint(Current current) {}
+  public void setProfiledPositionSetpoint(double positionRevs, double feedforward) {}
 
   @Override
-  public void setTorquePositionSetpoint(Angle angle) {}
+  public void setProfiledVelocitySetpoint(double velocityRevsPerSec) {}
 
   @Override
-  public void setTorquePositionSetpoint(Angle angle, Torque torque) {}
-
-  @Override
-  public void setTorquePositionSetpoint(Angle angle, Current feedforward) {}
-
-  @Override
-  public void setTorqueVelocitySetpoint(AngularVelocity velocity) {}
-
-  @Override
-  public void setTorqueVelocitySetpoint(AngularVelocity velocity, Torque torque) {}
-
-  @Override
-  public void setTorqueVelocitySetpoint(AngularVelocity velocity, Current feedforward) {}
-
-  @Override
-  public void setTorqueVelocitySetpoint(
-      AngularVelocity velocity, AngularAcceleration acceleration) {}
-
-  @Override
-  public void setTorqueMotionProfiledPositionSetpoint(Angle angle) {}
-
-  @Override
-  public void setTorqueMotionProfiledPositionSetpoint(Angle angle, Torque torque) {}
-
-  @Override
-  public void setTorqueMotionProfiledPositionSetpoint(Angle angle, Current feedforward) {}
-
-  @Override
-  public void setTorqueMotionProfiledVelocitySetpoint(AngularVelocity velocity) {}
-
-  @Override
-  public void setTorqueMotionProfiledVelocitySetpoint(AngularVelocity velocity, Torque torque) {}
-
-  @Override
-  public void setTorqueMotionProfiledVelocitySetpoint(
-      AngularVelocity velocity, Current feedforward) {}
-
-  @Override
-  public void setTorqueMotionProfiledVelocitySetpoint(
-      AngularVelocity velocity, AngularAcceleration acceleration) {}
+  public void setProfiledVelocitySetpoint(double velocityRevsPerSec, double feedforward) {}
 }

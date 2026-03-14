@@ -6,32 +6,25 @@
 
 package org.frc6423.robot.subsystem.drive.constants;
 
-import static edu.wpi.first.units.Units.FeetPerSecond;
-import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
-import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
+import edu.wpi.first.math.util.Units;
 
-import edu.wpi.first.units.measure.AngularAcceleration;
-import edu.wpi.first.units.measure.LinearAcceleration;
-import edu.wpi.first.units.measure.LinearVelocity;
-
-/** {@link RebuiltL2} but for L2 drive ratio */
+/** {@link RebuiltL2_old} but for L2 drive ratio */
 public class RebuiltL1 extends RebuiltL2 {
   @Override
-  public LinearVelocity getMaxLinearVelocity() {
+  public double getMaxLinearVelocityMetersPerSecond() {
     // https://www.swervedrivespecialties.com/products/mk5i-swerve-module
-    return FeetPerSecond.of(14.9);
+    return Units.feetToMeters(14.9);
   }
 
   @Override
-  public LinearAcceleration getMaxLinearAcceleration() {
-    // TODO derive in choreo; values copied from L2 ratio
-    return MetersPerSecondPerSecond.of(12.624);
+  public double getMaxLinearAccelerationMetersPerSecondPerSecond() {
+    return Units.feetToMeters(12.624);
   }
 
   @Override
-  public AngularAcceleration getAngularAcceleration() {
+  public double getAngularAccelerationRadsPerSecPerSec() {
     // TODO derive in choreo; values copied from L2 ratio
-    return RadiansPerSecondPerSecond.of(50.022);
+    return 50.022;
   }
 
   @Override
