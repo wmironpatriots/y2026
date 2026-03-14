@@ -174,7 +174,7 @@ public class DriveTeleoperatedCommands {
   private static double getOmegaFromJoystick(double omega) {
     var deadband =
         MathUtil.applyDeadband(omega, kJoystickDeadband)
-            * (Flags.kDriveConstants.getMaxAngularVelocityRadsPerSec() / 2);
+            * (Flags.kDriveConstants.getMaxAngularVelocityRadsPerSec() / 4);
 
     return deadband * deadband * Math.signum(omega) * -1;
   }

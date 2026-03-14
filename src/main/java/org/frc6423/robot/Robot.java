@@ -30,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
+import org.frc6423.robot.command.Auto;
 import org.frc6423.robot.command.DriveTeleoperatedCommands;
 import org.frc6423.robot.subsystem.RobotState;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
@@ -63,7 +64,7 @@ public class Robot extends CommandRobot {
 
   // * ~~~~~~~~ CONTROL ~~~~~~~~
 
-  //   private final Auto mAuto = new Auto(mDrive, mShooter, mFeeder, mIndexer, mIntake);
+  private final Auto mAuto = new Auto(mDrive, mShooter, mFeeder, mIndexer, mIntake);
 
   private final CommandXboxController mController = new CommandXboxController(0);
 
@@ -314,6 +315,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return null;
+    return mAuto.getSelectedAuto();
   }
 }
