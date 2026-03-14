@@ -132,7 +132,7 @@ public class Intake extends SubsystemBase {
                   .withNeutralMode(NeutralModeValue.Brake))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(20.0)
+                  .withStatorCurrentLimit(40.0)
                   .withStatorCurrentLimitEnable(true));
 
   /** {@link Double} Moment of Inertia of pivot system */
@@ -198,7 +198,7 @@ public class Intake extends SubsystemBase {
 
     kStowedSpeedVolts.initDefault(0.0);
     kStowingSpeedVolts.initDefault(4.5);
-    kIntakingSpeedVolts.initDefault(4.5);
+    kIntakingSpeedVolts.initDefault(7.0);
     kOutakingSpeedVolts.initDefault(-9.0);
   }
 

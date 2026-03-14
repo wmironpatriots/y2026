@@ -549,7 +549,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     mPivot.resetRelativeEncoder(kMinAngleRevs);
 
-    setDefaultCommand(stowAndDeaccel());
+    setDefaultCommand(stowAndCoast());
     // setDefaultCommand(
     //     runCurrentHoming()
     //         .unless(new Trigger(() -> isHomed()))

@@ -59,6 +59,8 @@ public class Robot extends CommandRobot {
   private Optional<FuelSimulation> mFuelSim = Optional.empty();
   private Optional<HopperSimulation> mHopperSim = Optional.empty();
 
+  private int toggle = 0;
+
   // * ~~~~~~~~ CONTROL ~~~~~~~~
 
   //   private final Auto mAuto = new Auto(mDrive, mShooter, mFeeder, mIndexer, mIntake);
@@ -73,6 +75,10 @@ public class Robot extends CommandRobot {
   //   private final Trigger mInAllianceZone =
   //       new Trigger(() ->
   // Rebuilt.kRobotAllianceZone.contains(mDrive.getPose2d().getTranslation()));
+
+  public int getToggle() {
+    return toggle;
+  }
 
   public Robot() {
     // Shut up DS
@@ -127,6 +133,9 @@ public class Robot extends CommandRobot {
   }
 
   public void configureDashboardNotifiers() {
+    RobotModeTriggers.teleop().onTrue(Commands.runOnce(() -> HubShiftUtil.initialize()));
+    RobotModeTriggers.autonomous().onTrue(Commands.runOnce(() -> HubShiftUtil.initialize()));
+
     addPeriodic(
         () -> {
           SmartDashboard.putNumber("Match Time", DriverStation.getMatchTime());
@@ -140,24 +149,22 @@ public class Robot extends CommandRobot {
               String.format(
                   "%.1f", Math.max(HubShiftUtil.getOfficialShiftInfo().remainingTime(), 0.0), 0.0));
         },
-        0.04);
+        0.01);
   }
 
   /** Configure driver bindings */
   public void configureBindings() {
     // Alliance Zone Triggers
-    RobotModeTriggers.teleop()
-        .and(mLockRequest.negate())
-        .whileTrue(
-            DriveTeleoperatedCommands.runTeleoperatedDrive(
-                mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
+    mDrive.setDefaultCommand(
+        DriveTeleoperatedCommands.runTeleoperatedDrive(
+            mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
 
-    RobotModeTriggers.teleop()
-        .and(mLockRequest)
+    mLockRequest
         // .and(mInAllianceZone)
         .whileTrue(
-            DriveTeleoperatedCommands.runTeleoperatedDrive(
-                mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
+        DriveTeleoperatedCommands.runTeleoperatedDrive(
+            mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
+
     // .whileTrue(
     //     DriveTeleoperatedCommands.runTeleoperatedDriveWhileFacing(
     //         mDrive,
@@ -173,15 +180,30 @@ public class Robot extends CommandRobot {
     //         DriveTeleoperatedCommands.runTeleoperatedDriveWithAngularAssist(
     //             mDrive, mController::getLeftY, mController::getLeftX, () -> Rotation2d.k180deg));
 
-    RobotModeTriggers.teleop().and(mIntakeRequest).whileTrue(mIntake.intake());
+    mIntakeRequest.whileTrue(mIntake.intake());
 
-    RobotModeTriggers.teleop()
-        .and(mSpinupRequest)
-        // .and(mInAllianceZone)
+    mController.a().onTrue(Commands.runOnce(() -> toggle = 0));
+    mController.b().onTrue(Commands.runOnce(() -> toggle = 1));
+    mController.y().onTrue(Commands.runOnce(() -> toggle = 2));
+
+    mSpinupRequest
+        .and(() -> getToggle() == 0)
         .whileTrue(
             mShooter.runSetpoint(
                 () -> ShooterSubsystem.kHubShotMap,
                 () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)));
+
+    mSpinupRequest
+        .and(() -> getToggle() == 1)
+        .whileTrue(
+            mShooter.runSetpoint(
+                () -> 7.5, () -> Rotation2d.fromRotations(ShooterSubsystem.kMaxAngleRevs)));
+
+    mSpinupRequest
+        .and(() -> getToggle() == 2)
+        .whileTrue(
+            mShooter.runSetpoint(
+                () -> 29, () -> Rotation2d.fromRotations(ShooterSubsystem.kMaxAngleRevs)));
 
     // RobotModeTriggers.teleop()
     //     .and(mSpinupRequest)
@@ -197,9 +219,7 @@ public class Robot extends CommandRobot {
     //           return new Pose2d(targetLine, Meters.zero(), Rotation2d.kZero);
     //         }));
 
-    RobotModeTriggers.teleop()
-        .and(mFireRequest)
-        .whileTrue(mFeeder.feed().alongWith(mIndexer.index()));
+    mFireRequest.whileTrue(mFeeder.feed().alongWith(mIndexer.index()));
 
     mController
         .x()
@@ -294,6 +314,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return Commands.none();
+    return null;
   }
 }
