@@ -78,7 +78,7 @@ public class Auto {
             kRobotState::getEstimatedPosition,
             kRobotState::resetPose,
             mDrive.getChoreoSwerveSampleConsumer(),
-            true,
+            false,
             drive);
     // Init Auto Chooser
     mAutoChooser = new AutoChooser();

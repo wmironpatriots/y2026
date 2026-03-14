@@ -99,6 +99,6 @@
   "splits":[0]
  },
  "events":[
-   {"name":"intake_start", "from":{"target":1, "targetTimestamp":1.11965, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+   {"name":"intake_start", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
    {"name":"intake_end", "from":{"target":2, "targetTimestamp":1.73521, "offset":{"exp":"0 s", "val":0.0}}, "event":null}]
 }
