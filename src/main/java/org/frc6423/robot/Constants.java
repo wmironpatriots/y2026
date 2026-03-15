@@ -8,13 +8,11 @@ package org.frc6423.robot;
 
 import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import org.frc6423.lib.util.GeometryUtil;
-import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
-import org.frc6423.robot.subsystem.drive.constants.SwerveConstants;
+import org.frc6423.robot.subsystems.drive.constants.RebuiltL2;
+import org.frc6423.robot.subsystems.drive.constants.SwerveConstants;
 
 /**
  * This is a globally accessible class for storing immutable values.
@@ -58,9 +56,9 @@ public final class Constants {
       return Rotation2d.fromRotations(getRobotAlliance() == Alliance.Blue ? 0.0 : 0.5);
     }
 
-    public static Pose2d getRobotAlliancePose2d(Pose2d pose) {
-      return GeometryUtil.allianceFlipPose2d(Rebuilt.kMidPose, pose);
-    }
+    // public static Pose2d getRobotAlliancePose2d(Pose2d pose) {
+    //   return GeometryUtil.allianceFlipPose2d(Rebuilt.kMidPose, pose);
+    // }
   }
 
   /** The matrix contains the CAN identification information for all devices */

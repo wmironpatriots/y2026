@@ -6,81 +6,22 @@
 
 package org.frc6423.robot;
 
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.EpilogueConfiguration;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import java.util.Optional;
-import org.frc6423.lib.driver.CommandRobot;
+import org.frc6423.lib.drivers.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.command.Auto;
-import org.frc6423.robot.command.DriveTeleoperatedCommands;
-import org.frc6423.robot.subsystem.RobotState;
-import org.frc6423.robot.subsystem.drive.DriveSubsystem;
-import org.frc6423.robot.subsystem.feeder.Feeder;
-import org.frc6423.robot.subsystem.indexer.Indexer;
-import org.frc6423.robot.subsystem.intake.Intake;
-import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
-import org.frc6423.robot.util.HubShiftUtil;
-import org.frc6423.robot.util.sim.FuelSimulation;
-import org.frc6423.robot.util.sim.HopperSimulation;
 
 @Logged
 public class Robot extends CommandRobot {
-  private final RobotState mRobotState = RobotState.getInstance();
-
-  // * ~~~~~~~~ SUBSYSTEMS ~~~~~~~~
-
-  private final DriveSubsystem mDrive = DriveSubsystem.create();
-  // private final Vision mVision = Vision.create();
-  private final Intake mIntake = Intake.create();
-  private final Indexer mIndexer = Indexer.create();
-  private final Feeder mFeeder = Feeder.create();
-  private final ShooterSubsystem mShooter = ShooterSubsystem.create();
-
-  // * ~~~~~~~~ SIM SYSTEMS ~~~~~~~~
-
-  private Optional<FuelSimulation> mFuelSim = Optional.empty();
-  private Optional<HopperSimulation> mHopperSim = Optional.empty();
-
-  private int toggle = 0;
-
-  // * ~~~~~~~~ CONTROL ~~~~~~~~
-
-  private final Auto mAuto = new Auto(mDrive, mShooter, mFeeder, mIndexer, mIntake);
-
-  private final CommandXboxController mController = new CommandXboxController(0);
-
-  private final Trigger mIntakeRequest = mController.leftTrigger(0.1);
-  private final Trigger mSpinupRequest = mController.rightTrigger(0.1);
-  private final Trigger mLockRequest = mController.rightTrigger(0.8);
-  private final Trigger mFireRequest = mController.rightBumper();
-
-  //   private final Trigger mInAllianceZone =
-  //       new Trigger(() ->
-  // Rebuilt.kRobotAllianceZone.contains(mDrive.getPose2d().getTranslation()));
-
-  public int getToggle() {
-    return toggle;
-  }
-
   public Robot() {
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);
@@ -128,193 +69,22 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
 
-    setupSimulation();
-    configureDashboardNotifiers();
     configureBindings();
-  }
-
-  public void configureDashboardNotifiers() {
-    RobotModeTriggers.teleop().onTrue(Commands.runOnce(() -> HubShiftUtil.initialize()));
-    RobotModeTriggers.autonomous().onTrue(Commands.runOnce(() -> HubShiftUtil.initialize()));
-
-    addPeriodic(
-        () -> {
-          SmartDashboard.putNumber("Match Time", DriverStation.getMatchTime());
-          SmartDashboard.putString(
-              "Shifts/Current Shift",
-              HubShiftUtil.getOfficialShiftInfo().currentShift().toString());
-          SmartDashboard.putBoolean(
-              "Shifts/Is Active", HubShiftUtil.getOfficialShiftInfo().active());
-          SmartDashboard.putString(
-              "Shifts/Remaining Shift Time",
-              String.format(
-                  "%.1f", Math.max(HubShiftUtil.getOfficialShiftInfo().remainingTime(), 0.0), 0.0));
-        },
-        0.01);
+    configureDashboard();
+    configureSimulation();
   }
 
   /** Configure driver bindings */
-  public void configureBindings() {
-    // Alliance Zone Triggers
-    mDrive.setDefaultCommand(
-        DriveTeleoperatedCommands.runTeleoperatedDrive(
-            mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
+  public void configureBindings() {}
 
-    mLockRequest
-        // .and(mInAllianceZone)
-        .whileTrue(
-        DriveTeleoperatedCommands.runTeleoperatedDrive(
-            mDrive, mController::getLeftY, mController::getLeftX, mController::getRightX));
+  /** Configure driver dashboard */
+  public void configureDashboard() {}
 
-    // .whileTrue(
-    //     DriveTeleoperatedCommands.runTeleoperatedDriveWhileFacing(
-    //         mDrive,
-    //         mController::getLeftY,
-    //         mController::getLeftX,
-    //         () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d).getTranslation(),
-    //         true));
-
-    // RobotModeTriggers.teleop()
-    //     .and(mLockRequest)
-    //     .and(mInAllianceZone.negate())
-    //     .whileTrue(
-    //         DriveTeleoperatedCommands.runTeleoperatedDriveWithAngularAssist(
-    //             mDrive, mController::getLeftY, mController::getLeftX, () -> Rotation2d.k180deg));
-
-    mIntakeRequest.whileTrue(mIntake.intake());
-
-    mController.a().onTrue(Commands.runOnce(() -> toggle = 0));
-    mController.b().onTrue(Commands.runOnce(() -> toggle = 1));
-    mController.y().onTrue(Commands.runOnce(() -> toggle = 2));
-
-    mSpinupRequest
-        .and(() -> getToggle() == 0)
-        .whileTrue(
-            mShooter.runSetpoint(
-                () -> ShooterSubsystem.kHubShotMap,
-                () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)));
-
-    mSpinupRequest
-        .and(() -> getToggle() == 1)
-        .whileTrue(
-            mShooter.runSetpoint(
-                () -> 7.5, () -> Rotation2d.fromRotations(ShooterSubsystem.kMaxAngleRevs)));
-
-    mSpinupRequest
-        .and(() -> getToggle() == 2)
-        .whileTrue(
-            mShooter.runSetpoint(
-                () -> 29, () -> Rotation2d.fromRotations(ShooterSubsystem.kMaxAngleRevs)));
-
-    // RobotModeTriggers.teleop()
-    //     .and(mSpinupRequest)
-    // .and(mInAllianceZone.negate())
-    // .whileTrue(
-    //     mShooter.runSetpoint(
-    //         () -> ShooterSubsystem.kGroundShotMap,
-    //         () -> {
-    //           var targetLine =
-    //               Flags.getRobotAlliancePose2d(Rebuilt.kRobotAllianceZone.getCenter())
-    //                   .getMeasureX();
-
-    //           return new Pose2d(targetLine, Meters.zero(), Rotation2d.kZero);
-    //         }));
-
-    mFireRequest.whileTrue(mFeeder.feed().alongWith(mIndexer.index()));
-
-    mController
-        .x()
-        .whileTrue(Commands.runOnce(() -> RobotState.getInstance().resetPose(new Pose2d())));
-
-    // RobotModeTriggers.teleop()
-    //     .and(mSpinupRequest)
-    //     .whileTrue(
-    //         mShooter.runSetpoint(() -> ShooterSubsystem.kHubShotMap, () -> Rebuilt.kHubPose2d));
-
-    // RobotModeTriggers.teleop().whileTrue(mFeeder.feed().andThen(mIndexer.index()));
-
-    // // Intake
-    // RobotModeTriggers.teleop().and(mIntakeRequest).whileTrue(mIntake.intake());
-
-    // RobotModeTriggers.teleop().onTrue(Commands.runOnce(HubShiftUtil::initialize));
-    // RobotModeTriggers.autonomous().onTrue(Commands.runOnce(HubShiftUtil::initialize));
-    // RobotModeTriggers.disabled()
-    //     .onTrue(Commands.runOnce(HubShiftUtil::initialize).ignoringDisable(true));
-
-    // RobotModeTriggers.teleop()
-    //     .and(mInAllianceZone)
-    //     .whileTrue(
-    //         mShooter.runSetpoint(
-    //             () -> ShooterSubsystem.kHubShotMap,
-    //             () -> Flags.getRobotAlliancePose2d(Rebuilt.kHubPose2d)));
-  }
-
-  /** Setup simulation optionals if robot is simulated */
-  public void setupSimulation() {
-    // Initialize Simulation
-    if (Robot.isSimulation()) {
-      mFuelSim = Optional.of(new FuelSimulation("Fuel Simulation"));
-      mHopperSim = Optional.of(new HopperSimulation());
-
-      mFuelSim.ifPresent(
-          (sim) -> {
-            // Initial Configuration
-            sim.enableAirResistance();
-
-            // Setup robot
-            var chassisWidth =
-                Meters.of(
-                    Flags.kDriveConstants.getTrackWidthMeters()
-                        + Flags.kDriveConstants.getBumperThicknessInches());
-            sim.registerRobot(
-                chassisWidth,
-                chassisWidth,
-                Inches.of(6),
-                mDrive::getPose2d,
-                mDrive::getChassisSpeedsWrtField);
-
-            // Setup arena
-            if (Flags.kSpawnStartingFuel) {
-              sim.spawnStartingFuel();
-            }
-
-            // Reset field when auton opp mode starts
-            RobotModeTriggers.autonomous()
-                .onTrue(
-                    Commands.runOnce(
-                        () -> {
-                          sim.clearFuel();
-                          sim.spawnStartingFuel();
-                        }));
-
-            // Start sim
-            sim.start();
-
-            RobotModeTriggers.teleop()
-                .and(mFireRequest)
-                .whileTrue(
-                    Commands.runOnce(
-                            () ->
-                                sim.launchFuel(
-                                    MetersPerSecond.of(
-                                        mShooter.getTargetMuzzleVelocityMetersPerSec()),
-                                    mShooter.getTargetRotation2d().getMeasure(),
-                                    Rotation2d.kZero.getMeasure(),
-                                    ShooterSubsystem.kRobotToShooter.getMeasureZ()))
-                        .andThen(Commands.waitSeconds(0.1))
-                        .repeatedly());
-
-            // Start sim notifier
-            addPeriodic(() -> sim.updateSim(), 0.002);
-          });
-    } else {
-      mFuelSim = Optional.empty();
-      mHopperSim = Optional.empty();
-    }
-  }
+  /** Configure simulation */
+  public void configureSimulation() {}
 
   @Override
   protected Command getAutonCommand() {
-    return mAuto.getSelectedAuto();
+    return Commands.none();
   }
 }

@@ -4,6 +4,6 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.robot.command;
+package org.frc6423.robot.simulation;
 
-public class FiringCommand {}
+public class HopperSimulation {}
