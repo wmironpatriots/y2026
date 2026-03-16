@@ -11,9 +11,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import java.util.Optional;
 import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Field;
+import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
 
 public class FireControlSystem {
   public static final InterpolatingProjectileParametersTree kHubShotMap =
@@ -227,7 +227,7 @@ public class FireControlSystem {
     return mVirtualTarget;
   }
 
-  public static Optional<ProjectileParameters> calculateParameters(
+  public static ProjectileParameters calculateParameters(
       Pose2d robotPose, ChassisSpeeds speedsWrtField) {
     // Compensate for approximated latency
     var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speedsWrtField, robotPose.getRotation());
@@ -239,7 +239,7 @@ public class FireControlSystem {
                 speeds.omegaRadiansPerSecond * kLatencyCompensationSec.get()));
 
     // Calculate current target
-    var isScoring = !Field.getAllianceZone().contains(robotPose.getTranslation());
+    var isScoring = Field.getAllianceZone().contains(robotPose.getTranslation());
     var target =
         isScoring
             ? Field.getHubPose2d().getTranslation()
@@ -258,7 +258,8 @@ public class FireControlSystem {
     // Calculate final parameters
     var parameters = tree.get(predictedPose.getTranslation().getDistance(virtualTarget));
 
-    return Optional.ofNullable(parameters);
+    if (parameters != null) return parameters;
+    else return new ProjectileParameters(ShooterSubsystem.kMinAngleRevs, 0.0, 0.0);
   }
 
   public static Translation2d calculateVirtualTarget(

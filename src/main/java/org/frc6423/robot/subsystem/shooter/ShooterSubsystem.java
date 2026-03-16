@@ -38,6 +38,7 @@ import java.util.function.Supplier;
 import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Matrix;
 import org.frc6423.robot.Robot;
+import org.frc6423.robot.fcs.ProjectileParameters;
 
 public class ShooterSubsystem extends SubsystemBase {
   public static ShooterSubsystem create() {
@@ -353,10 +354,17 @@ public class ShooterSubsystem extends SubsystemBase {
   public Command runSetpoint(Supplier<Rotation2d> angle, DoubleSupplier muzzleVelocityMps) {
     return this.run(
         () -> {
+          mTargetAngle = angle.get();
           mHood.setTargetPosition(angle.get().getRotations());
 
+          mTargetMuzzleVelocityMps = muzzleVelocityMps.getAsDouble();
           mFlywheel.setTargetVelocity(
               muzzleVelocityMpsToFlywheelVelocityRps(muzzleVelocityMps.getAsDouble()));
         });
+  }
+
+  public Command runSetpoint(Supplier<ProjectileParameters> parameters) {
+    return runSetpoint(
+        () -> Rotation2d.fromRadians(parameters.get().pitch()), () -> parameters.get().velocity());
   }
 }

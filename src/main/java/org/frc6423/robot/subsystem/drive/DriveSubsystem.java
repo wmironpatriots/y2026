@@ -212,6 +212,10 @@ public class DriveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    for (var module : mModules) {
+      module.periodic();
+    }
+
     Tracer.traceFunc(
         "Update Odometry",
         () -> {
@@ -248,7 +252,7 @@ public class DriveSubsystem extends SubsystemBase {
         mSimRotation.rotateBy(
             Rotation2d.fromRadians(
                 !Double.isNaN(getChassisSpeeds().omegaRadiansPerSecond)
-                    ? getChassisSpeeds().omegaRadiansPerSecond * 0.2
+                    ? getChassisSpeeds().omegaRadiansPerSecond * 0.02
                     : 0));
   }
 
@@ -479,21 +483,19 @@ public class DriveSubsystem extends SubsystemBase {
   // * ~~~~~~~~ COMMANDS ~~~~~~~~
 
   public Command driveTeleoperatedFacingTarget(
-      DoubleSupplier vx, DoubleSupplier vy, DoubleSupplier omega, Supplier<Translation2d> target) {
+      DoubleSupplier vx, DoubleSupplier vy, Supplier<Translation2d> target) {
     return driveTeleoperatedWithAngularAsisst(
-        vx, vy, omega, () -> target.get().minus(getPose2d().getTranslation()).getAngle());
+        vx, vy, () -> target.get().minus(getPose2d().getTranslation()).getAngle());
   }
 
   public Command driveTeleoperatedWithAngularAsisst(
-      DoubleSupplier vx, DoubleSupplier vy, DoubleSupplier omega, Supplier<Rotation2d> angle) {
+      DoubleSupplier vx, DoubleSupplier vy, Supplier<Rotation2d> angle) {
     return driveTeleoperated(
             vx,
             vy,
             () ->
                 mAngularController.calculate(
                     getRotation2d().getRadians(), angle.get().getRadians()))
-        .until(() -> omega.getAsDouble() > 0.02)
-        .andThen(driveTeleoperated(vx, vy, omega))
         .beforeStarting(() -> mAngularController.reset());
   }
 

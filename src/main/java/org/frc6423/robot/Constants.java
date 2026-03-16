@@ -49,7 +49,7 @@ public final class Constants {
         new Pose2d(kFieldLength.div(2), kFieldWidth.div(2), Rotation2d.kZero);
 
     public static Pose2d kBlueAllianceZonePose2d =
-        new Pose2d(kAllianceZoneLength, kFieldWidth.div(2), Rotation2d.kZero);
+        new Pose2d(kAllianceZoneLength.div(2), kFieldWidth.div(2), Rotation2d.kZero);
 
     public static Pose2d kBlueAllianceHubPose2d =
         new Pose2d(Inches.of(182.11), Inches.of(158.84), Rotation2d.kZero);
@@ -60,7 +60,7 @@ public final class Constants {
 
     public static Rectangle2d getAllianceZone() {
       return new Rectangle2d(
-          getRobotAlliancePose2d(kBlueAllianceZonePose2d), kAllianceZoneLength, kFieldWidth.div(2));
+          getRobotAlliancePose2d(kBlueAllianceZonePose2d), kAllianceZoneLength, kFieldWidth);
     }
 
     public static Pose2d getRobotAlliancePose2d(Pose2d pose) {

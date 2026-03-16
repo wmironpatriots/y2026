@@ -6,12 +6,17 @@
 
 package org.frc6423.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.EpilogueConfiguration;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -20,10 +25,13 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.lib.util.InputStream;
 import org.frc6423.robot.Constants.Field;
 import org.frc6423.robot.Constants.Flags;
+import org.frc6423.robot.fcs.FireControlSystem;
+import org.frc6423.robot.simulation.FuelSimulation;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 import org.frc6423.robot.subsystem.feeder.FeederSubsystem;
 import org.frc6423.robot.subsystem.indexer.IndexerSubsystem;
@@ -56,11 +64,16 @@ public class Robot extends CommandRobot {
   private final Trigger mIntakeTrigger = mDriverController.leftTrigger(0.1);
   private final Trigger mAgitateTrigger = mDriverController.leftBumper();
   private final Trigger mSpinupTrigger = mDriverController.rightTrigger(0.1);
-  private final Trigger mFireTrigger =
-      mDriverController.rightBumper().and(mShooter::isHoldingSetpoint);
+  private final Trigger mLockTrigger = mDriverController.rightTrigger(0.5);
+  private final Trigger mFireTrigger = mDriverController.rightBumper();
+  // .and(mShooter::isHoldingSetpoint)
+  // .and(mDrive::isFacingAngularTarget);
 
   private final Trigger mInAllianceZone =
       new Trigger(() -> Field.getAllianceZone().contains(mDrive.getPose2d().getTranslation()));
+
+  private final Optional<FuelSimulation> mFuelSim =
+      (isSimulation()) ? Optional.of(new FuelSimulation()) : Optional.empty();
 
   public Robot() {
     // Shut up DS
@@ -131,6 +144,14 @@ public class Robot extends CommandRobot {
 
     // ~~~ Shooter Controls ~~~
 
+    mSpinupTrigger.whileTrue(
+        mShooter.runSetpoint(
+            () ->
+                FireControlSystem.calculateParameters(
+                    mDrive.getPose2d(), mDrive.getChassisSpeedsWrtField())));
+
+    mFireTrigger.whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
+
     // ~~~ Drive Controls ~~~
 
     InputStream rawX = InputStream.of(mDriverController::getLeftY).negate();
@@ -160,14 +181,66 @@ public class Robot extends CommandRobot {
             .scale(() -> Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec())
             .rateLimit(Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec());
 
-    RobotModeTriggers.teleop().whileTrue(mDrive.driveTeleoperated(x, y, omega));
+    RobotModeTriggers.teleop()
+        .and(mLockTrigger.negate())
+        .whileTrue(mDrive.driveTeleoperated(x, y, omega));
+
+    RobotModeTriggers.teleop()
+        .and(mLockTrigger)
+        .whileTrue(
+            mDrive.driveTeleoperatedFacingTarget(
+                x, y, () -> FireControlSystem.getVirtualTarget().getTranslation()));
   }
 
   /** Configure driver dashboard */
   public void configureDashboard() {}
 
   /** Configure simulation */
-  public void configureSimulation() {}
+  public void configureSimulation() {
+    mFuelSim.ifPresent(
+        (sim) -> {
+          // Initial Configuration
+          sim.enableAirResistance();
+
+          // Setup robot
+          var chassisWidth =
+              Meters.of(
+                  Flags.kDrivetrainContants.getTrackWidthMeters()
+                      + Flags.kDrivetrainContants.getBumperThicknessInches());
+          sim.registerRobot(
+              chassisWidth,
+              chassisWidth,
+              Inches.of(6),
+              mDrive::getPose2d,
+              mDrive::getChassisSpeedsWrtField);
+
+          // Reset field when auton opp mode starts
+          RobotModeTriggers.autonomous()
+              .onTrue(
+                  Commands.runOnce(
+                      () -> {
+                        sim.clearFuel();
+                        sim.spawnStartingFuel();
+                      }));
+
+          // Start sim
+          sim.start();
+
+          mFireTrigger.whileTrue(
+              Commands.runOnce(
+                      () ->
+                          sim.launchFuel(
+                              MetersPerSecond.of(mShooter.getTargetMuzzleVelocityMps()),
+                              mShooter.getTargetRotation2d().getMeasure(),
+                              Rotation2d.kZero.getMeasure(),
+                              ShooterSubsystem.kRobotToShooter.getMeasureZ()))
+                  .andThen(Commands.waitSeconds(0.1))
+                  .repeatedly());
+
+          // Start sim notifier
+          addPeriodic(() -> sim.updateSim(), 0.002);
+        });
+  }
 
   @Override
   protected Command getAutonCommand() {

@@ -120,6 +120,7 @@ public class IntakeSubsystem extends SubsystemBase {
       new TunableNumber("Intake/Intaking Speed (volts)");
   public static final TunableNumber kOutakingSpeedVolts =
       new TunableNumber("Intake/Outaking Speed (volts)");
+  public static final TunableNumber kAgitatingPeriod = new TunableNumber("Intake/Agitating Period");
 
   static {
     kPositionKs.initDefault(0.0);
@@ -132,6 +133,7 @@ public class IntakeSubsystem extends SubsystemBase {
     kPositionToleranceDeg.initDefault(1.5);
     kPositionStowedDeg.initDefault(Units.rotationsToDegrees(kMinAngleRevs));
     kPositionDeployedDeg.initDefault(Units.rotationsToDegrees(kMaxAngleRevs));
+    kAgitatingPeriod.initDefault(0.25);
 
     kStowedSpeedVolts.initDefault(0.0);
     kStowingSpeedVolts.initDefault(4.5);
@@ -257,7 +259,10 @@ public class IntakeSubsystem extends SubsystemBase {
           mPivot.setTargetPosition(
               Units.degreesToRotations(
                   kPositionDeployedDeg.getAsDouble()
-                      - Math.abs(Math.sin(Timer.getTimestamp()) * kPositionAgitatingDeg.get())));
+                      - Math.abs(
+                          kAgitatingPeriod.get()
+                              * Math.sin(Timer.getTimestamp())
+                              * kPositionAgitatingDeg.get())));
           mRoller.setVoltageOutput(kIntakingSpeedVolts.get());
         });
   }
