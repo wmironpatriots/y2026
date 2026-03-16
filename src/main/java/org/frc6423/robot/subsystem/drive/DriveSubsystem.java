@@ -6,24 +6,6 @@
 
 package org.frc6423.robot.subsystem.drive;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.frc6423.lib.util.Tracer;
-import org.frc6423.lib.util.TunableNumber;
-import org.frc6423.robot.Constants;
-import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.Robot;
-import org.frc6423.robot.subsystem.drive.component.GyroIO;
-import org.frc6423.robot.subsystem.drive.component.GyroIONone;
-import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
-import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
-import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOComp;
-import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOSim;
-import org.frc6423.robot.subsystem.drive.constant.SwerveConstants;
-
 import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
@@ -41,6 +23,21 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import org.frc6423.lib.util.Tracer;
+import org.frc6423.lib.util.TunableNumber;
+import org.frc6423.robot.Constants.Flags;
+import org.frc6423.robot.Robot;
+import org.frc6423.robot.subsystem.drive.component.GyroIO;
+import org.frc6423.robot.subsystem.drive.component.GyroIONone;
+import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
+import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
+import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOComp;
+import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOSim;
+import org.frc6423.robot.subsystem.drive.constant.SwerveConstants;
 
 /** {@link SubsystemBase} Manager class for the swerve drivetrain */
 public class DriveSubsystem extends SubsystemBase {
@@ -143,14 +140,18 @@ public class DriveSubsystem extends SubsystemBase {
         new SwerveModuleState()
       };
 
-  /** {@link SwerveDrivePoseEstimator} Odometry class for estimating the position of robot using vision/drivetrain measurements */
-  private final SwerveDrivePoseEstimator mPoseEstimator = new SwerveDrivePoseEstimator(
-    kConstants.getKinematics(), 
-    Rotation2d.kZero, 
-    getWheelPositions(), 
-    new Pose2d(), 
-    VecBuilder.fill(0.0, 0.0, 0.0), // TODO - approximate
-    VecBuilder.fill(0.0, 0.0, 0.0)); // TODO - approximate
+  /**
+   * {@link SwerveDrivePoseEstimator} Odometry class for estimating the position of robot using
+   * vision/drivetrain measurements
+   */
+  private final SwerveDrivePoseEstimator mPoseEstimator =
+      new SwerveDrivePoseEstimator(
+          kConstants.getKinematics(),
+          Rotation2d.kZero,
+          getWheelPositions(),
+          new Pose2d(),
+          VecBuilder.fill(0.0, 0.0, 0.0), // TODO - approximate
+          VecBuilder.fill(0.0, 0.0, 0.0)); // TODO - approximate
 
   /** {@link Field2d} Member for visualizing relevant positions on Elastic */
   private final Field2d mF2d;
@@ -191,29 +192,28 @@ public class DriveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    Tracer.traceFunc("Update Odometry", () -> {
-      mPoseEstimator.updateWithTime(
-        Timer.getTimestamp(), 
-        getRotation2d(), 
-      getWheelPositions());
-    });
+    Tracer.traceFunc(
+        "Update Odometry",
+        () -> {
+          mPoseEstimator.updateWithTime(Timer.getTimestamp(), getRotation2d(), getWheelPositions());
+        });
 
     mF2d.setRobotPose(getPose2d());
 
     // Update tunables
-    if (
-      kTranslationalFeedbackKp.hasChanged(hashCode())
-      || kTranslationalFeedbackKd.hasChanged(hashCode())
-      || kAngularFeedbackKp.hasChanged(hashCode())
-      || kAngularFeedbackKd.hasChanged(hashCode())) {
-        mTranslationalXController.setPID(kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
-        mTranslationalYController.setPID(kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
+    if (kTranslationalFeedbackKp.hasChanged(hashCode())
+        || kTranslationalFeedbackKd.hasChanged(hashCode())
+        || kAngularFeedbackKp.hasChanged(hashCode())
+        || kAngularFeedbackKd.hasChanged(hashCode())) {
+      mTranslationalXController.setPID(
+          kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
+      mTranslationalYController.setPID(
+          kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
 
-        mAngularController.setPID(kAngularFeedbackKp.get(), 0.0, kAngularFeedbackKd.get());
+      mAngularController.setPID(kAngularFeedbackKp.get(), 0.0, kAngularFeedbackKd.get());
 
-        resetFeedbackControllers();
-      }
-      
+      resetFeedbackControllers();
+    }
   }
 
   @Override
@@ -235,8 +235,7 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @Logged(name = "Within Translational Tolerance (bool)", importance = Importance.INFO)
   public boolean isAtTranslationalTarget() {
-    return mTranslationalXController.atSetpoint()
-        && mTranslationalYController.atSetpoint();
+    return mTranslationalXController.atSetpoint() && mTranslationalYController.atSetpoint();
   }
 
   /**
@@ -248,7 +247,6 @@ public class DriveSubsystem extends SubsystemBase {
   public boolean isFacingAngularTarget() {
     return mAngularController.atSetpoint();
   }
-
 
   /**
    * Get estimated yaw rotation of robot
@@ -376,7 +374,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   /**
    * Run a {@link SwerveSample} setpoint
-   * 
+   *
    * @param sample {@link SwerveSample} Desired state
    */
   public void runSwerveSample(SwerveSample sample) {

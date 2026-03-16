@@ -18,9 +18,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-
 import java.util.Optional;
-
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
@@ -42,10 +40,8 @@ import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 public class Robot extends CommandRobot {
   private final CommandXboxController mDriverController = new CommandXboxController(0);
 
-  private final Optional<DriveSubsystem> mDriveSubsystem = 
-    (Flags.kInitializeDrive) 
-      ? Optional.of(DriveSubsystem.create()) 
-      : Optional.empty();
+  private final Optional<DriveSubsystem> mDriveSubsystem =
+      (Flags.kInitializeDrive) ? Optional.of(DriveSubsystem.create()) : Optional.empty();
 
   public Robot() {
     // Shut up DS
