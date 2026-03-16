@@ -6,100 +6,144 @@
 
 package org.frc6423.robot.subsystem.vision;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
 public class Vision extends SubsystemBase {
-    public static class CameraConfig {
-        public final String cameraName;
-        public final Transform3d robotToCam;
+  public static class CameraConfig {
+    public final String cameraName;
+    public final Transform3d robotToCam;
 
-        public CameraConfig(String cameraName, Transform3d robotToCam) {
-            this.cameraName = cameraName;
-            this.robotToCam = robotToCam;
-        }
+    public CameraConfig(String cameraName, Transform3d robotToCam) {
+      this.cameraName = cameraName;
+      this.robotToCam = robotToCam;
     }
+  }
 
-    private static class CameraBundle {
-        private final PhotonCamera camera;
-        private final PhotonPoseEstimator poseEstimator;
+  private static class CameraBundle {
+    private final PhotonCamera camera;
+    private final PhotonPoseEstimator poseEstimator;
 
-        private CameraBundle(PhotonCamera camera, PhotonPoseEstimator poseEstimator) {
-            this.camera = camera;
-            this.poseEstimator = poseEstimator;
-        }
+    private CameraBundle(PhotonCamera camera, PhotonPoseEstimator poseEstimator) {
+      this.camera = camera;
+      this.poseEstimator = poseEstimator;
     }
+  }
 
-    private final List<CameraBundle> cameras;
-    private List<EstimatedRobotPose> latestEstimates = List.of();
-   
-    public Vision(String cameraName, Transform3d robotToCam) {
-        this(new CameraConfig(cameraName, robotToCam));
-    }
+  private final List<CameraBundle> cameras;
+  private List<EstimatedRobotPose> latestEstimates = List.of();
+  private List<Matrix<N3, N1>> curStdDevs;
 
-    public Vision(CameraConfig... configs) {
+  // public Vision(String cameraName, Transform3d robotToCam) {
+  //    this(new CameraConfig(cameraName, robotToCam));
+  // }
 
-        AprilTagFieldLayout layout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+  public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(0.6, 0.6, 1155);
+  public static final Matrix<N3, N1> MULTIPLE_TAG_STD_DEVS = VecBuilder.fill(0.3, 0.3, 1155);
+  public static final Matrix<N3, N1> SUPERTRUST_TAG_STD_DEVS = VecBuilder.fill(0.001, 0.001, 0.001);
+  private static AprilTagFieldLayout layout =
+      AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
-        List<CameraBundle> cameraBundles = new ArrayList<>(configs.length);
-        Arrays.stream(configs)
-            .filter(config -> config != null)
-            .forEach(config -> {
-                PhotonCamera camera = new PhotonCamera(config.cameraName);
-                PhotonPoseEstimator poseEstimator = new PhotonPoseEstimator(
-                    layout,
-                    PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-                    config.robotToCam
-                );
-                poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
-                cameraBundles.add(new CameraBundle(camera, poseEstimator));
+  public Vision(CameraConfig... configs) {
+    List<CameraBundle> cameraBundles = new ArrayList<>(configs.length);
+    Arrays.stream(configs)
+        .filter(config -> config != null)
+        .forEach(
+            config -> {
+              PhotonCamera camera = new PhotonCamera(config.cameraName);
+              PhotonPoseEstimator poseEstimator =
+                  new PhotonPoseEstimator(
+                      layout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, config.robotToCam);
+              poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+              cameraBundles.add(new CameraBundle(camera, poseEstimator));
             });
 
-        cameras = Collections.unmodifiableList(cameraBundles);
-    }
+    cameras = Collections.unmodifiableList(cameraBundles);
+  }
 
-    @Override
-    public void periodic() {
-        List<EstimatedRobotPose> estimates = new ArrayList<>();
-
-        for (CameraBundle camera : cameras) {
-            PhotonPipelineResult result = camera.camera.getLatestResult();
-            if (!result.hasTargets()) {
-                continue;
-            }
-
-            camera.poseEstimator.update(result)
-                .filter(est -> isEstimateUsable(est, result))
-                .ifPresent(estimates::add);
+  @Override
+  public void periodic() {
+    List<EstimatedRobotPose> estimates = new ArrayList<>();
+    List<Matrix<N3, N1>> stdDevs = new ArrayList<>();
+    for (CameraBundle bundle : cameras) {
+      List<PhotonPipelineResult> results = bundle.camera.getAllUnreadResults();
+      for (PhotonPipelineResult res : results) {
+        if (!res.hasTargets()) {
+          continue;
         }
-
-        latestEstimates = Collections.unmodifiableList(estimates);
+        bundle
+            .poseEstimator
+            .update(res)
+            .filter(est -> isEstimateUsable(est, res))
+            .ifPresent(estimates::add);
+        // CHANGE THIS LATER, LIST SIZES CAN DESYNC
+        stdDevs.add(
+            estimationStdDevs(estimates.get(estimates.size() - 1).estimatedPose.toPose2d(), res));
+      }
     }
 
-    public List<EstimatedRobotPose> getLatestPoseEstimates() {
-        return latestEstimates;
-    }
+    latestEstimates = Collections.unmodifiableList(estimates);
+    curStdDevs = Collections.unmodifiableList(stdDevs);
+  }
 
-    public boolean isConnected() {
-        return cameras.stream().anyMatch(context -> context.camera.isConnected());
+  public Matrix<N3, N1> estimationStdDevs(
+      Pose2d estimatedPose, PhotonPipelineResult pipelineResult) {
+    var estStdDevs = SINGLE_TAG_STD_DEVS;
+    var targets = pipelineResult.getTargets();
+    double avgDist = 0;
+    double avgWeight = 0;
+    for (var tgt : targets) {
+      var tagPose = layout.getTagPose(tgt.getFiducialId());
+      if (tagPose.isEmpty()) continue;
+      avgDist +=
+          tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
+      avgWeight += 1;
     }
+    if (targets.isEmpty()) return estStdDevs;
 
-    private boolean isEstimateUsable(EstimatedRobotPose est, PhotonPipelineResult result) {
-        // add thresholds and stuff here later
-        return true;
-    }
+    avgDist /= targets.size();
+    avgWeight /= targets.size();
+
+    // Decrease std devs if multiple targets are visibleX
+    if (targets.size() > 1) estStdDevs = MULTIPLE_TAG_STD_DEVS;
+    // Increase std devs based on (average) distance
+    if (targets.size() == 1 && avgDist > 4)
+      estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
+    else estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
+
+    return estStdDevs.times(avgWeight);
+  }
+
+  public List<EstimatedRobotPose> getLatestPoseEstimates() {
+    return latestEstimates;
+  }
+
+  public List<Matrix<N3, N1>> getEstimationStdDevs() {
+    return curStdDevs;
+  }
+
+  public boolean isConnected() {
+    return cameras.stream().anyMatch(context -> context.camera.isConnected());
+  }
+
+  private boolean isEstimateUsable(EstimatedRobotPose est, PhotonPipelineResult result) {
+    // add thresholds and stuff here later
+    return true;
+  }
 }
-

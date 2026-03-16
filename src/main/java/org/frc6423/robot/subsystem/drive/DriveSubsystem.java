@@ -6,6 +6,9 @@
 
 package org.frc6423.robot.subsystem.drive;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Radians;
+
 import choreo.trajectory.SwerveSample;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
@@ -14,7 +17,10 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -38,6 +44,8 @@ import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOComp;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOSim;
 import org.frc6423.robot.subsystem.drive.constant.SwerveConstants;
+import org.frc6423.robot.subsystem.vision.Vision;
+import org.frc6423.robot.subsystem.vision.Vision.CameraConfig;
 
 /** {@link SubsystemBase} Manager class for the swerve drivetrain */
 public class DriveSubsystem extends SubsystemBase {
@@ -190,6 +198,14 @@ public class DriveSubsystem extends SubsystemBase {
     SmartDashboard.putData(mF2d);
   }
 
+  CameraConfig bessie =
+      new CameraConfig(
+          "bessie",
+          new Transform3d(
+              new Translation3d(Inches.of(12.255), Inches.of(0), Inches.of(14.207)),
+              new Rotation3d(Radians.of(0.0), Radians.of(0.523599), Radians.of(0.0))));
+  Vision mVision = new Vision(bessie);
+
   @Override
   public void periodic() {
     Tracer.traceFunc(
@@ -214,6 +230,17 @@ public class DriveSubsystem extends SubsystemBase {
 
       resetFeedbackControllers();
     }
+    Tracer.traceFunc(
+        "Update Vision",
+        () -> {
+          var estimates = mVision.getLatestPoseEstimates();
+          for (int i = 0; i < estimates.size(); i++) {
+            var est = estimates.get(i);
+            var stdDevs = mVision.getEstimationStdDevs().get(i);
+            mPoseEstimator.addVisionMeasurement(
+                est.estimatedPose.toPose2d(), est.timestampSeconds, stdDevs);
+          }
+        });
   }
 
   @Override
