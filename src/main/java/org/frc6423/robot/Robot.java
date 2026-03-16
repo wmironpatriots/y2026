@@ -70,7 +70,7 @@ public class Robot extends CommandRobot {
           }
 
           // Set lowest importance level to be logged
-          config.minimumImportance = Flags.kLoggingLevel;
+          config.minimumImportance = Flags.kLowestLoggingLevel;
         });
 
     // Bind Epilogue to robot periodic

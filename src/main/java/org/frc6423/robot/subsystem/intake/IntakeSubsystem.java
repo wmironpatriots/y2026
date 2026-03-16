@@ -1,0 +1,236 @@
+// Copyright (c) 2026 FRC 6423 - Ward Melville Iron Patriots
+// https://github.com/wmironpatriots
+// 
+// Open Source Software; you can modify and/or share it under the terms of
+// MIT license file in the root directory of this project
+
+package org.frc6423.robot.subsystem.intake;
+
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.AudioConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.frc6423.lib.io.RollerIO;
+import org.frc6423.lib.io.RollerIOTalonFx;
+import org.frc6423.lib.util.TunableNumber;
+import org.frc6423.robot.Constants.Matrix;
+
+public class IntakeSubsystem extends SubsystemBase {
+  // * ~~~~~~~~ CONSTANTS ~~~~~~~~
+  public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
+
+  public static final int kPivotCanDeviceId = Matrix.kIntakePivotId;
+
+  public static final int kRollerCanDeviceId = Matrix.kIntakeRollerId;
+
+  public static final double kPivotSensorToMechRatio =
+      (5.0 / 1.0) * (3.0 / 1.0) * (1.0 / 1.0) * (36.0 / 16.0);
+
+  public static final double kMinAngleRevs = Units.degreesToRotations(98);
+
+  public static final double kMaxAngleRevs = Units.degreesToRadians(145);
+
+  public static final TalonFXConfiguration kPivotTalonFxConfig =
+      new TalonFXConfiguration()
+          .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
+          .withMotorOutput(
+              new MotorOutputConfigs()
+                  .withInverted(InvertedValue.Clockwise_Positive)
+                  .withNeutralMode(NeutralModeValue.Brake))
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimit(40.0)
+                  .withStatorCurrentLimitEnable(true))
+          .withFeedback(
+              new FeedbackConfigs()
+                  .withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
+                  .withSensorToMechanismRatio(kPivotSensorToMechRatio))
+          .withMotionMagic(
+              new MotionMagicConfigs()
+                  .withMotionMagicCruiseVelocity(2)
+                  .withMotionMagicAcceleration(3));
+
+  public static final TalonFXConfiguration kRollerTalonFxConfig =
+      RollerIOTalonFx.createGenericRollerConfig(true);
+
+  public static final double kPivotCurrentZeroingThreshold = 30.0;
+
+  public static final double kRotationalInertiaKgSquaredMeters = 402.290096 * 0.0002926397;
+
+  public static final double kArmLengthMeters = 0.5;
+
+  // * ~~~~~~~~ TUNABLES ~~~~~~~~
+
+  public static final TunableNumber kPositionKs = new TunableNumber("Intake/Position kS");
+  public static final TunableNumber kPositionKg = new TunableNumber("Intake/Position kG");
+  public static final TunableNumber kPositionKv = new TunableNumber("Intake/Position kV");
+  public static final TunableNumber kPositionKa = new TunableNumber("Intake/Position kA");
+  public static final TunableNumber kPositionKp = new TunableNumber("Intake/Position kP");
+  public static final TunableNumber kPositionKd = new TunableNumber("Intake/Position kD");
+
+  public static final TunableNumber kPositionToleranceDeg =
+      new TunableNumber("Intake/Position Tolerance (degrees)");
+  public static final TunableNumber kPositionStowedDeg =
+      new TunableNumber("Intake/Position Stowed (degrees)");
+  public static final TunableNumber kPositionDeployedDeg =
+      new TunableNumber("Intake/Position Deployed (degrees)");
+
+  public static final TunableNumber kStowedSpeedVolts =
+      new TunableNumber("Intake/Stowed Speed (volts)");
+  public static final TunableNumber kStowingSpeedVolts =
+      new TunableNumber("Intake/Stowing Speed (volts)");
+  public static final TunableNumber kIntakingSpeedVolts =
+      new TunableNumber("Intake/Intaking Speed (volts)");
+  public static final TunableNumber kOutakingSpeedVolts =
+      new TunableNumber("Intake/Outaking Speed (volts)");
+
+  static {
+    kPositionKs.initDefault(0.0);
+    kPositionKg.initDefault(0.0);
+    kPositionKv.initDefault(0.0);
+    kPositionKa.initDefault(0.0);
+    kPositionKp.initDefault(250.0);
+    kPositionKd.initDefault(30.0);
+
+    kPositionToleranceDeg.initDefault(1.5);
+    kPositionStowedDeg.initDefault(Units.rotationsToDegrees(kMinAngleRevs) + 1.5);
+    kPositionDeployedDeg.initDefault(Units.rotationsToDegrees(kMaxAngleRevs) - 1.5);
+
+    kStowedSpeedVolts.initDefault(0.0);
+    kStowingSpeedVolts.initDefault(4.5);
+    kIntakingSpeedVolts.initDefault(7.0);
+    kOutakingSpeedVolts.initDefault(-9.0);
+  }
+
+  // * ~~~~~~~~ MEMBERS ~~~~~~~~
+
+  @Logged private final RollerIO mRoller;
+  @Logged private final PivotIO mPivot;
+
+  private boolean mIsZeroed = false;
+
+  private LinearFilter mCurrentFilter = LinearFilter.movingAverage(5);
+  private double mFilteredCurrent = 0.0;
+
+  private Rotation2d mTarget = Rotation2d.fromRotations(kMinAngleRevs);
+
+  protected IntakeSubsystem(RollerIO roller, PivotIO pivot) {
+    mRoller = roller;
+    mPivot = pivot;
+  }
+
+  @Override
+  public void periodic() {
+    // Update hardware
+    mPivot.periodic();
+    mRoller.periodic();
+
+    // Calculate filtered current
+    mFilteredCurrent = mCurrentFilter.calculate(mPivot.getStatorCurrentAmps());
+
+    // Update tunables
+    if (kPositionKs.hasChanged(hashCode())
+        || kPositionKg.hasChanged(hashCode())
+        || kPositionKv.hasChanged(hashCode())
+        || kPositionKa.hasChanged(hashCode())
+        || kPositionKp.hasChanged(hashCode())
+        || kPositionKd.hasChanged(hashCode())) {
+      mPivot.setGains(
+          kPositionKs.get(),
+          kPositionKg.get(),
+          kPositionKv.get(),
+          kPositionKa.get(),
+          kPositionKp.get(),
+          kPositionKd.get());
+    }
+  }
+
+  // * ~~~~~~~~ GETTERS/SETTERS ~~~~~~~~
+
+  @Logged(name = "Is Zeroed (bool)", importance = Importance.INFO)
+  public boolean isZeroed() {
+    return mIsZeroed;
+  }
+
+  @Logged(name = "Is Near Position (bool)", importance = Importance.INFO)
+  public boolean isNearPosition() {
+    return MathUtil.isNear(
+        getTargetRotation2d().getDegrees(),
+        getRotation2d().getDegrees(),
+        kPositionToleranceDeg.get());
+  }
+
+  @Logged(name = "Target Rotation2d", importance = Importance.INFO)
+  public Rotation2d getTargetRotation2d() {
+    return mTarget;
+  }
+
+  @Logged(name = "Rotation2d", importance = Importance.INFO)
+  public Rotation2d getRotation2d() {
+    return Rotation2d.fromRotations(mPivot.getPositionRevs());
+  }
+
+  // * ~~~~~~~~ SETTERS ~~~~~~~~
+
+  public Command runCurrentHoming() {
+    return Commands.sequence(
+        this.runOnce(() -> mPivot.setTargetVoltage(-2))
+            .until(() -> mFilteredCurrent > kPivotCurrentZeroingThreshold),
+        this.runOnce(() -> mPivot.resetEncoder(kMinAngleRevs)),
+        Commands.print("Intake Homed"));
+  }
+
+  /**
+   * Deploy and run inwards
+   *
+   * @return {@link Command}
+   */
+  public Command intake() {
+    return this.run(
+        () -> {
+          mPivot.setTargetPosition(kPositionDeployedDeg.getAsDouble());
+          mRoller.setVoltageOutput(kIntakingSpeedVolts.get());
+        });
+  }
+
+  /**
+   * Deploy and run outwards
+   *
+   * @return {@link Command}
+   */
+  public Command outake() {
+    return this.run(
+        () -> {
+          mPivot.setTargetPosition(kPositionDeployedDeg.getAsDouble());
+          mRoller.setVoltageOutput(kIntakingSpeedVolts.get());
+        });
+  }
+
+  /**
+   * Stop subsystem completely
+   *
+   * @return {@link Command}
+   */
+  public Command stop() {
+    return this.runOnce(
+        () -> {
+          mPivot.stop();
+          mRoller.stop();
+        });
+  }
+}
