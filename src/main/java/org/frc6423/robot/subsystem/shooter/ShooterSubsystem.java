@@ -75,7 +75,7 @@ public class ShooterSubsystem extends SubsystemBase {
           .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withInverted(InvertedValue.Clockwise_Positive)
+                  .withInverted(InvertedValue.CounterClockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Brake))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
@@ -100,9 +100,9 @@ public class ShooterSubsystem extends SubsystemBase {
           .withFeedback(
               new FeedbackConfigs().withSensorToMechanismRatio(kFlywheelSensorToMechRatio));
 
-  public static final double kMinAngleRevs = Units.degreesToRotations(90 - 14.703759);
+  public static final double kMaxAngleRevs = Units.degreesToRotations(90 - 14.703759);
 
-  public static final double kMaxAngleRevs = Units.degreesToRotations(90 - 43);
+  public static final double kMinAngleRevs = Units.degreesToRotations(90 - 43);
 
   public static final double kHoodCurrentZeroingThreshold = 10.0;
 
@@ -322,11 +322,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public Command runCurrentHoming() {
     return Commands.sequence(
-        this.run(() -> mHood.setTargetVoltage(2))
+        this.run(() -> mHood.setTargetVoltage(-2))
             .until(() -> mHoodCurrentFilterValue > kHoodCurrentZeroingThreshold),
         this.runOnce(
             () -> {
-              mHood.resetEncoder(kMinAngleRevs);
+              mHood.resetEncoder(kMaxAngleRevs);
               mIsHomed = true;
             }),
         Commands.print("Hood Homed"));

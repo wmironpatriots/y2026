@@ -86,7 +86,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public static final double kMinAngleRevs = Units.degreesToRotations(0.0);
 
-  public static final double kMaxAngleRevs = Units.degreesToRadians(47.0);
+  public static final double kMaxAngleRevs = Units.degreesToRotations(56.425800397);
 
   public static final double kPivotCurrentZeroingThreshold = 30.0;
 
@@ -157,7 +157,7 @@ public class IntakeSubsystem extends SubsystemBase {
     mRoller = roller;
     mPivot = pivot;
 
-    setDefaultCommand(runCurrentHoming().unless(this::isHomed).andThen(stow()).repeatedly());
+    setDefaultCommand(runCurrentHoming().unless(this::isHomed).andThen(stow()));
   }
 
   @Override
@@ -238,7 +238,8 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command stow() {
     return this.run(
         () -> {
-          mPivot.setTargetPosition(Units.degreesToRotations(kPositionStowedDeg.get()));
+          mTarget = Rotation2d.fromDegrees(kPositionStowedDeg.get());
+          mPivot.setTargetPosition(mTarget.getRotations());
 
           if (isNearPosition()) {
             mRoller.setVoltageOutput(kStowedSpeedVolts.get());
@@ -256,13 +257,14 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command intakeAgitated() {
     return this.run(
         () -> {
-          mPivot.setTargetPosition(
-              Units.degreesToRotations(
+          mTarget =
+              Rotation2d.fromDegrees(
                   kPositionDeployedDeg.getAsDouble()
                       - Math.abs(
                           kAgitatingPeriod.get()
                               * Math.sin(Timer.getTimestamp())
-                              * kPositionAgitatingDeg.get())));
+                              * kPositionAgitatingDeg.get()));
+          mPivot.setTargetPosition(mTarget.getRotations());
           mRoller.setVoltageOutput(kIntakingSpeedVolts.get());
         });
   }
@@ -275,7 +277,8 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command rest() {
     return this.run(
         () -> {
-          mPivot.setTargetPosition(Units.degreesToRotations(kPositionDeployedDeg.get()));
+          mTarget = Rotation2d.fromDegrees(kPositionDeployedDeg.get());
+          mPivot.setTargetPosition(mTarget.getRotations());
           mRoller.stop();
         });
   }
@@ -288,7 +291,8 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command intake() {
     return this.run(
         () -> {
-          mPivot.setTargetPosition(Units.degreesToRotations(kPositionDeployedDeg.getAsDouble()));
+          mTarget = Rotation2d.fromDegrees(kPositionDeployedDeg.getAsDouble());
+          mPivot.setTargetPosition(mTarget.getRotations());
           mRoller.setVoltageOutput(kIntakingSpeedVolts.get());
         });
   }
@@ -301,10 +305,14 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command outakeAgitated() {
     return this.run(
         () -> {
-          mPivot.setTargetPosition(
-              Units.degreesToRotations(
+          mTarget =
+              Rotation2d.fromDegrees(
                   kPositionDeployedDeg.getAsDouble()
-                      - Math.abs(Math.sin(Timer.getTimestamp()) * kPositionAgitatingDeg.get())));
+                      - Math.abs(
+                          kAgitatingPeriod.get()
+                              * Math.sin(Timer.getTimestamp())
+                              * kPositionAgitatingDeg.get()));
+          mPivot.setTargetPosition(mTarget.getRotations());
           mRoller.setVoltageOutput(kOutakingSpeedVolts.get());
         });
   }
@@ -317,7 +325,8 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command outake() {
     return this.run(
         () -> {
-          mPivot.setTargetPosition(Units.degreesToRotations(kPositionDeployedDeg.getAsDouble()));
+          mTarget = Rotation2d.fromDegrees(kPositionDeployedDeg.getAsDouble());
+          mPivot.setTargetPosition(mTarget.getRotations());
           mRoller.setVoltageOutput(kOutakingSpeedVolts.get());
         });
   }

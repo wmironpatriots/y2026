@@ -189,7 +189,7 @@ public class Robot extends CommandRobot {
         .and(mLockTrigger)
         .whileTrue(
             mDrive.driveTeleoperatedFacingTarget(
-                x, y, () -> FireControlSystem.getVirtualTarget().getTranslation()));
+                x, y, () -> FireControlSystem.getVirtualTarget().getTranslation(), true));
   }
 
   /** Configure driver dashboard */

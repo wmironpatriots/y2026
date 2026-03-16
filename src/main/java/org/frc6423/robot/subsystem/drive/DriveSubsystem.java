@@ -483,9 +483,16 @@ public class DriveSubsystem extends SubsystemBase {
   // * ~~~~~~~~ COMMANDS ~~~~~~~~
 
   public Command driveTeleoperatedFacingTarget(
-      DoubleSupplier vx, DoubleSupplier vy, Supplier<Translation2d> target) {
+      DoubleSupplier vx, DoubleSupplier vy, Supplier<Translation2d> target, boolean flipped) {
     return driveTeleoperatedWithAngularAsisst(
-        vx, vy, () -> target.get().minus(getPose2d().getTranslation()).getAngle());
+        vx,
+        vy,
+        () ->
+            target
+                .get()
+                .minus(getPose2d().getTranslation())
+                .getAngle()
+                .plus(flipped ? Rotation2d.k180deg : Rotation2d.kZero));
   }
 
   public Command driveTeleoperatedWithAngularAsisst(
