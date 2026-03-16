@@ -389,7 +389,7 @@ public class DriveSubsystem extends SubsystemBase {
             mAngularController.calculate(getRotation2d().getRadians(), sample.heading));
 
     // Create full velocities & convert to states
-    var speeds ==
+    var speeds =
         ChassisSpeeds.fromFieldRelativeSpeeds(
             ffSpeedsWrtField.plus(fbSpeedsWrtField), getRotation2d());
 
