@@ -22,6 +22,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -41,9 +42,9 @@ public class IntakeSubsystem extends SubsystemBase {
   public static final double kPivotSensorToMechRatio =
       (5.0 / 1.0) * (3.0 / 1.0) * (1.0 / 1.0) * (36.0 / 16.0);
 
-  public static final double kMinAngleRevs = Units.degreesToRotations(98);
+  public static final double kMinAngleRevs = Units.degreesToRotations(0.0);
 
-  public static final double kMaxAngleRevs = Units.degreesToRadians(145);
+  public static final double kMaxAngleRevs = Units.degreesToRadians(47.0);
 
   public static final TalonFXConfiguration kPivotTalonFxConfig =
       new TalonFXConfiguration()
@@ -89,6 +90,8 @@ public class IntakeSubsystem extends SubsystemBase {
       new TunableNumber("Intake/Position Stowed (degrees)");
   public static final TunableNumber kPositionDeployedDeg =
       new TunableNumber("Intake/Position Deployed (degrees)");
+  public static final TunableNumber kPositionAgitatingDeg =
+      new TunableNumber("Intake/Position Agitating (degrees)");
 
   public static final TunableNumber kStowedSpeedVolts =
       new TunableNumber("Intake/Stowed Speed (volts)");
@@ -108,8 +111,8 @@ public class IntakeSubsystem extends SubsystemBase {
     kPositionKd.initDefault(30.0);
 
     kPositionToleranceDeg.initDefault(1.5);
-    kPositionStowedDeg.initDefault(Units.rotationsToDegrees(kMinAngleRevs) + 1.5);
-    kPositionDeployedDeg.initDefault(Units.rotationsToDegrees(kMaxAngleRevs) - 1.5);
+    kPositionStowedDeg.initDefault(Units.rotationsToDegrees(kMinAngleRevs));
+    kPositionDeployedDeg.initDefault(Units.rotationsToDegrees(kMaxAngleRevs));
 
     kStowedSpeedVolts.initDefault(0.0);
     kStowingSpeedVolts.initDefault(4.5);
@@ -132,6 +135,8 @@ public class IntakeSubsystem extends SubsystemBase {
   protected IntakeSubsystem(RollerIO roller, PivotIO pivot) {
     mRoller = roller;
     mPivot = pivot;
+
+    setDefaultCommand(runCurrentHoming().unless(this::isHomed).andThen(stow()));
   }
 
   @Override
@@ -163,7 +168,7 @@ public class IntakeSubsystem extends SubsystemBase {
   // * ~~~~~~~~ GETTERS/SETTERS ~~~~~~~~
 
   @Logged(name = "Is Zeroed (bool)", importance = Importance.INFO)
-  public boolean isZeroed() {
+  public boolean isHomed() {
     return mIsZeroed;
   }
 
@@ -185,14 +190,66 @@ public class IntakeSubsystem extends SubsystemBase {
     return Rotation2d.fromRotations(mPivot.getPositionRevs());
   }
 
-  // * ~~~~~~~~ SETTERS ~~~~~~~~
+  // * ~~~~~~~~ COMMANDS ~~~~~~~~
 
+  /**
+   * Run pivot backwards at constant voltage until pushing against hardstop, then zero
+   *
+   * @return {@link Command}
+   */
   public Command runCurrentHoming() {
     return Commands.sequence(
         this.runOnce(() -> mPivot.setTargetVoltage(-2))
             .until(() -> mFilteredCurrent > kPivotCurrentZeroingThreshold),
         this.runOnce(() -> mPivot.resetEncoder(kMinAngleRevs)),
         Commands.print("Intake Homed"));
+  }
+
+  /**
+   * Stow and stop once completely folded
+   *
+   * @return {@link Command}
+   */
+  public Command stow() {
+    return this.run(
+        () -> {
+          mPivot.setTargetPosition(Units.degreesToRotations(kPositionStowedDeg.get()));
+
+          if (isNearPosition()) {
+            mRoller.setVoltageOutput(kStowedSpeedVolts.get());
+          } else {
+            mRoller.setVoltageOutput(kStowingSpeedVolts.get());
+          }
+        });
+  }
+
+  /**
+   * Intake while ocilating between {@link #kPositionDeployedDeg} and {@link #kPositionAgitatingDeg}
+   *
+   * @return {@link Command}
+   */
+  public Command intakeAgitated() {
+    return this.run(
+        () -> {
+          mPivot.setTargetPosition(
+              Units.degreesToRotations(
+                  kPositionDeployedDeg.getAsDouble()
+                      - Math.abs(Math.sin(Timer.getTimestamp()) * kPositionAgitatingDeg.get())));
+          mRoller.setVoltageOutput(kIntakingSpeedVolts.get());
+        });
+  }
+
+  /**
+   * Rest in deployed position
+   *
+   * @return {@link Command}
+   */
+  public Command rest() {
+    return this.run(
+        () -> {
+          mPivot.setTargetPosition(Units.degreesToRotations(kPositionDeployedDeg.get()));
+          mRoller.stop();
+        });
   }
 
   /**
@@ -203,8 +260,24 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command intake() {
     return this.run(
         () -> {
-          mPivot.setTargetPosition(kPositionDeployedDeg.getAsDouble());
+          mPivot.setTargetPosition(Units.degreesToRotations(kPositionDeployedDeg.getAsDouble()));
           mRoller.setVoltageOutput(kIntakingSpeedVolts.get());
+        });
+  }
+
+  /**
+   * Outake while ocilating between {@link #kPositionDeployedDeg} and {@link #kPositionAgitatingDeg}
+   *
+   * @return {@link Command}
+   */
+  public Command outakeAgitated() {
+    return this.run(
+        () -> {
+          mPivot.setTargetPosition(
+              Units.degreesToRotations(
+                  kPositionDeployedDeg.getAsDouble()
+                      - Math.abs(Math.sin(Timer.getTimestamp()) * kPositionAgitatingDeg.get())));
+          mRoller.setVoltageOutput(kOutakingSpeedVolts.get());
         });
   }
 
@@ -216,8 +289,8 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command outake() {
     return this.run(
         () -> {
-          mPivot.setTargetPosition(kPositionDeployedDeg.getAsDouble());
-          mRoller.setVoltageOutput(kIntakingSpeedVolts.get());
+          mPivot.setTargetPosition(Units.degreesToRotations(kPositionDeployedDeg.getAsDouble()));
+          mRoller.setVoltageOutput(kOutakingSpeedVolts.get());
         });
   }
 
