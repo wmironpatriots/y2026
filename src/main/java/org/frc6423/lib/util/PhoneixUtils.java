@@ -4,7 +4,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.lib.utils;
+package org.frc6423.lib.util;
 
 import com.ctre.phoenix6.StatusCode;
 import java.util.function.Supplier;

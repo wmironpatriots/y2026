@@ -4,9 +4,11 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // MIT license file in the root directory of this project
 
-package org.frc6423.lib.drivers;
+package org.frc6423.lib.driver;
 
 import static edu.wpi.first.units.Units.Seconds;
+
+import org.frc6423.lib.util.Tracer;
 
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -14,7 +16,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import org.frc6423.lib.utils.Tracer;
 
 /**
  * {@link CommandRobot} is an extension of {@link TimedRobot}

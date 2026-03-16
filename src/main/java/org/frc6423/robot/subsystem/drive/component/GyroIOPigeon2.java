@@ -9,9 +9,12 @@ package org.frc6423.robot.subsystem.drive.component;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.Pigeon2;
-import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.GyroConfig;
 
-/** Interface for interacting with {@link Pigeon2} gyro hardware */
+import edu.wpi.first.math.geometry.Rotation2d;
+
+import org.frc6423.robot.subsystem.drive.constant.SwerveConstants.GyroConfig;
+
+/** {@link GyroIO} extension for interacting with a {@link Pigeon2} */
 public class GyroIOPigeon2 extends GyroIO {
   private final Pigeon2 mPigeon;
 
@@ -29,8 +32,8 @@ public class GyroIOPigeon2 extends GyroIO {
   }
 
   @Override
-  public double getYawDegrees() {
-    return mYawSignal.getValueAsDouble();
+  public Rotation2d getYawRotation2d() {
+    return mPigeon.getRotation2d();
   }
 
   @Override

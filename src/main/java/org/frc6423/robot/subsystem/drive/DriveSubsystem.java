@@ -6,33 +6,16 @@
 
 package org.frc6423.robot.subsystem.drive;
 
-import choreo.trajectory.SwerveSample;
-import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.wpilibj.RobotState;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
+
+import org.frc6423.lib.util.Tracer;
+import org.frc6423.lib.util.TunableNumber;
+import org.frc6423.robot.Constants;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.Robot;
-import org.frc6423.robot.command.DriveTeleoperatedCommands;
-import org.frc6423.robot.subsystem.RobotState.OdometryMeasurement;
 import org.frc6423.robot.subsystem.drive.component.GyroIO;
 import org.frc6423.robot.subsystem.drive.component.GyroIONone;
 import org.frc6423.robot.subsystem.drive.component.GyroIOPigeon2;
@@ -40,6 +23,24 @@ import org.frc6423.robot.subsystem.drive.component.SwerveModuleIO;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOComp;
 import org.frc6423.robot.subsystem.drive.component.SwerveModuleIOSim;
 import org.frc6423.robot.subsystem.drive.constant.SwerveConstants;
+
+import choreo.trajectory.SwerveSample;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** {@link SubsystemBase} Manager class for the swerve drivetrain */
 public class DriveSubsystem extends SubsystemBase {
@@ -74,6 +75,30 @@ public class DriveSubsystem extends SubsystemBase {
 
   /** {@link String} The directory to store tunables in NT */
   public static final String kTunablesPrefix = "/Drive";
+
+  // * ~~~~~~~~ TUNNABLES ~~~~~~~~
+
+  private static final TunableNumber kTranslationalFeedbackKp = new TunableNumber("/drive/kP");
+  private static final TunableNumber kTranslationalFeedbackKd = new TunableNumber("/drive/kP");
+
+  private static final TunableNumber kAngularFeedbackKp = new TunableNumber("/drive/kP");
+  private static final TunableNumber kAngularFeedbackKd = new TunableNumber("/drive/kd");
+
+  static {
+    if (Robot.isReal()) {
+      kTranslationalFeedbackKp.initDefault(5.0);
+      kTranslationalFeedbackKd.initDefault(0.0);
+
+      kAngularFeedbackKp.initDefault(6.0);
+      kAngularFeedbackKd.initDefault(0.0);
+    } else {
+      kTranslationalFeedbackKp.initDefault(5.0);
+      kTranslationalFeedbackKd.initDefault(0.0);
+
+      kAngularFeedbackKp.initDefault(6.0);
+      kAngularFeedbackKd.initDefault(0.0);
+    }
+  }
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
@@ -118,8 +143,29 @@ public class DriveSubsystem extends SubsystemBase {
         new SwerveModuleState()
       };
 
+  /** {@link SwerveDrivePoseEstimator} Odometry class for estimating the position of robot using vision/drivetrain measurements */
+  private final SwerveDrivePoseEstimator mPoseEstimator = new SwerveDrivePoseEstimator(
+    kConstants.getKinematics(), 
+    Rotation2d.kZero, 
+    getWheelPositions(), 
+    new Pose2d(), 
+    VecBuilder.fill(0.0, 0.0, 0.0), // TODO - approximate
+    VecBuilder.fill(0.0, 0.0, 0.0)); // TODO - approximate
+
   /** {@link Field2d} Member for visualizing relevant positions on Elastic */
   private final Field2d mF2d;
+
+  /** {@link PIDController} Feedback controller for translational assists in the x direction */
+  private final PIDController mTranslationalXController = new PIDController(5.0, 0.0, 0.0);
+
+  /** {@link PIDController} Feedback controller for translational assists in the y direction */
+  private final PIDController mTranslationalYController = new PIDController(5.0, 0.0, 0.0);
+
+  /** {@link PIDController} Feedback controller for angular assists */
+  private final PIDController mAngularController = new PIDController(6.0, 0.0, 0.0);
+
+  /** {@link Rotation2d} Simulated robot rotation for sim */
+  private Rotation2d mSimRotation = Rotation2d.kZero;
 
   protected DriveSubsystem(
       GyroIO gyro,
@@ -141,45 +187,43 @@ public class DriveSubsystem extends SubsystemBase {
 
     mF2d = new Field2d();
     SmartDashboard.putData(mF2d);
-
-    RobotState.getInstance()
-        .resetPose(new Pose2d(getPose2d().getTranslation(), Flags.getAllianceRotation()));
   }
 
   @Override
   public void periodic() {
-    Tracer.traceFunc(
-        "Update Hardware",
-        () -> {
-          mGyro.periodic();
-          Arrays.stream(mModules).forEach(SwerveModuleIO::periodic);
-        });
-
-    // Update odometry
-    RobotState.getInstance()
-        .addOdometryMeasurement(
-            new OdometryMeasurement(
-                Timer.getFPGATimestamp(),
-                getWheelPositions(),
-                Robot.isReal()
-                    ? Optional.of(Rotation2d.fromDegrees(mGyro.getYawDegrees()))
-                    : Optional.empty()));
-
-    Tracer.traceFunc(
-        "Update Odometry",
-        () -> {
-          RobotState.getInstance()
-              .addOdometryMeasurement(
-                  new OdometryMeasurement(
-                      Timer.getFPGATimestamp(),
-                      getWheelPositions(),
-                      Robot.isReal()
-                          ? Optional.of(Rotation2d.fromDegrees(mGyro.getYawDegrees()))
-                          : Optional.empty()));
-          RobotState.getInstance().setChassisSpeeds(getChassisSpeeds());
-        });
+    Tracer.traceFunc("Update Odometry", () -> {
+      mPoseEstimator.updateWithTime(
+        Timer.getTimestamp(), 
+        getRotation2d(), 
+      getWheelPositions());
+    });
 
     mF2d.setRobotPose(getPose2d());
+
+    // Update tunables
+    if (
+      kTranslationalFeedbackKp.hasChanged(hashCode())
+      || kTranslationalFeedbackKd.hasChanged(hashCode())
+      || kAngularFeedbackKp.hasChanged(hashCode())
+      || kAngularFeedbackKd.hasChanged(hashCode())) {
+        mTranslationalXController.setPID(kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
+        mTranslationalYController.setPID(kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
+
+        mAngularController.setPID(kAngularFeedbackKp.get(), 0.0, kAngularFeedbackKd.get());
+
+        resetFeedbackControllers();
+      }
+      
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    mSimRotation =
+        mSimRotation.rotateBy(
+            Rotation2d.fromRadians(
+                !Double.isNaN(getChassisSpeeds().omegaRadiansPerSecond)
+                    ? getChassisSpeeds().omegaRadiansPerSecond * 0.2
+                    : 0));
   }
 
   // * ~~~~~~~~ GETTERS ~~~~~~~~
@@ -191,8 +235,8 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @Logged(name = "Within Translational Tolerance (bool)", importance = Importance.INFO)
   public boolean isAtTranslationalTarget() {
-    return DriveTeleoperatedCommands.kTranslationalXController.atSetpoint()
-        && DriveTeleoperatedCommands.kTranslationalYController.atSetpoint();
+    return mTranslationalXController.atSetpoint()
+        && mTranslationalYController.atSetpoint();
   }
 
   /**
@@ -202,8 +246,9 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @Logged(name = "Within Angular Tolerance (bool)", importance = Importance.INFO)
   public boolean isFacingAngularTarget() {
-    return DriveTeleoperatedCommands.kAngularController.atSetpoint();
+    return mAngularController.atSetpoint();
   }
+
 
   /**
    * Get estimated yaw rotation of robot
@@ -211,7 +256,7 @@ public class DriveSubsystem extends SubsystemBase {
    * @return {@link Rotation2dd}
    */
   public Rotation2d getRotation2d() {
-    return getPose2d().getRotation();
+    return (Robot.isReal()) ? getPose2d().getRotation() : mSimRotation;
   }
 
   /**
@@ -221,7 +266,7 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @Logged(name = "Field Position (Pose2d)", importance = Importance.INFO)
   public Pose2d getPose2d() {
-    return RobotState.getInstance().getEstimatedPosition();
+    return mPoseEstimator.getEstimatedPosition();
   }
 
   /**
@@ -297,6 +342,12 @@ public class DriveSubsystem extends SubsystemBase {
 
   // * ~~~~~~~~ SETTERS ~~~~~~~~
 
+  public void resetFeedbackControllers() {
+    mTranslationalXController.reset();
+    mTranslationalYController.reset();
+    mAngularController.reset();
+  }
+
   /**
    * Set setpoint {@link ChassisSpeeds} for drivetrain to follow
    *
@@ -324,57 +375,50 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Get a {@link Consumer} for driving based off {@link SwerveSample}
-   *
-   * @return {@link Consumer} of {@link SwerveSample}
+   * Run a {@link SwerveSample} setpoint
+   * 
+   * @param sample {@link SwerveSample} Desired state
    */
-  public Consumer<SwerveSample> getChoreoSwerveSampleConsumer() {
-    final PIDController xController = new PIDController(5.0, 0.0, 0.0);
-    final PIDController yController = new PIDController(5.0, 0.0, 0.0);
-    final PIDController angularController = new PIDController(6.0, 0.0, 0.0);
-    angularController.enableContinuousInput(-Math.PI, Math.PI);
+  public void runSwerveSample(SwerveSample sample) {
+    // Get sample velocities & feedback velocities
+    var ffSpeedsWrtField = sample.getChassisSpeeds();
+    var fbSpeedsWrtField =
+        new ChassisSpeeds(
+            mTranslationalXController.calculate(getPose2d().getX(), sample.x),
+            mTranslationalYController.calculate(getPose2d().getY(), sample.y),
+            mAngularController.calculate(getRotation2d().getRadians(), sample.heading));
 
-    return (sample) -> {
-      // Get sample velocities & feedback velocities
-      var ffSpeedsWrtField = sample.getChassisSpeeds();
-      var fbSpeedsWrtField =
-          new ChassisSpeeds(
-              xController.calculate(getPose2d().getX(), sample.x),
-              yController.calculate(getPose2d().getY(), sample.y),
-              angularController.calculate(getRotation2d().getRadians(), sample.heading));
+    // Create full velocities & convert to states
+    var speeds ==
+        ChassisSpeeds.fromFieldRelativeSpeeds(
+            ffSpeedsWrtField.plus(fbSpeedsWrtField), getRotation2d());
 
-      // Create full velocities & convert to states
-      var speeds =
-          ChassisSpeeds.fromFieldRelativeSpeeds(
-              ffSpeedsWrtField.plus(fbSpeedsWrtField), getRotation2d());
+    var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
 
-      var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
+    // Get desired Module forces
+    var xForces = sample.moduleForcesX();
+    var yForces = sample.moduleForcesY();
 
-      // Get desired Module forces
-      var xForces = sample.moduleForcesX();
-      var yForces = sample.moduleForcesY();
+    for (int i = 0; i < mModules.length; i++) {
+      // Get desired angle of module
+      var angle = states[i].angle;
 
-      for (int i = 0; i < mModules.length; i++) {
-        // Get desired angle of module
-        var angle = states[i].angle;
+      // Calculate desired force vector of module and account for chassis orientation
+      var force =
+          new Translation2d(xForces[i], yForces[i])
+              .rotateBy(Rotation2d.fromRadians(sample.heading).unaryMinus())
+              .toVector();
+      var forceDirection = VecBuilder.fill(angle.getCos(), angle.getSin());
 
-        // Calculate desired force vector of module and account for chassis orientation
-        var force =
-            new Translation2d(xForces[i], yForces[i])
-                .rotateBy(Rotation2d.fromRadians(sample.heading).unaryMinus())
-                .toVector();
-        var forceDirection = VecBuilder.fill(angle.getCos(), angle.getSin());
+      // Convert desired force vector into wheel torque
+      var torque = force.dot(forceDirection) * kConstants.getWheelRadiusMeters();
 
-        // Convert desired force vector into wheel torque
-        var torque = force.dot(forceDirection) * kConstants.getWheelRadiusMeters();
+      // Send setpoint
+      mModules[i].setSetpoint(states[i], torque);
+    }
 
-        // Send setpoint
-        mModules[i].setSetpoint(states[i], torque);
-      }
-
-      // Log setpoints
-      mSetpointWheelStates = states;
-    };
+    // Log setpoints
+    mSetpointWheelStates = states;
   }
 
   public void setSetpointWheelStates(SwerveModuleState[] desiredStates, double[] wheelTorquesNm) {
