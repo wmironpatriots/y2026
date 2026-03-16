@@ -27,12 +27,31 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.frc6423.lib.io.RollerIO;
+import org.frc6423.lib.io.RollerIONone;
 import org.frc6423.lib.io.RollerIOTalonFx;
 import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Matrix;
+import org.frc6423.robot.Robot;
 
 public class IntakeSubsystem extends SubsystemBase {
+  /**
+   * Static Factory for automatically configuring and creating a {@link IntakeSubsystem}
+   *
+   * @return {@link IntakeSubsystem}
+   */
+  public static IntakeSubsystem create() {
+    return (Robot.isReal())
+        ? new IntakeSubsystem(
+            new RollerIOTalonFx(kRollerCanDeviceId, kCanBus, kRollerTalonFxConfig),
+            new PivotIOReal(kPivotCanDeviceId, kCanBus, kPivotTalonFxConfig))
+        : new IntakeSubsystem(
+            new RollerIONone(),
+            new PivotIOReal(
+                kPivotCanDeviceId, kCanBus, kPivotTalonFxConfig)); // TODO - replace with sim
+  }
+
   // * ~~~~~~~~ CONSTANTS ~~~~~~~~
+
   public static final CANBus kCanBus = Matrix.kSubsystemCanBus;
 
   public static final int kPivotCanDeviceId = Matrix.kIntakePivotId;
@@ -41,10 +60,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public static final double kPivotSensorToMechRatio =
       (5.0 / 1.0) * (3.0 / 1.0) * (1.0 / 1.0) * (36.0 / 16.0);
-
-  public static final double kMinAngleRevs = Units.degreesToRotations(0.0);
-
-  public static final double kMaxAngleRevs = Units.degreesToRadians(47.0);
 
   public static final TalonFXConfiguration kPivotTalonFxConfig =
       new TalonFXConfiguration()
@@ -68,6 +83,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public static final TalonFXConfiguration kRollerTalonFxConfig =
       RollerIOTalonFx.createGenericRollerConfig(true);
+
+  public static final double kMinAngleRevs = Units.degreesToRotations(0.0);
+
+  public static final double kMaxAngleRevs = Units.degreesToRadians(47.0);
 
   public static final double kPivotCurrentZeroingThreshold = 30.0;
 
@@ -125,7 +144,7 @@ public class IntakeSubsystem extends SubsystemBase {
   @Logged private final RollerIO mRoller;
   @Logged private final PivotIO mPivot;
 
-  private boolean mIsZeroed = false;
+  private boolean mIsHomed = false;
 
   private LinearFilter mCurrentFilter = LinearFilter.movingAverage(5);
   private double mFilteredCurrent = 0.0;
@@ -136,7 +155,7 @@ public class IntakeSubsystem extends SubsystemBase {
     mRoller = roller;
     mPivot = pivot;
 
-    setDefaultCommand(runCurrentHoming().unless(this::isHomed).andThen(stow()));
+    setDefaultCommand(runCurrentHoming().unless(this::isHomed).andThen(stow()).repeatedly());
   }
 
   @Override
@@ -167,9 +186,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
   // * ~~~~~~~~ GETTERS/SETTERS ~~~~~~~~
 
-  @Logged(name = "Is Zeroed (bool)", importance = Importance.INFO)
+  @Logged(name = "Is Homed (bool)", importance = Importance.INFO)
   public boolean isHomed() {
-    return mIsZeroed;
+    return mIsHomed;
   }
 
   @Logged(name = "Is Near Position (bool)", importance = Importance.INFO)
@@ -199,9 +218,13 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   public Command runCurrentHoming() {
     return Commands.sequence(
-        this.runOnce(() -> mPivot.setTargetVoltage(-2))
+        this.run(() -> mPivot.setTargetVoltage(-2))
             .until(() -> mFilteredCurrent > kPivotCurrentZeroingThreshold),
-        this.runOnce(() -> mPivot.resetEncoder(kMinAngleRevs)),
+        this.runOnce(
+            () -> {
+              mPivot.resetEncoder(kMinAngleRevs);
+              mIsHomed = true;
+            }),
         Commands.print("Intake Homed"));
   }
 

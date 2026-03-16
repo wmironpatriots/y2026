@@ -40,6 +40,8 @@ public abstract class PivotIO {
 
   public abstract void resetEncoder(double positionRevs);
 
+  public abstract void setProfilingConstraints(double cruiseVelocity, double acceleration);
+
   public abstract void setGains(double kS, double kG, double kV, double kA, double kP, double kD);
 
   public abstract void enableBrake(boolean enabled);

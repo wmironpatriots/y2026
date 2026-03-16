@@ -107,6 +107,18 @@ public class PivotIOReal extends PivotIO {
   }
 
   @Override
+  public void setProfilingConstraints(double cruiseVelocity, double acceleration) {
+    new Thread(
+            () -> {
+              mConfig.MotionMagic.MotionMagicCruiseVelocity = cruiseVelocity;
+              mConfig.MotionMagic.MotionMagicAcceleration = acceleration;
+
+              PhoneixUtils.tryUntilOk(3, () -> mServo.getConfigurator().apply(mConfig));
+            })
+        .run();
+  }
+
+  @Override
   public void setGains(double kS, double kG, double kV, double kA, double kP, double kD) {
     new Thread(
             () -> {
