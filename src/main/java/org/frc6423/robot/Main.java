@@ -8,6 +8,13 @@ package org.frc6423.robot;
 
 import edu.wpi.first.wpilibj.RobotBase;
 
+/**
+ * Main contains the entry point of the robot program {@link #main(String...)}
+ *
+ * <p><strong> NO INITIALIZATION SHOULD HAPPEN HERE </strong>
+ *
+ * <p>This file should only be modified if you know what you are doing
+ */
 public final class Main {
   private Main() {}
 

@@ -11,57 +11,32 @@ import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import org.frc6423.robot.subsystems.drive.constants.RebuiltL2;
-import org.frc6423.robot.subsystems.drive.constants.SwerveConstants;
+import org.frc6423.robot.subsystem.drive.constant.RebuiltL2;
+import org.frc6423.robot.subsystem.drive.constant.SwerveConstants;
 
-/**
- * This is a globally accessible class for storing immutable values.
- *
- * <p>All values in this class are public, static, and final
- *
- * <p>To utilize values in this class, you should statically import the entire class or its
- * subclasses
- */
 public final class Constants {
-  /** Runtime flags determining the robots initialization */
   public static final class Flags {
-    /** {@link SwerveConstants} Drivetrain characterization */
-    public static final SwerveConstants kDriveConstants = new RebuiltL2();
+    public static final boolean kInitializeSubsystems = false;
 
-    /** When true, subsystems will not be initialized */
-    public static final boolean kSubsystemDisabled = false;
+    public static final boolean kInitializeDrive = false;
 
-    /** When true, drive will not be initialized */
-    public static final boolean kDriveDisabled = false;
+    public static final boolean kInitializeTunables = true;
 
-    /** When true, tunables/characterization commands will appear on dashboard */
-    public static final boolean kTuningModeEnabled = true;
+    public static final boolean kInitializeSimulatedFuelPools = true;
 
-    /** {@link Importance} Minimum Epilogue importance to be logged */
-    public static final Importance kLoggingLevel = Importance.DEBUG;
+    public static final SwerveConstants kDrivetrainContants = new RebuiltL2();
 
-    /** {@link Alliance} Alliance robot is currently on */
+    public static final Importance kLowestLoggingLevel = Importance.DEBUG;
+
     public static Alliance getRobotAlliance() {
       return DriverStation.getAlliance().orElse(Alliance.Blue);
     }
 
-    public static final boolean kSpawnStartingFuel = false;
-
-    /**
-     * Get yaw offset based on {@link #kRobotAlliance}
-     *
-     * @return {@link getAllianceRotation}
-     */
     public static Rotation2d getAllianceRotation() {
       return Rotation2d.fromRotations(getRobotAlliance() == Alliance.Blue ? 0.0 : 0.5);
     }
-
-    // public static Pose2d getRobotAlliancePose2d(Pose2d pose) {
-    //   return GeometryUtil.allianceFlipPose2d(Rebuilt.kMidPose, pose);
-    // }
   }
 
-  /** The matrix contains the CAN identification information for all devices */
   public static final class Matrix {
     public static final CANBus kDriveCanBus = new CANBus("DRIVE");
 

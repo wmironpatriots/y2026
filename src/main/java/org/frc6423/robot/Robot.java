@@ -17,11 +17,27 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.frc6423.lib.drivers.CommandRobot;
 import org.frc6423.robot.Constants.Flags;
 
+/**
+ * Robot initializes all components and defines the behavior of the program
+ *
+ * <p>This is an extension of {@link CommandRobot}
+ *
+ * <p>Virtual systems should be initialized within {@link #Robot()}
+ *
+ * <p>Driver/operator controls should be initialized within {@link #configureBindings()}
+ *
+ * <p>Dashboard widgets should be initilaized within {@link #configureDashboard()}
+ *
+ * <p>Simulation members should be initialized within {@link #configureSimulation()}
+ */
 @Logged
 public class Robot extends CommandRobot {
+  private final CommandXboxController mDriverController = new CommandXboxController(0);
+
   public Robot() {
     // Shut up DS
     DriverStation.silenceJoystickConnectionWarning(true);

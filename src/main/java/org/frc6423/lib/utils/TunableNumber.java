@@ -59,7 +59,7 @@ public class TunableNumber implements DoubleSupplier {
     if (!mHasDefault) {
       mHasDefault = true;
       this.mDefaultValue = defaultValue;
-      if (Flags.kTuningModeEnabled) {
+      if (Flags.kInitializeTunables) {
         mNtEntry = NetworkTableUtil.createEntry(mKey, defaultValue);
       }
     }
@@ -74,7 +74,7 @@ public class TunableNumber implements DoubleSupplier {
     if (!mHasDefault) {
       return 0.0;
     } else {
-      return Flags.kTuningModeEnabled ? mNtEntry.get() : mDefaultValue;
+      return Flags.kInitializeTunables ? mNtEntry.get() : mDefaultValue;
     }
   }
 
