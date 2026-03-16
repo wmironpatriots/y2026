@@ -18,10 +18,17 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import java.util.Optional;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import org.frc6423.lib.driver.CommandRobot;
+import org.frc6423.lib.util.InputStream;
+import org.frc6423.robot.Constants.Field;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
+import org.frc6423.robot.subsystem.feeder.FeederSubsystem;
+import org.frc6423.robot.subsystem.indexer.IndexerSubsystem;
+import org.frc6423.robot.subsystem.intake.IntakeSubsystem;
+import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
 
 /**
  * Robot initializes all components and defines the behavior of the program
@@ -40,8 +47,20 @@ import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 public class Robot extends CommandRobot {
   private final CommandXboxController mDriverController = new CommandXboxController(0);
 
-  private final Optional<DriveSubsystem> mDriveSubsystem =
-      (Flags.kInitializeDrive) ? Optional.of(DriveSubsystem.create()) : Optional.empty();
+  private final DriveSubsystem mDrive = DriveSubsystem.create();
+  private final IntakeSubsystem mIntake = IntakeSubsystem.create();
+  private final IndexerSubsystem mIndexer = IndexerSubsystem.create();
+  private final FeederSubsystem mFeeder = FeederSubsystem.create();
+  private final ShooterSubsystem mShooter = ShooterSubsystem.create();
+
+  private final Trigger mIntakeTrigger = mDriverController.leftTrigger(0.1);
+  private final Trigger mAgitateTrigger = mDriverController.leftBumper();
+  private final Trigger mSpinupTrigger = mDriverController.rightTrigger(0.1);
+  private final Trigger mFireTrigger =
+      mDriverController.rightBumper().and(mShooter::isHoldingSetpoint);
+
+  private final Trigger mInAllianceZone =
+      new Trigger(() -> Field.getAllianceZone().contains(mDrive.getPose2d().getTranslation()));
 
   public Robot() {
     // Shut up DS
@@ -96,7 +115,53 @@ public class Robot extends CommandRobot {
   }
 
   /** Configure driver bindings */
-  public void configureBindings() {}
+  public void configureBindings() {
+
+    // ~~~ Intake Controls ~~~
+
+    mIntakeTrigger.and(mAgitateTrigger.negate()).whileTrue(mIntake.intake());
+
+    mIntakeTrigger.and(mAgitateTrigger).whileTrue(mIntake.intakeAgitated());
+
+    // ~~~ Indexer/Feeder Controls ~~~
+
+    mAgitateTrigger.and(mIntakeTrigger.negate()).whileTrue(mIndexer.index());
+
+    mFireTrigger.whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
+
+    // ~~~ Shooter Controls ~~~
+
+    // ~~~ Drive Controls ~~~
+
+    InputStream rawX = InputStream.of(mDriverController::getLeftY).negate();
+    InputStream rawY = InputStream.of(mDriverController::getLeftX).negate();
+
+    InputStream r =
+        InputStream.hypot(rawX, rawY)
+            .clamp(1.0)
+            .deadband(0.02, 1.0)
+            .signedPow(2.0)
+            .scale(() -> Flags.kDrivetrainContants.getMaxLinearVelocityMetersPerSecond());
+    // .rateLimit(
+    //     Flags.kDrivetrainContants
+    //         .getMaxLinearAccelerationMetersPerSecondPerSecond()); // tODO remove?
+
+    InputStream theta = InputStream.atan(rawX, rawY);
+
+    InputStream x = r.scale(theta.map(Math::cos));
+    InputStream y = r.scale(theta.map(Math::sin));
+
+    InputStream omega =
+        InputStream.of(mDriverController::getRightX)
+            .negate()
+            .clamp(1.0)
+            .deadband(0.02, 1.0)
+            .signedPow(2.0)
+            .scale(() -> Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec())
+            .rateLimit(Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec());
+
+    RobotModeTriggers.teleop().whileTrue(mDrive.driveTeleoperated(x, y, omega));
+  }
 
   /** Configure driver dashboard */
   public void configureDashboard() {}

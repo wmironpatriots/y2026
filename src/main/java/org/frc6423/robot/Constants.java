@@ -6,9 +6,14 @@
 
 package org.frc6423.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+
 import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import org.frc6423.robot.subsystem.drive.constant.RebuiltL2;
@@ -16,10 +21,6 @@ import org.frc6423.robot.subsystem.drive.constant.SwerveConstants;
 
 public final class Constants {
   public static final class Flags {
-    public static final boolean kInitializeSubsystems = false;
-
-    public static final boolean kInitializeDrive = false;
-
     public static final boolean kInitializeTunables = true;
 
     public static final boolean kInitializeSimulatedFuelPools = true;
@@ -34,6 +35,40 @@ public final class Constants {
 
     public static Rotation2d getAllianceRotation() {
       return Rotation2d.fromRotations(getRobotAlliance() == Alliance.Blue ? 0.0 : 0.5);
+    }
+  }
+
+  public static final class Field {
+    public static final Distance kFieldLength = Inches.of(651.22);
+
+    public static final Distance kFieldWidth = Inches.of(317.69);
+
+    public static final Distance kAllianceZoneLength = Inches.of(182.11);
+
+    public static final Pose2d kMidPose =
+        new Pose2d(kFieldLength.div(2), kFieldWidth.div(2), Rotation2d.kZero);
+
+    public static Pose2d kBlueAllianceZonePose2d =
+        new Pose2d(kAllianceZoneLength, kFieldWidth.div(2), Rotation2d.kZero);
+
+    public static Pose2d kBlueAllianceHubPose2d =
+        new Pose2d(Inches.of(182.11), Inches.of(158.84), Rotation2d.kZero);
+
+    public static Pose2d getHubPose2d() {
+      return getRobotAlliancePose2d(kBlueAllianceHubPose2d);
+    }
+
+    public static Rectangle2d getAllianceZone() {
+      return new Rectangle2d(
+          getRobotAlliancePose2d(kBlueAllianceZonePose2d), kAllianceZoneLength, kFieldWidth.div(2));
+    }
+
+    public static Pose2d getRobotAlliancePose2d(Pose2d pose) {
+      return (Flags.getRobotAlliance() == DriverStation.Alliance.Blue)
+          ? pose
+          : new Pose2d(
+              pose.getTranslation().rotateAround(kMidPose.getTranslation(), Rotation2d.k180deg),
+              pose.getRotation().plus(Rotation2d.k180deg));
     }
   }
 

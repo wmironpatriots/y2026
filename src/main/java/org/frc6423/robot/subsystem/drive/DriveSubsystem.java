@@ -19,14 +19,18 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 import org.frc6423.lib.util.Tracer;
 import org.frc6423.lib.util.TunableNumber;
 import org.frc6423.robot.Constants.Flags;
@@ -77,23 +81,31 @@ public class DriveSubsystem extends SubsystemBase {
 
   private static final TunableNumber kTranslationalFeedbackKp = new TunableNumber("/drive/kP");
   private static final TunableNumber kTranslationalFeedbackKd = new TunableNumber("/drive/kP");
+  private static final TunableNumber kTranslationalFeedbackTolerance =
+      new TunableNumber("/drive/tolerance (centimeters)");
 
   private static final TunableNumber kAngularFeedbackKp = new TunableNumber("/drive/kP");
   private static final TunableNumber kAngularFeedbackKd = new TunableNumber("/drive/kd");
+  private static final TunableNumber kAngularFeebackToleranceDeg =
+      new TunableNumber("/drive/tolerance (degrees)");
 
   static {
     if (Robot.isReal()) {
       kTranslationalFeedbackKp.initDefault(5.0);
       kTranslationalFeedbackKd.initDefault(0.0);
+      kTranslationalFeedbackTolerance.initDefault(1.5);
 
       kAngularFeedbackKp.initDefault(6.0);
       kAngularFeedbackKd.initDefault(0.0);
+      kAngularFeebackToleranceDeg.initDefault(1.5);
     } else {
       kTranslationalFeedbackKp.initDefault(5.0);
       kTranslationalFeedbackKd.initDefault(0.0);
+      kTranslationalFeedbackTolerance.initDefault(1.5);
 
       kAngularFeedbackKp.initDefault(6.0);
       kAngularFeedbackKd.initDefault(0.0);
+      kAngularFeebackToleranceDeg.initDefault(1.5);
     }
   }
 
@@ -144,14 +156,7 @@ public class DriveSubsystem extends SubsystemBase {
    * {@link SwerveDrivePoseEstimator} Odometry class for estimating the position of robot using
    * vision/drivetrain measurements
    */
-  private final SwerveDrivePoseEstimator mPoseEstimator =
-      new SwerveDrivePoseEstimator(
-          kConstants.getKinematics(),
-          Rotation2d.kZero,
-          getWheelPositions(),
-          new Pose2d(),
-          VecBuilder.fill(0.0, 0.0, 0.0), // TODO - approximate
-          VecBuilder.fill(0.0, 0.0, 0.0)); // TODO - approximate
+  private final SwerveDrivePoseEstimator mPoseEstimator;
 
   /** {@link Field2d} Member for visualizing relevant positions on Elastic */
   private final Field2d mF2d;
@@ -186,6 +191,21 @@ public class DriveSubsystem extends SubsystemBase {
           mFrontRightModule, mBackRightModule, mFrontLeftModule, mBackLeftModule
         };
 
+    mPoseEstimator =
+        new SwerveDrivePoseEstimator(
+            kConstants.getKinematics(),
+            Rotation2d.kZero,
+            getWheelPositions(),
+            new Pose2d(),
+            VecBuilder.fill(0.0, 0.0, 0.0), // TODO - approximate
+            VecBuilder.fill(0.0, 0.0, 0.0)); // TODO - approximate
+
+    mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
+    mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
+    mAngularController.setTolerance(Units.degreesToRadians(kAngularFeebackToleranceDeg.get()));
+
+    mAngularController.enableContinuousInput(0.0, 2 * Math.PI);
+
     mF2d = new Field2d();
     SmartDashboard.putData(mF2d);
   }
@@ -203,14 +223,20 @@ public class DriveSubsystem extends SubsystemBase {
     // Update tunables
     if (kTranslationalFeedbackKp.hasChanged(hashCode())
         || kTranslationalFeedbackKd.hasChanged(hashCode())
+        || kTranslationalFeedbackTolerance.hasChanged(hashCode())
         || kAngularFeedbackKp.hasChanged(hashCode())
-        || kAngularFeedbackKd.hasChanged(hashCode())) {
+        || kAngularFeedbackKd.hasChanged(hashCode())
+        || kAngularFeebackToleranceDeg.hasChanged(hashCode())) {
       mTranslationalXController.setPID(
           kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
       mTranslationalYController.setPID(
           kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
+      mTranslationalXController.setTolerance(kTranslationalFeedbackTolerance.get() * 0.01);
 
       mAngularController.setPID(kAngularFeedbackKp.get(), 0.0, kAngularFeedbackKd.get());
+
+      mTranslationalYController.setTolerance(kTranslationalFeedbackTolerance.get() * 0.01);
+      mAngularController.setTolerance(Units.degreesToRadians(kAngularFeebackToleranceDeg.get()));
 
       resetFeedbackControllers();
     }
@@ -448,5 +474,37 @@ public class DriveSubsystem extends SubsystemBase {
     for (int i = 0; i < mModules.length; i++) {
       mModules[i].neutral();
     }
+  }
+
+  // * ~~~~~~~~ COMMANDS ~~~~~~~~
+
+  public Command driveTeleoperatedFacingTarget(
+      DoubleSupplier vx, DoubleSupplier vy, DoubleSupplier omega, Supplier<Translation2d> target) {
+    return driveTeleoperatedWithAngularAsisst(
+        vx, vy, omega, () -> target.get().minus(getPose2d().getTranslation()).getAngle());
+  }
+
+  public Command driveTeleoperatedWithAngularAsisst(
+      DoubleSupplier vx, DoubleSupplier vy, DoubleSupplier omega, Supplier<Rotation2d> angle) {
+    return driveTeleoperated(
+            vx,
+            vy,
+            () ->
+                mAngularController.calculate(
+                    getRotation2d().getRadians(), angle.get().getRadians()))
+        .until(() -> omega.getAsDouble() > 0.02)
+        .andThen(driveTeleoperated(vx, vy, omega))
+        .beforeStarting(() -> mAngularController.reset());
+  }
+
+  public Command driveTeleoperated(DoubleSupplier vx, DoubleSupplier vy, DoubleSupplier omega) {
+    return run(
+        () ->
+            setChassisSpeedsSetpoint(
+                ChassisSpeeds.fromFieldRelativeSpeeds(
+                    vx.getAsDouble(),
+                    vy.getAsDouble(),
+                    omega.getAsDouble(),
+                    getRotation2d().plus(Flags.getAllianceRotation()))));
   }
 }
