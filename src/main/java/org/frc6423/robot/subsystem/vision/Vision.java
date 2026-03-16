@@ -6,12 +6,17 @@
 
 package org.frc6423.robot.subsystem.vision;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Radians;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -26,6 +31,17 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 
 public class Vision extends SubsystemBase {
+  public static Vision create() {
+    return new Vision(kBessie);
+  }
+
+  public static final CameraConfig kBessie =
+      new CameraConfig(
+          "bessie",
+          new Transform3d(
+              new Translation3d(Inches.of(12.255), Inches.of(0), Inches.of(14.207)),
+              new Rotation3d(Radians.of(0.0), Radians.of(0.523599), Radians.of(0.0))));
+
   public static class CameraConfig {
     public final String cameraName;
     public final Transform3d robotToCam;

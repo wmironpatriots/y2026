@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.lib.util.InputStream;
+import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Field;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.fcs.FireControlSystem;
@@ -37,6 +38,7 @@ import org.frc6423.robot.subsystem.feeder.FeederSubsystem;
 import org.frc6423.robot.subsystem.indexer.IndexerSubsystem;
 import org.frc6423.robot.subsystem.intake.IntakeSubsystem;
 import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
+import org.frc6423.robot.subsystem.vision.Vision;
 
 /**
  * Robot initializes all components and defines the behavior of the program
@@ -60,6 +62,7 @@ public class Robot extends CommandRobot {
   private final IndexerSubsystem mIndexer = IndexerSubsystem.create();
   private final FeederSubsystem mFeeder = FeederSubsystem.create();
   private final ShooterSubsystem mShooter = ShooterSubsystem.create();
+  private final Vision mVision = Vision.create();
 
   private final Trigger mIntakeTrigger = mDriverController.leftTrigger(0.1);
   private final Trigger mAgitateTrigger = mDriverController.leftBumper();
@@ -121,6 +124,22 @@ public class Robot extends CommandRobot {
     config.backend.log(metadataPath + "GitBranch", BuildConstants.GIT_BRANCH);
     config.backend.log(metadataPath + "BuildDate", BuildConstants.BUILD_DATE);
     config.backend.log(metadataPath + "BuildUnixTime", BuildConstants.BUILD_UNIX_TIME);
+
+    addPeriodic(
+        () -> {
+          Tracer.traceFunc(
+              "Update Vision",
+              () -> {
+                var estimates = mVision.getLatestPoseEstimates();
+                for (int i = 0; i < estimates.size(); i++) {
+                  var est = estimates.get(i);
+                  var stdDevs = mVision.getEstimationStdDevs().get(i);
+                  mDrive.addVisionMeasurement(
+                      est.estimatedPose.toPose2d(), est.timestampSeconds, stdDevs);
+                }
+              });
+        },
+        0.02);
 
     configureBindings();
     configureDashboard();
