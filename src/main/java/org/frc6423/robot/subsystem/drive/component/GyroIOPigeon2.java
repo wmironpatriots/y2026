@@ -9,9 +9,7 @@ package org.frc6423.robot.subsystem.drive.component;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.Pigeon2;
-
 import edu.wpi.first.math.geometry.Rotation2d;
-
 import org.frc6423.robot.subsystem.drive.constant.SwerveConstants.GyroConfig;
 
 /** {@link GyroIO} extension for interacting with a {@link Pigeon2} */

@@ -15,7 +15,6 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
-
 import org.frc6423.lib.util.PhoneixUtils;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.subsystem.drive.constant.SwerveConstants.ModuleConfig;
