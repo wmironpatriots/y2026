@@ -65,7 +65,7 @@ public class Robot extends CommandRobot {
   private final VisionSubsystem mVision = VisionSubsystem.create();
 
   private final Trigger mIntakeTrigger = mDriverController.leftTrigger(0.1);
-  private final Trigger mAgitateTrigger = mDriverController.leftBumper();
+  private final Trigger mOutakeTrigger = mDriverController.leftBumper();
   private final Trigger mSpinupTrigger = mDriverController.rightTrigger(0.1);
   private final Trigger mLockTrigger = mDriverController.rightTrigger(0.5);
   private final Trigger mFireTrigger = mDriverController.rightBumper();
@@ -152,13 +152,15 @@ public class Robot extends CommandRobot {
 
     // ~~~ Intake Controls ~~~
 
-    mIntakeTrigger.and(mAgitateTrigger.negate()).whileTrue(mIntake.intake());
+    mIntakeTrigger.whileTrue(mIntake.intake());
 
-    mIntakeTrigger.and(mAgitateTrigger).whileTrue(mIntake.intakeAgitated());
+    mOutakeTrigger.whileTrue(mIntake.outake());
+
+    mIntakeTrigger.and(mOutakeTrigger).whileTrue(mIntake.intakeAgitated());
 
     // ~~~ Indexer/Feeder Controls ~~~
 
-    mAgitateTrigger.and(mIntakeTrigger.negate()).whileTrue(mIndexer.index());
+    mOutakeTrigger.and(mIntakeTrigger.negate()).whileTrue(mIndexer.index());
 
     mFireTrigger.whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
 
