@@ -30,10 +30,17 @@ import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
 
-public class Vision extends SubsystemBase {
-  public static Vision create() {
-    return new Vision(kBessie);
+public class VisionSubsystem extends SubsystemBase {
+  /**
+   * Static Factory for automatically configuring and creating a {@link VisionSubsystem}
+   *
+   * @return {@link VisionSubsystem}
+   */
+  public static VisionSubsystem create() {
+    return new VisionSubsystem(kBessie);
   }
+
+  // * ~~~~~~~~ CONSTANTS ~~~~~~~~
 
   public static final CameraConfig kBessie =
       new CameraConfig(
@@ -62,6 +69,8 @@ public class Vision extends SubsystemBase {
     }
   }
 
+  // * ~~~~~~~~ MEMBERS ~~~~~~~~
+
   private final List<CameraBundle> cameras;
   private List<EstimatedRobotPose> latestEstimates = List.of();
   private List<Matrix<N3, N1>> curStdDevs;
@@ -76,7 +85,7 @@ public class Vision extends SubsystemBase {
   private static AprilTagFieldLayout layout =
       AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
-  public Vision(CameraConfig... configs) {
+  public VisionSubsystem(CameraConfig... configs) {
     List<CameraBundle> cameraBundles = new ArrayList<>(configs.length);
     Arrays.stream(configs)
         .filter(config -> config != null)
@@ -85,7 +94,7 @@ public class Vision extends SubsystemBase {
               PhotonCamera camera = new PhotonCamera(config.cameraName);
               PhotonPoseEstimator poseEstimator =
                   new PhotonPoseEstimator(
-                      layout, PoseStrategy.CLOSEST_TO_CAMERA_HEIGHT, config.robotToCam);
+                      layout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, config.robotToCam);
               poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
               cameraBundles.add(new CameraBundle(camera, poseEstimator));
             });
@@ -98,8 +107,9 @@ public class Vision extends SubsystemBase {
     List<EstimatedRobotPose> estimates = new ArrayList<>();
     List<Matrix<N3, N1>> stdDevs = new ArrayList<>();
     for (CameraBundle bundle : cameras) {
-      List<PhotonPipelineResult> results = bundle.camera.getAllUnreadResults();
-      for (PhotonPipelineResult res : results) {
+      var unreadResults = bundle.camera.getAllUnreadResults();
+
+      for (PhotonPipelineResult res : unreadResults) {
         if (!res.hasTargets()) {
           continue;
         }
@@ -144,7 +154,8 @@ public class Vision extends SubsystemBase {
       estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
     else estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
 
-    return estStdDevs.times(avgWeight);
+    // return estStdDevs.times(avgWeight);
+    return VecBuilder.fill(0.0, 0.0, 0.0);
   }
 
   public List<EstimatedRobotPose> getLatestPoseEstimates() {

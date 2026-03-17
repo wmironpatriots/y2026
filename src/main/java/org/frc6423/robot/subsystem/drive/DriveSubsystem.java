@@ -23,7 +23,6 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -200,12 +199,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     mPoseEstimator =
         new SwerveDrivePoseEstimator(
-            kConstants.getKinematics(),
-            Rotation2d.kZero,
-            getWheelPositions(),
-            new Pose2d(),
-            VecBuilder.fill(0.0, 0.0, 0.0), // TODO - approximate
-            VecBuilder.fill(0.0, 0.0, 0.0)); // TODO - approximate
+            kConstants.getKinematics(), Rotation2d.kZero, getWheelPositions(), new Pose2d());
 
     mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
     mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
@@ -226,7 +220,7 @@ public class DriveSubsystem extends SubsystemBase {
     Tracer.traceFunc(
         "Update Odometry",
         () -> {
-          mPoseEstimator.updateWithTime(Timer.getTimestamp(), getRotation2d(), getWheelPositions());
+          mPoseEstimator.update(getRotation2d(), getWheelPositions());
         });
 
     mF2d.setRobotPose(getPose2d());
@@ -291,7 +285,7 @@ public class DriveSubsystem extends SubsystemBase {
    * @return {@link Rotation2dd}
    */
   public Rotation2d getRotation2d() {
-    return (Robot.isReal()) ? getPose2d().getRotation() : mSimRotation;
+    return (Robot.isReal()) ? mGyro.getYawRotation2d() : mSimRotation;
   }
 
   /**

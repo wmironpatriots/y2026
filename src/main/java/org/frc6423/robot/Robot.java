@@ -37,7 +37,7 @@ import org.frc6423.robot.subsystem.feeder.FeederSubsystem;
 import org.frc6423.robot.subsystem.indexer.IndexerSubsystem;
 import org.frc6423.robot.subsystem.intake.IntakeSubsystem;
 import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
-import org.frc6423.robot.subsystem.vision.Vision;
+import org.frc6423.robot.subsystem.vision.VisionSubsystem;
 
 /**
  * Robot initializes all components and defines the behavior of the program
@@ -61,7 +61,7 @@ public class Robot extends CommandRobot {
   private final IndexerSubsystem mIndexer = IndexerSubsystem.create();
   private final FeederSubsystem mFeeder = FeederSubsystem.create();
   private final ShooterSubsystem mShooter = ShooterSubsystem.create();
-  private final Vision mVision = Vision.create();
+  private final VisionSubsystem mVision = VisionSubsystem.create();
 
   private final Trigger mIntakeTrigger = mDriverController.leftTrigger(0.1);
   private final Trigger mAgitateTrigger = mDriverController.leftBumper();
@@ -168,8 +168,8 @@ public class Robot extends CommandRobot {
 
     // ~~~ Drive Controls ~~~
 
-    InputStream rawX = InputStream.of(mDriverController::getLeftY).negate();
-    InputStream rawY = InputStream.of(mDriverController::getLeftX).negate();
+    InputStream rawX = InputStream.of(mDriverController::getLeftY);
+    InputStream rawY = InputStream.of(mDriverController::getLeftX);
 
     InputStream r =
         InputStream.hypot(rawX, rawY)
@@ -196,14 +196,14 @@ public class Robot extends CommandRobot {
             .rateLimit(Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec());
 
     RobotModeTriggers.teleop()
-        .and(mLockTrigger.negate())
+        // .and(mLockTrigger.negate())
         .whileTrue(mDrive.driveTeleoperated(x, y, omega));
 
-    RobotModeTriggers.teleop()
-        .and(mLockTrigger)
-        .whileTrue(
-            mDrive.driveTeleoperatedFacingTarget(
-                x, y, () -> FireControlSystem.getVirtualTarget(), true));
+    // RobotModeTriggers.teleop()
+    //     .and(mLockTrigger)
+    //     .whileTrue(
+    //         mDrive.driveTeleoperatedFacingTarget(
+    //             x, y, () -> FireControlSystem.getVirtualTarget(), true));
   }
 
   /** Configure driver dashboard */

@@ -130,7 +130,7 @@ public class IntakeSubsystem extends SubsystemBase {
     kPositionKp.initDefault(250.0);
     kPositionKd.initDefault(30.0);
 
-    kPositionToleranceDeg.initDefault(1.5);
+    kPositionToleranceDeg.initDefault(6.5);
     kPositionStowedDeg.initDefault(Units.rotationsToDegrees(kMinAngleRevs));
     kPositionDeployedDeg.initDefault(Units.rotationsToDegrees(kMaxAngleRevs));
     kAgitatingPeriod.initDefault(0.25);

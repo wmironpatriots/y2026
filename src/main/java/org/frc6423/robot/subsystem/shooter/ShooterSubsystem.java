@@ -75,11 +75,11 @@ public class ShooterSubsystem extends SubsystemBase {
           .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withInverted(InvertedValue.CounterClockwise_Positive)
+                  .withInverted(InvertedValue.Clockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Brake))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(40.0)
+                  .withStatorCurrentLimit(20.0)
                   .withStatorCurrentLimitEnable(true))
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(kHoodSensorToMechRatio));
 
@@ -88,7 +88,7 @@ public class ShooterSubsystem extends SubsystemBase {
           .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withInverted(InvertedValue.CounterClockwise_Positive)
+                  .withInverted(InvertedValue.Clockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Coast))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
@@ -100,11 +100,11 @@ public class ShooterSubsystem extends SubsystemBase {
           .withFeedback(
               new FeedbackConfigs().withSensorToMechanismRatio(kFlywheelSensorToMechRatio));
 
-  public static final double kMaxAngleRevs = Units.degreesToRotations(90 - 14.703759);
+  public static final double kMinAngleRevs = Units.degreesToRotations(48.7);
 
-  public static final double kMinAngleRevs = Units.degreesToRotations(90 - 43);
+  public static final double kMaxAngleRevs = Units.degreesToRotations(75.3);
 
-  public static final double kHoodCurrentZeroingThreshold = 10.0;
+  public static final double kHoodCurrentZeroingThreshold = 5.0;
 
   public static final double kRotationalInertiaKgSquaredMeters = 402.290096 * 0.0002926397;
 
@@ -146,6 +146,11 @@ public class ShooterSubsystem extends SubsystemBase {
   public static final TunableNumber kHoodKp = new TunableNumber("Shooter/Hood kP");
   public static final TunableNumber kHoodKd = new TunableNumber("Shooter/Hood kD");
 
+  public static final TunableNumber kHoodCruiseVelocity =
+      new TunableNumber("Shooter/Hood Velocity");
+  public static final TunableNumber kHoodAcceleration =
+      new TunableNumber("Shooter/Hood Acceleration");
+
   public static final TunableNumber kHoodToleranceDeg =
       new TunableNumber("Shooter/Hood Tolerance (degrees)");
 
@@ -166,6 +171,9 @@ public class ShooterSubsystem extends SubsystemBase {
       kHoodKp.initDefault(4000.0);
       kHoodKd.initDefault(25.0);
 
+      kHoodCruiseVelocity.initDefault(3);
+      kHoodAcceleration.initDefault(4);
+
       kHoodToleranceDeg.initDefault(0.75);
 
       kFlywheelKs.initDefault(3.035);
@@ -181,6 +189,9 @@ public class ShooterSubsystem extends SubsystemBase {
       kHoodKa.initDefault(0.0);
       kHoodKp.initDefault(4000.0);
       kHoodKd.initDefault(25.0);
+
+      kHoodCruiseVelocity.initDefault(3);
+      kHoodAcceleration.initDefault(4);
 
       kHoodToleranceDeg.initDefault(0.75);
 
@@ -227,8 +238,8 @@ public class ShooterSubsystem extends SubsystemBase {
             new SysIdRoutine.Mechanism(
                 (voltage) -> mFlywheel.setTargetTorqueCurrent(voltage.in(Volts)), null, this));
 
-    setDefaultCommand(
-        runCurrentHoming().unless(this::isHomed).andThen(stowAndCoast()).repeatedly());
+    mHood.resetEncoder(kMaxAngleRevs);
+    setDefaultCommand(stowAndCoast());
   }
 
   @Override
@@ -238,7 +249,7 @@ public class ShooterSubsystem extends SubsystemBase {
     mFlywheel.periodic();
 
     // Calculate filtered pivot current
-    mHoodCurrentFilterValue = mHoodCurrentFilter.calculate(mHood.getStatorCurrentAmps());
+    mHoodCurrentFilterValue = Math.abs(mHoodCurrentFilter.calculate(mHood.getStatorCurrentAmps()));
 
     // Update Debouncers
     isHoldingSetpoint();
@@ -265,6 +276,10 @@ public class ShooterSubsystem extends SubsystemBase {
         || kHoodKd.hasChanged(hashCode())) {
       mHood.setGains(
           kHoodKs.get(), 0.0, kHoodKv.get(), kHoodKa.get(), kHoodKp.get(), kHoodKd.get());
+    }
+
+    if (kHoodCruiseVelocity.hasChanged(hashCode()) || kHoodAcceleration.hasChanged(hashCode())) {
+      mHood.setProfilingConstraints(kHoodCruiseVelocity.get(), kHoodAcceleration.get());
     }
   }
 
@@ -318,11 +333,20 @@ public class ShooterSubsystem extends SubsystemBase {
     return flywheelVelocityRpsToMuzzleVelocityMps(mFlywheel.getVelocityRevsPerSec());
   }
 
+  public void setHoodAngle(Rotation2d angle) {
+    System.out.println(angle.getDegrees());
+    mTargetAngle =
+        Rotation2d.fromRotations(
+            MathUtil.clamp(angle.getRotations(), kMinAngleRevs, kMaxAngleRevs));
+
+    mHood.setTargetPosition(mTargetAngle.getRotations());
+  }
+
   // * ~~~~~~~~ COMMANDS ~~~~~~~~
 
   public Command runCurrentHoming() {
     return Commands.sequence(
-        this.run(() -> mHood.setTargetVoltage(-2))
+        this.run(() -> mHood.setTargetVoltage(2))
             .until(() -> mHoodCurrentFilterValue > kHoodCurrentZeroingThreshold),
         this.runOnce(
             () -> {
@@ -335,7 +359,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public Command stowAndCoast() {
     return this.run(
         () -> {
-          mHood.setTargetPosition(kMinAngleRevs);
+          setHoodAngle(Rotation2d.fromRotations(kMaxAngleRevs));
 
           mFlywheel.enableBrake(false);
           mFlywheel.stop();
@@ -345,7 +369,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public Command stowAndDeaccel() {
     return this.run(
         () -> {
-          mHood.setTargetPosition(kMinAngleRevs);
+          setHoodAngle(Rotation2d.fromRotations(kMaxAngleRevs));
 
           mFlywheel.setTargetVelocity(0.0);
         });
@@ -354,8 +378,7 @@ public class ShooterSubsystem extends SubsystemBase {
   public Command runSetpoint(Supplier<Rotation2d> angle, DoubleSupplier muzzleVelocityMps) {
     return this.run(
         () -> {
-          mTargetAngle = angle.get();
-          mHood.setTargetPosition(angle.get().getRotations());
+          setHoodAngle(angle.get());
 
           mTargetMuzzleVelocityMps = muzzleVelocityMps.getAsDouble();
           mFlywheel.setTargetVelocity(
