@@ -198,7 +198,12 @@ public class DriveSubsystem extends SubsystemBase {
 
     mPoseEstimator =
         new SwerveDrivePoseEstimator(
-            kConstants.getKinematics(), Rotation2d.kZero, getWheelPositions(), new Pose2d());
+            kConstants.getKinematics(),
+            Rotation2d.kZero,
+            getWheelPositions(),
+            new Pose2d(),
+            VecBuilder.fill(0.6, 0.6, 0.07),
+            VecBuilder.fill(0.9, 0.9, 0.4));
 
     mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
     mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
