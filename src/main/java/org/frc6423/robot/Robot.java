@@ -28,7 +28,6 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.lib.util.InputStream;
-import org.frc6423.lib.util.Tracer;
 import org.frc6423.robot.Constants.Field;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.fcs.FireControlSystem;
@@ -127,17 +126,13 @@ public class Robot extends CommandRobot {
 
     addPeriodic(
         () -> {
-          Tracer.traceFunc(
-              "Update Vision",
-              () -> {
-                var estimates = mVision.getLatestPoseEstimates();
-                for (int i = 0; i < estimates.size(); i++) {
-                  var est = estimates.get(i);
-                  var stdDevs = mVision.getEstimationStdDevs().get(i);
-                  mDrive.addVisionMeasurement(
-                      est.estimatedPose.toPose2d(), est.timestampSeconds, stdDevs);
-                }
-              });
+          var estimates = mVision.getLatestPoseEstimates();
+          for (int i = 0; i < estimates.size(); i++) {
+            var est = estimates.get(i);
+            var stdDevs = mVision.getEstimationStdDevs().get(i);
+            mDrive.addVisionMeasurement(
+                est.estimatedPose.toPose2d(), est.timestampSeconds, stdDevs);
+          }
         },
         0.02);
 
@@ -208,7 +203,7 @@ public class Robot extends CommandRobot {
         .and(mLockTrigger)
         .whileTrue(
             mDrive.driveTeleoperatedFacingTarget(
-                x, y, () -> FireControlSystem.getVirtualTarget().getTranslation(), true));
+                x, y, () -> FireControlSystem.getVirtualTarget(), true));
   }
 
   /** Configure driver dashboard */
@@ -239,7 +234,7 @@ public class Robot extends CommandRobot {
                   Commands.runOnce(
                       () -> {
                         sim.clearFuel();
-                        sim.spawnStartingFuel();
+                        // sim.spawnStartingFuel();
                       }));
 
           // Start sim
@@ -251,13 +246,13 @@ public class Robot extends CommandRobot {
                           sim.launchFuel(
                               MetersPerSecond.of(mShooter.getTargetMuzzleVelocityMps()),
                               mShooter.getTargetRotation2d().getMeasure(),
-                              Rotation2d.kZero.getMeasure(),
+                              Rotation2d.k180deg.getMeasure(),
                               ShooterSubsystem.kRobotToShooter.getMeasureZ()))
                   .andThen(Commands.waitSeconds(0.1))
                   .repeatedly());
 
           // Start sim notifier
-          addPeriodic(() -> sim.updateSim(), 0.002);
+          addPeriodic(() -> sim.updateSim(), 0.02);
         });
   }
 

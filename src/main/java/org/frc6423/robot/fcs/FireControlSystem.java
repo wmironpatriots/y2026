@@ -221,9 +221,9 @@ public class FireControlSystem {
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 
-  private static Pose2d mVirtualTarget = Pose2d.kZero;
+  private static Translation2d mVirtualTarget = Translation2d.kZero;
 
-  public static Pose2d getVirtualTarget() {
+  public static Translation2d getVirtualTarget() {
     return mVirtualTarget;
   }
 
@@ -251,12 +251,11 @@ public class FireControlSystem {
     var tree = isScoring ? kHubShotMap : kGroundShotMap;
 
     // Calculate virtual target
-    var virtualTarget =
+    mVirtualTarget =
         calculateVirtualTarget(predictedPose.getTranslation(), target, tree, speedsWrtField);
-    mVirtualTarget = new Pose2d(virtualTarget, Rotation2d.kZero);
 
     // Calculate final parameters
-    var parameters = tree.get(predictedPose.getTranslation().getDistance(virtualTarget));
+    var parameters = tree.get(predictedPose.getTranslation().getDistance(mVirtualTarget));
 
     if (parameters != null) return parameters;
     else return new ProjectileParameters(ShooterSubsystem.kMinAngleRevs, 0.0, 0.0);

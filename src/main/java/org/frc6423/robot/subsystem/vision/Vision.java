@@ -85,7 +85,7 @@ public class Vision extends SubsystemBase {
               PhotonCamera camera = new PhotonCamera(config.cameraName);
               PhotonPoseEstimator poseEstimator =
                   new PhotonPoseEstimator(
-                      layout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, config.robotToCam);
+                      layout, PoseStrategy.CLOSEST_TO_CAMERA_HEIGHT, config.robotToCam);
               poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
               cameraBundles.add(new CameraBundle(camera, poseEstimator));
             });
@@ -107,10 +107,11 @@ public class Vision extends SubsystemBase {
             .poseEstimator
             .update(res)
             .filter(est -> isEstimateUsable(est, res))
-            .ifPresent(estimates::add);
-        // CHANGE THIS LATER, LIST SIZES CAN DESYNC
-        stdDevs.add(
-            estimationStdDevs(estimates.get(estimates.size() - 1).estimatedPose.toPose2d(), res));
+            .ifPresent(
+                (est) -> {
+                  estimates.add(est);
+                  stdDevs.add(estimationStdDevs(est.estimatedPose.toPose2d(), res));
+                });
       }
     }
 

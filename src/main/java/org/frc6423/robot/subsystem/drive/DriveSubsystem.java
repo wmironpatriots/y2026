@@ -82,15 +82,19 @@ public class DriveSubsystem extends SubsystemBase {
 
   // * ~~~~~~~~ TUNNABLES ~~~~~~~~
 
-  private static final TunableNumber kTranslationalFeedbackKp = new TunableNumber("/drive/kP");
-  private static final TunableNumber kTranslationalFeedbackKd = new TunableNumber("/drive/kP");
+  private static final TunableNumber kTranslationalFeedbackKp =
+      new TunableNumber(kTunablesPrefix + "/Trans kP");
+  private static final TunableNumber kTranslationalFeedbackKd =
+      new TunableNumber(kTunablesPrefix + "Trans kD");
   private static final TunableNumber kTranslationalFeedbackTolerance =
-      new TunableNumber("/drive/tolerance (centimeters)");
+      new TunableNumber(kTunablesPrefix + "tolerance (centimeters)");
 
-  private static final TunableNumber kAngularFeedbackKp = new TunableNumber("/drive/kP");
-  private static final TunableNumber kAngularFeedbackKd = new TunableNumber("/drive/kd");
+  private static final TunableNumber kAngularFeedbackKp =
+      new TunableNumber(kTunablesPrefix + "Angular kP");
+  private static final TunableNumber kAngularFeedbackKd =
+      new TunableNumber(kTunablesPrefix + "Angular kd");
   private static final TunableNumber kAngularFeebackToleranceDeg =
-      new TunableNumber("/drive/tolerance (degrees)");
+      new TunableNumber(kTunablesPrefix + "tolerance (degrees)");
 
   static {
     if (Robot.isReal()) {
@@ -99,8 +103,8 @@ public class DriveSubsystem extends SubsystemBase {
       kTranslationalFeedbackTolerance.initDefault(1.5);
 
       kAngularFeedbackKp.initDefault(6.0);
-      kAngularFeedbackKd.initDefault(0.0);
-      kAngularFeebackToleranceDeg.initDefault(1.5);
+      kAngularFeedbackKd.initDefault(0.5);
+      kAngularFeebackToleranceDeg.initDefault(1.0);
     } else {
       kTranslationalFeedbackKp.initDefault(5.0);
       kTranslationalFeedbackKd.initDefault(0.0);
