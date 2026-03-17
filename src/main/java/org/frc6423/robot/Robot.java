@@ -174,8 +174,8 @@ public class Robot extends CommandRobot {
 
     // ~~~ Drive Controls ~~~
 
-    InputStream rawX = InputStream.of(mDriverController::getLeftY);
-    InputStream rawY = InputStream.of(mDriverController::getLeftX);
+    InputStream rawX = InputStream.of(mDriverController::getLeftY).negate();
+    InputStream rawY = InputStream.of(mDriverController::getLeftX).negate();
 
     InputStream r =
         InputStream.hypot(rawX, rawY)
@@ -198,18 +198,17 @@ public class Robot extends CommandRobot {
             .clamp(1.0)
             .deadband(0.02, 1.0)
             .signedPow(2.0)
-            .scale(() -> Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec())
-            .rateLimit(Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec());
+            .scale(() -> Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec());
 
     RobotModeTriggers.teleop()
-        // .and(mLockTrigger.negate())
+        .and(mLockTrigger.negate())
         .whileTrue(mDrive.driveTeleoperated(x, y, omega));
 
-    // RobotModeTriggers.teleop()
-    //     .and(mLockTrigger)
-    //     .whileTrue(
-    //         mDrive.driveTeleoperatedFacingTarget(
-    //             x, y, () -> FireControlSystem.getVirtualTarget(), true));
+    RobotModeTriggers.teleop()
+        .and(mLockTrigger)
+        .whileTrue(
+            mDrive.driveTeleoperatedFacingTarget(
+                x, y, () -> FireControlSystem.getVirtualTarget(), true));
   }
 
   /** Configure driver dashboard */

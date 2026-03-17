@@ -22,7 +22,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -102,7 +101,7 @@ public class DriveSubsystem extends SubsystemBase {
       kTranslationalFeedbackTolerance.initDefault(1.5);
 
       kAngularFeedbackKp.initDefault(6.0);
-      kAngularFeedbackKd.initDefault(0.5);
+      kAngularFeedbackKd.initDefault(0.0);
       kAngularFeebackToleranceDeg.initDefault(1.0);
     } else {
       kTranslationalFeedbackKp.initDefault(5.0);
@@ -203,7 +202,6 @@ public class DriveSubsystem extends SubsystemBase {
 
     mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
     mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
-    mAngularController.setTolerance(Units.degreesToRadians(kAngularFeebackToleranceDeg.get()));
 
     mAngularController.enableContinuousInput(0.0, 2 * Math.PI);
 
@@ -241,7 +239,6 @@ public class DriveSubsystem extends SubsystemBase {
       mAngularController.setPID(kAngularFeedbackKp.get(), 0.0, kAngularFeedbackKd.get());
 
       mTranslationalYController.setTolerance(kTranslationalFeedbackTolerance.get() * 0.01);
-      mAngularController.setTolerance(Units.degreesToRadians(kAngularFeebackToleranceDeg.get()));
 
       resetFeedbackControllers();
     }
