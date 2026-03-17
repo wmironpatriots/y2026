@@ -217,7 +217,7 @@ public class FireControlSystem {
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
   private static final TunableNumber kLatencyCompensationSec =
-      new TunableNumber("Fire Control System/Latency Compensation (seconds)", 0.3);
+      new TunableNumber("Fire Control System/Latency Compensation (seconds)", 0.15);
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
 

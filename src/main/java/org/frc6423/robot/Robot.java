@@ -248,12 +248,21 @@ public class Robot extends CommandRobot {
                               mShooter.getTargetRotation2d().getMeasure(),
                               Rotation2d.k180deg.getMeasure(),
                               ShooterSubsystem.kRobotToShooter.getMeasureZ()))
-                  .andThen(Commands.waitSeconds(0.1))
+                  .andThen(Commands.waitSeconds(0.5))
                   .repeatedly());
 
-          // Start sim notifier
-          addPeriodic(() -> sim.updateSim(), 0.02);
+          mDriverController.povDown().onTrue(Commands.runOnce(() -> sim.clearFuel()));
+
+          //   // Start sim notifier
+          //   addPeriodic(() -> sim.updateSim(), 0.02);
         });
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    super.simulationPeriodic();
+
+    mFuelSim.ifPresent((sim) -> sim.updateSim());
   }
 
   @Override
