@@ -138,7 +138,7 @@ public class IntakeSubsystem extends SubsystemBase {
     kStowedSpeedVolts.initDefault(0.0);
     kStowingSpeedVolts.initDefault(4.5);
     kIntakingSpeedVolts.initDefault(7.0);
-    kOutakingSpeedVolts.initDefault(-9.0);
+    kOutakingSpeedVolts.initDefault(9.0);
   }
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
@@ -313,7 +313,7 @@ public class IntakeSubsystem extends SubsystemBase {
                               * Math.sin(Timer.getTimestamp())
                               * kPositionAgitatingDeg.get()));
           mPivot.setTargetPosition(mTarget.getRotations());
-          mRoller.setVoltageOutput(kOutakingSpeedVolts.get());
+          mRoller.setVoltageOutput(kOutakingSpeedVolts.get() * -1);
         });
   }
 
@@ -327,7 +327,7 @@ public class IntakeSubsystem extends SubsystemBase {
         () -> {
           mTarget = Rotation2d.fromDegrees(kPositionDeployedDeg.getAsDouble());
           mPivot.setTargetPosition(mTarget.getRotations());
-          mRoller.setVoltageOutput(kOutakingSpeedVolts.get());
+          mRoller.setVoltageOutput(kOutakingSpeedVolts.get() * -1);
         });
   }
 

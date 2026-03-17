@@ -75,6 +75,10 @@ public class IndexerSubsystem extends SubsystemBase {
     return this.run(() -> mHardware.setVoltageOutput(kIndexingSpeedVolts.get()));
   }
 
+  public Command feedInverse() {
+    return this.run(() -> mHardware.setVoltageOutput(kIndexingSpeedVolts.get() * -1));
+  }
+
   /**
    * Stop running
    *

@@ -199,7 +199,7 @@ public class DriveSubsystem extends SubsystemBase {
     mPoseEstimator =
         new SwerveDrivePoseEstimator(
             kConstants.getKinematics(),
-            Rotation2d.kZero,
+            getRotation2d(),
             getWheelPositions(),
             new Pose2d(),
             VecBuilder.fill(0.6, 0.6, 0.07),
@@ -509,7 +509,7 @@ public class DriveSubsystem extends SubsystemBase {
             vy,
             () ->
                 mAngularController.calculate(
-                    getRotation2d().getRadians(), angle.get().getRadians()))
+                    getPose2d().getRotation().getRadians(), angle.get().getRadians()))
         .beforeStarting(() -> mAngularController.reset());
   }
 

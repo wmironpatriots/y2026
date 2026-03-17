@@ -156,11 +156,11 @@ public class Robot extends CommandRobot {
 
     mOutakeTrigger.whileTrue(mIntake.outake());
 
-    mIntakeTrigger.and(mOutakeTrigger).whileTrue(mIntake.intakeAgitated());
+    mOutakeTrigger.whileTrue(mIntake.intakeAgitated());
 
     // ~~~ Indexer/Feeder Controls ~~~
 
-    mOutakeTrigger.and(mIntakeTrigger.negate()).whileTrue(mIndexer.index());
+    mOutakeTrigger.and(mIntakeTrigger.negate()).whileTrue(mIndexer.feedInverse());
 
     mFireTrigger.whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
 
