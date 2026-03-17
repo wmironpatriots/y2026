@@ -75,7 +75,7 @@ public class ShooterSubsystem extends SubsystemBase {
           .withAudio(new AudioConfigs().withBeepOnBoot(true).withBeepOnConfig(true))
           .withMotorOutput(
               new MotorOutputConfigs()
-                  .withInverted(InvertedValue.Clockwise_Positive)
+                  .withInverted(InvertedValue.CounterClockwise_Positive)
                   .withNeutralMode(NeutralModeValue.Brake))
           .withCurrentLimits(
               new CurrentLimitsConfigs()

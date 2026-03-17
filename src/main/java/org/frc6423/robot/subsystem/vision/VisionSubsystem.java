@@ -6,6 +6,7 @@
 
 package org.frc6423.robot.subsystem.vision;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Radians;
 
@@ -46,8 +47,8 @@ public class VisionSubsystem extends SubsystemBase {
       new CameraConfig(
           "bessie",
           new Transform3d(
-              new Translation3d(Inches.of(12.255), Inches.of(0), Inches.of(14.207)),
-              new Rotation3d(Radians.of(0.0), Radians.of(0.523599), Radians.of(0.0))));
+              new Translation3d(Inches.of(-12.255), Inches.of(0), Inches.of(-14.207)),
+              new Rotation3d(Radians.of(0.0), Radians.of(0.523599), Degrees.of(180))));
 
   public static class CameraConfig {
     public final String cameraName;

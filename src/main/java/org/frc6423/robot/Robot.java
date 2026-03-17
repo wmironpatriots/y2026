@@ -16,6 +16,7 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -139,6 +140,11 @@ public class Robot extends CommandRobot {
     configureBindings();
     configureDashboard();
     configureSimulation();
+  }
+
+  @Logged
+  public Pose2d getTarget() {
+    return new Pose2d(FireControlSystem.getVirtualTarget(), Rotation2d.kZero);
   }
 
   /** Configure driver bindings */

@@ -251,7 +251,10 @@ public class FireControlSystem {
         calculateVirtualTarget(predictedPose.getTranslation(), target, tree, speedsWrtField);
 
     // Calculate final parameters
-    var parameters = tree.get(predictedPose.getTranslation().getDistance(mVirtualTarget));
+    var parameters =
+        tree.get(
+            predictedPose.getTranslation().getDistance(mVirtualTarget)
+                + ShooterSubsystem.kRobotToShooter.getX());
 
     if (parameters != null) return parameters;
     else return new ProjectileParameters(ShooterSubsystem.kMinAngleRevs, 0.0, 0.0);
