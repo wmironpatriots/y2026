@@ -29,11 +29,9 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.Optional;
 import org.frc6423.lib.driver.CommandRobot;
 import org.frc6423.lib.util.InputStream;
-import org.frc6423.robot.Constants.Field;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.fcs.FireControlSystem;
 import org.frc6423.robot.simulation.FuelSimulation;
-import org.frc6423.robot.subsystem.AutonBuilder;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 import org.frc6423.robot.subsystem.feeder.FeederSubsystem;
 import org.frc6423.robot.subsystem.indexer.IndexerSubsystem;
@@ -56,7 +54,7 @@ import org.frc6423.robot.subsystem.vision.VisionSubsystem;
  */
 @Logged
 public class Robot extends CommandRobot {
-  private final CommandXboxController mDriverController = new CommandXboxController(0);
+  // * ~~~~~~~~ SUBSYSTEMS ~~~~~~~~
 
   private final DriveSubsystem mDrive = DriveSubsystem.create();
   private final IntakeSubsystem mIntake = IntakeSubsystem.create();
@@ -65,18 +63,24 @@ public class Robot extends CommandRobot {
   private final ShooterSubsystem mShooter = ShooterSubsystem.create();
   private final VisionSubsystem mVision = VisionSubsystem.create();
 
-  private final AutonBuilder mAuto = new AutonBuilder(mDrive);
+  // * ~~~~~~~~ CONTROLLERS ~~~~~~~~
 
-  private final Trigger mIntakeTrigger = mDriverController.leftTrigger(0.1);
-  private final Trigger mOutakeTrigger = mDriverController.leftBumper();
-  private final Trigger mSpinupTrigger = mDriverController.rightTrigger(0.1);
-  private final Trigger mLockTrigger = mDriverController.rightTrigger(0.5);
-  private final Trigger mFireTrigger = mDriverController.rightBumper();
-  // .and(mShooter::isHoldingSetpoint)
-  // .and(mDrive::isFacingAngularTarget);
+  private final AutoBuilder mAutoBuilder = new AutoBuilder(mDrive);
+  private final CommandXboxController mDriverController = new CommandXboxController(0);
 
-  private final Trigger mInAllianceZone =
-      new Trigger(() -> Field.getAllianceZone().contains(mDrive.getPose2d().getTranslation()));
+  // * ~~~~~~~~ DRIVER TRIGGERS ~~~~~~~~
+
+  private final Trigger mTriggerIsIntaking = mDriverController.leftTrigger(0.1);
+  private final Trigger mTriggerIsOutaking = mDriverController.leftBumper();
+  private final Trigger mTriggerIsSpinningUp = mDriverController.rightTrigger(0.1);
+  private final Trigger mTriggerIsLocking = mDriverController.rightTrigger(0.5);
+  private final Trigger mTriggerIsFiring = mDriverController.rightBumper();
+
+  // * ~~~~~~~~ ROBOT TRIGGERS ~~~~~~~~
+
+  private final Trigger mIsLocked =
+      new Trigger(() -> mShooter.isHoldingSetpoint())
+          .and(new Trigger(() -> mDrive.isFacingAngularTarget()));
 
   private final Optional<FuelSimulation> mFuelSim =
       (isSimulation()) ? Optional.of(new FuelSimulation()) : Optional.empty();
@@ -155,27 +159,27 @@ public class Robot extends CommandRobot {
 
     // ~~~ Intake Controls ~~~
 
-    mIntakeTrigger.whileTrue(mIntake.intake());
+    mTriggerIsIntaking.whileTrue(mIntake.intake());
 
-    mOutakeTrigger.whileTrue(mIntake.outake());
+    mTriggerIsOutaking.whileTrue(mIntake.outake());
 
-    mOutakeTrigger.whileTrue(mIntake.intakeAgitated());
+    mTriggerIsOutaking.whileTrue(mIntake.intakeAgitated());
 
     // ~~~ Indexer/Feeder Controls ~~~
 
-    mOutakeTrigger.and(mIntakeTrigger.negate()).whileTrue(mIndexer.feedInverse());
+    mTriggerIsOutaking.and(mTriggerIsIntaking.negate()).whileTrue(mIndexer.feedInverse());
 
-    mFireTrigger.whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
+    mTriggerIsFiring.whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
 
     // ~~~ Shooter Controls ~~~
 
-    mSpinupTrigger.whileTrue(
+    mTriggerIsSpinningUp.whileTrue(
         mShooter.runSetpoint(
             () ->
                 FireControlSystem.calculateParameters(
                     mDrive.getPose2d(), mDrive.getChassisSpeedsWrtField())));
 
-    mFireTrigger.whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
+    mTriggerIsFiring.and(mIsLocked).whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
 
     // ~~~ Drive Controls ~~~
 
@@ -188,9 +192,6 @@ public class Robot extends CommandRobot {
             .deadband(0.02, 1.0)
             .signedPow(2.0)
             .scale(() -> Flags.kDrivetrainContants.getMaxLinearVelocityMetersPerSecond());
-    // .rateLimit(
-    //     Flags.kDrivetrainContants
-    //         .getMaxLinearAccelerationMetersPerSecondPerSecond()); // tODO remove?
 
     InputStream theta = InputStream.atan(rawX, rawY);
 
@@ -206,11 +207,11 @@ public class Robot extends CommandRobot {
             .scale(() -> Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec());
 
     RobotModeTriggers.teleop()
-        .and(mLockTrigger.negate())
+        .and(mTriggerIsLocking.negate())
         .whileTrue(mDrive.driveTeleoperated(x, y, omega));
 
     RobotModeTriggers.teleop()
-        .and(mLockTrigger)
+        .and(mTriggerIsLocking)
         .whileTrue(
             mDrive.driveTeleoperatedFacingTarget(
                 x, y, () -> FireControlSystem.getVirtualTarget(), true));
@@ -257,7 +258,8 @@ public class Robot extends CommandRobot {
           // Start sim
           sim.start();
 
-          mFireTrigger.whileTrue(
+          // Configure sim actions
+          mTriggerIsFiring.whileTrue(
               Commands.runOnce(
                       () ->
                           sim.launchFuel(
@@ -284,6 +286,6 @@ public class Robot extends CommandRobot {
 
   @Override
   protected Command getAutonCommand() {
-    return Commands.none();
+    return mAutoBuilder.getSelectedAuton();
   }
 }
