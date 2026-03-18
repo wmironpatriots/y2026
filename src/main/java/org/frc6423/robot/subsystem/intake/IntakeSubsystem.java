@@ -96,21 +96,21 @@ public class IntakeSubsystem extends SubsystemBase {
 
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
-  public static final TunableNumber kPositionKs = new TunableNumber("Intake/Position kS");
-  public static final TunableNumber kPositionKg = new TunableNumber("Intake/Position kG");
-  public static final TunableNumber kPositionKv = new TunableNumber("Intake/Position kV");
-  public static final TunableNumber kPositionKa = new TunableNumber("Intake/Position kA");
-  public static final TunableNumber kPositionKp = new TunableNumber("Intake/Position kP");
-  public static final TunableNumber kPositionKd = new TunableNumber("Intake/Position kD");
+  public static final TunableNumber kPositionKs = new TunableNumber("Intake/Pivot/kS");
+  public static final TunableNumber kPositionKg = new TunableNumber("Intake/Pivot/kG");
+  public static final TunableNumber kPositionKv = new TunableNumber("Intake/Pivot/kV");
+  public static final TunableNumber kPositionKa = new TunableNumber("Intake/Pivot/kA");
+  public static final TunableNumber kPositionKp = new TunableNumber("Intake/Pivot/kP");
+  public static final TunableNumber kPositionKd = new TunableNumber("Intake/Pivot/kD");
 
   public static final TunableNumber kPositionToleranceDeg =
-      new TunableNumber("Intake/Position Tolerance (degrees)");
+      new TunableNumber("Intake/Pivot/Tolerance (degrees)");
   public static final TunableNumber kPositionStowedDeg =
-      new TunableNumber("Intake/Position Stowed (degrees)");
+      new TunableNumber("Intake/Pivot/Stowed (degrees)");
   public static final TunableNumber kPositionDeployedDeg =
-      new TunableNumber("Intake/Position Deployed (degrees)");
+      new TunableNumber("Intake/Pivot/Deployed (degrees)");
   public static final TunableNumber kPositionAgitatingDeg =
-      new TunableNumber("Intake/Position Agitating (degrees)");
+      new TunableNumber("Intake/Pivot/Agitating (degrees)");
 
   public static final TunableNumber kStowedSpeedVolts =
       new TunableNumber("Intake/Stowed Speed (volts)");
@@ -193,7 +193,7 @@ public class IntakeSubsystem extends SubsystemBase {
     return mIsHomed;
   }
 
-  @Logged(name = "Is Near Position (bool)", importance = Importance.INFO)
+  @Logged(name = "Is Near Pivot/(bool)", importance = Importance.INFO)
   public boolean isNearPosition() {
     return MathUtil.isNear(
         getTargetRotation2d().getDegrees(),

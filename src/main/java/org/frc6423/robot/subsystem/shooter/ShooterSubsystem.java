@@ -155,28 +155,28 @@ public class ShooterSubsystem extends SubsystemBase {
 
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
 
-  public static final TunableNumber kHoodKs = new TunableNumber("Shooter/Hood kS");
-  public static final TunableNumber kHoodKa = new TunableNumber("Shooter/Hood kA");
-  public static final TunableNumber kHoodKv = new TunableNumber("Shooter/Hood kV");
-  public static final TunableNumber kHoodKp = new TunableNumber("Shooter/Hood kP");
-  public static final TunableNumber kHoodKd = new TunableNumber("Shooter/Hood kD");
+  public static final TunableNumber kHoodKs = new TunableNumber("Shooter/Hood/kS");
+  public static final TunableNumber kHoodKa = new TunableNumber("Shooter/Hood/kA");
+  public static final TunableNumber kHoodKv = new TunableNumber("Shooter/Hood/kV");
+  public static final TunableNumber kHoodKp = new TunableNumber("Shooter/Hood/kP");
+  public static final TunableNumber kHoodKd = new TunableNumber("Shooter/Hood/kD");
 
   public static final TunableNumber kHoodCruiseVelocity =
-      new TunableNumber("Shooter/Hood Velocity");
+      new TunableNumber("Shooter/Hood/Cruise Velocity (revolutions per secon)");
   public static final TunableNumber kHoodAcceleration =
-      new TunableNumber("Shooter/Hood Acceleration");
+      new TunableNumber("Shooter/Hood/Acceleration (revolutions per second per second)");
 
   public static final TunableNumber kHoodToleranceDeg =
-      new TunableNumber("Shooter/Hood Tolerance (degrees)");
+      new TunableNumber("Shooter/Hood/Tolerance (degrees)");
 
-  public static final TunableNumber kFlywheelKs = new TunableNumber("Shooter/Flywheel kS");
-  public static final TunableNumber kFlywheelKa = new TunableNumber("Shooter/Flywheel kA");
-  public static final TunableNumber kFlywheelKv = new TunableNumber("Shooter/Flywheel kV");
-  public static final TunableNumber kFlywheelKp = new TunableNumber("Shooter/Flywheel kP");
-  public static final TunableNumber kFlywheelKd = new TunableNumber("Shooter/Flywheel kD");
+  public static final TunableNumber kFlywheelKs = new TunableNumber("Shooter/Flywheel/kS");
+  public static final TunableNumber kFlywheelKa = new TunableNumber("Shooter/Flywheel/kA");
+  public static final TunableNumber kFlywheelKv = new TunableNumber("Shooter/Flywheel/kV");
+  public static final TunableNumber kFlywheelKp = new TunableNumber("Shooter/Flywheel/kP");
+  public static final TunableNumber kFlywheelKd = new TunableNumber("Shooter/Flywheel/kD");
 
   public static final TunableNumber kFlywheelToleranceMetersPerSec =
-      new TunableNumber("Shooter/Flywheel Tolerance (meters per second)");
+      new TunableNumber("Shooter/Flywheel/Tolerance (meters per second)");
 
   static {
     if (Robot.isReal()) {
