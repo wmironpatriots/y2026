@@ -120,6 +120,9 @@ public class DriveSubsystem extends SubsystemBase {
   /** {@link GyroIO} Hardware Interface for the gyro */
   private final GyroIO mGyro;
 
+  /** {@link Rotation2d} Simulated robot rotation for sim */
+  private Rotation2d mSimRotation = Rotation2d.kZero;
+
   /** {@link SwerveModuleIO} Hardware Interface for the front right swerve module */
   @Logged(name = "Front Right")
   private final SwerveModuleIO mFrontRightModule;
@@ -176,11 +179,6 @@ public class DriveSubsystem extends SubsystemBase {
   /** {@link PIDController} Feedback controller for angular assists */
   private final PIDController mAngularController = new PIDController(6.0, 0.0, 0.0);
 
-  /** {@link Rotation2d} Simulated robot rotation for sim */
-  private Rotation2d mSimRotation = Rotation2d.kZero;
-
-  public Object resetFeedbackControllers;
-
   protected DriveSubsystem(
       GyroIO gyro,
       SwerveModuleIO frontRight,
@@ -201,12 +199,10 @@ public class DriveSubsystem extends SubsystemBase {
 
     mPoseEstimator =
         new SwerveDrivePoseEstimator(
-            kConstants.getKinematics(),
-            mGyro.getYawRotation2d(),
-            getWheelPositions(),
-            new Pose2d(),
-            VecBuilder.fill(0.6, 0.6, 0.07),
-            VecBuilder.fill(0.9, 0.9, 0.4));
+            kConstants.getKinematics(), getGyroRotation2d(), getWheelPositions(), new Pose2d());
+    // VecBuilder.fill(0.6, 0.6, 0.07),
+    // VecBuilder.fill(0.9, 0.9, 0.4));
+    mGyro.reset(Rotation2d.kZero);
 
     mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
     mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
@@ -226,7 +222,7 @@ public class DriveSubsystem extends SubsystemBase {
     Tracer.traceFunc(
         "Update Odometry",
         () -> {
-          mPoseEstimator.update(getRotation2d(), getWheelPositions());
+          mPoseEstimator.update(getGyroRotation2d(), getWheelPositions());
         });
 
     mF2d.setRobotPose(getPose2d());
@@ -289,8 +285,12 @@ public class DriveSubsystem extends SubsystemBase {
    *
    * @return {@link Rotation2dd}
    */
-  public Rotation2d getRotation2d() {
+  public Rotation2d getGyroRotation2d() {
     return (Robot.isReal()) ? mGyro.getYawRotation2d() : mSimRotation;
+  }
+
+  public Rotation2d getRotation2d() {
+    return getPose2d().getRotation();
   }
 
   /**
@@ -430,7 +430,7 @@ public class DriveSubsystem extends SubsystemBase {
           new ChassisSpeeds(
               xController.calculate(getPose2d().getX(), sample.x),
               yController.calculate(getPose2d().getY(), sample.y),
-              angularController.calculate(getPose2d().getRotation().getRadians(), sample.heading));
+              angularController.calculate(getRotation2d().getRadians(), sample.heading));
 
       // Create full velocities & convert to states
       var speeds = ffSpeedsWrtField;
@@ -484,7 +484,7 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void reset(Pose2d pose) {
-    mPoseEstimator.resetPose(pose);
+    mPoseEstimator.resetPosition(getGyroRotation2d(), getWheelPositions(), pose);
   }
 
   /** Stop drivetrain completely */
@@ -524,7 +524,7 @@ public class DriveSubsystem extends SubsystemBase {
             vy,
             () ->
                 mAngularController.calculate(
-                    getPose2d().getRotation().getRadians(), angle.get().getRadians()))
+                    getRotation2d().getRadians(), angle.get().getRadians()))
         .beforeStarting(() -> mAngularController.reset());
   }
 

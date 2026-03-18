@@ -14,6 +14,9 @@ public class GyroIONone extends GyroIO {
   public void periodic() {}
 
   @Override
+  public void reset(Rotation2d angle) {}
+
+  @Override
   public Rotation2d getYawRotation2d() {
     return Rotation2d.kZero;
   }
