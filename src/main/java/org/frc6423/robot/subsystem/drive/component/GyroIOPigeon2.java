@@ -27,8 +27,11 @@ public class GyroIOPigeon2 extends GyroIO {
     mYawSignal.setUpdateFrequency(50.0);
 
     ParentDevice.optimizeBusUtilizationForAll(mPigeon);
+  }
 
-    mPigeon.reset();
+  @Override
+  public void reset(Rotation2d angle) {
+    mPigeon.setYaw(angle.getDegrees());
   }
 
   @Override

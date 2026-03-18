@@ -12,5 +12,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 public abstract class GyroIO {
   public abstract void periodic();
 
+  public abstract void reset(Rotation2d angle);
+
   public abstract Rotation2d getYawRotation2d();
 }
