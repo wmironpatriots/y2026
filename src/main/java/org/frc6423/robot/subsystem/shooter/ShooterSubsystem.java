@@ -306,8 +306,8 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     // Update Alerts
-    mLeftIsDisconnected.set(mFlywheel.isLeftConnected());
-    mRightIsDisconnected.set(mFlywheel.isRightConnected());
+    mLeftIsDisconnected.set(!mFlywheel.isLeftConnected());
+    mRightIsDisconnected.set(!mFlywheel.isRightConnected());
     mLeftIsOverheated.set(mFlywheel.getLeftTemperatureCelsius() > kWarningTemperatureCelsius);
     mRightIsOverheated.set(mFlywheel.getRightTemperatureCelsius() > kWarningTemperatureCelsius);
   }

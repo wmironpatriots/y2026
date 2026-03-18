@@ -41,7 +41,7 @@ public class RollerIOTalonFx extends RollerIO {
                         : InvertedValue.Clockwise_Positive)))
         .withCurrentLimits(
             new CurrentLimitsConfigs()
-                .withStatorCurrentLimit(40.0)
+                .withStatorCurrentLimit(20.0)
                 .withStatorCurrentLimitEnable(true));
   }
 
