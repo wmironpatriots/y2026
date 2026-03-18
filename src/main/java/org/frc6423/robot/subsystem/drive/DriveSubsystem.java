@@ -12,6 +12,7 @@ import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -22,6 +23,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -83,6 +85,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   private static final TunableNumber kTranslationalFeedbackKp =
       new TunableNumber(kTunablesPrefix + "/Trans kP");
+  private static final TunableNumber kTranslationalFeedbackKi =
+      new TunableNumber(kTunablesPrefix + "/Trans kI");
   private static final TunableNumber kTranslationalFeedbackKd =
       new TunableNumber(kTunablesPrefix + "/Trans kD");
   private static final TunableNumber kTranslationalFeedbackTolerance =
@@ -90,6 +94,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   private static final TunableNumber kAngularFeedbackKp =
       new TunableNumber(kTunablesPrefix + "/Angular kP");
+  private static final TunableNumber kAngularFeedbackKi =
+      new TunableNumber(kTunablesPrefix + "/Angular kI");
   private static final TunableNumber kAngularFeedbackKd =
       new TunableNumber(kTunablesPrefix + "/Angular kd");
   private static final TunableNumber kAngularFeebackToleranceDeg =
@@ -97,21 +103,25 @@ public class DriveSubsystem extends SubsystemBase {
 
   static {
     if (Robot.isReal()) {
-      kTranslationalFeedbackKp.initDefault(5.0);
-      kTranslationalFeedbackKd.initDefault(0.0);
-      kTranslationalFeedbackTolerance.initDefault(1.5);
+      kTranslationalFeedbackKp.initDefault(10.0);
+      kTranslationalFeedbackKi.initDefault(0.01);
+      kTranslationalFeedbackKd.initDefault(0.02);
+      kTranslationalFeedbackTolerance.initDefault(2.54);
 
-      kAngularFeedbackKp.initDefault(6.0);
-      kAngularFeedbackKd.initDefault(0.0);
-      kAngularFeebackToleranceDeg.initDefault(1.0);
+      kAngularFeedbackKp.initDefault(5.0);
+      kAngularFeedbackKi.initDefault(0.0);
+      kAngularFeedbackKd.initDefault(0.08);
+      kAngularFeebackToleranceDeg.initDefault(2.0);
     } else {
-      kTranslationalFeedbackKp.initDefault(5.0);
-      kTranslationalFeedbackKd.initDefault(0.0);
-      kTranslationalFeedbackTolerance.initDefault(1.5);
+      kTranslationalFeedbackKp.initDefault(10.0);
+      kTranslationalFeedbackKi.initDefault(0.01);
+      kTranslationalFeedbackKd.initDefault(0.02);
+      kTranslationalFeedbackTolerance.initDefault(2.54);
 
-      kAngularFeedbackKp.initDefault(6.0);
-      kAngularFeedbackKd.initDefault(0.0);
-      kAngularFeebackToleranceDeg.initDefault(1.5);
+      kAngularFeedbackKp.initDefault(5.0);
+      kAngularFeedbackKi.initDefault(0.0);
+      kAngularFeedbackKd.initDefault(0.08);
+      kAngularFeebackToleranceDeg.initDefault(2.0);
     }
   }
 
@@ -170,14 +180,39 @@ public class DriveSubsystem extends SubsystemBase {
   /** {@link Field2d} Member for visualizing relevant positions on Elastic */
   private final Field2d mF2d;
 
-  /** {@link PIDController} Feedback controller for translational assists in the x direction */
-  private final PIDController mTranslationalXController = new PIDController(5.0, 0.0, 0.0);
+  /**
+   * {@link ProfiledPIDController} Feedback controller for translational assists in the x direction
+   */
+  private final ProfiledPIDController mTranslationalXController =
+      new ProfiledPIDController(
+          kTranslationalFeedbackKp.get(),
+          kTranslationalFeedbackKi.get(),
+          kTranslationalFeedbackKd.get(),
+          new Constraints(
+              kConstants.getMaxLinearVelocityMetersPerSecond(),
+              kConstants.getMaxLinearAccelerationMetersPerSecondPerSecond()));
 
-  /** {@link PIDController} Feedback controller for translational assists in the y direction */
-  private final PIDController mTranslationalYController = new PIDController(5.0, 0.0, 0.0);
+  /**
+   * {@link ProfiledPIDController} Feedback controller for translational assists in the y direction
+   */
+  private final ProfiledPIDController mTranslationalYController =
+      new ProfiledPIDController(
+          kTranslationalFeedbackKp.get(),
+          kTranslationalFeedbackKi.get(),
+          kTranslationalFeedbackKd.get(),
+          new Constraints(
+              kConstants.getMaxLinearVelocityMetersPerSecond(),
+              kConstants.getMaxLinearAccelerationMetersPerSecondPerSecond()));
 
-  /** {@link PIDController} Feedback controller for angular assists */
-  private final PIDController mAngularController = new PIDController(6.0, 0.0, 0.0);
+  /** {@link ProfiledPIDController} Feedback controller for angular assists */
+  private final ProfiledPIDController mAngularController =
+      new ProfiledPIDController(
+          kAngularFeedbackKp.get(),
+          kAngularFeedbackKi.get(),
+          kAngularFeedbackKd.get(),
+          new Constraints(
+              kConstants.getMaxAngularVelocityRadsPerSec(),
+              kConstants.getAngularAccelerationRadsPerSecPerSec()));
 
   protected DriveSubsystem(
       GyroIO gyro,
@@ -204,9 +239,6 @@ public class DriveSubsystem extends SubsystemBase {
     // VecBuilder.fill(0.9, 0.9, 0.4));
     mGyro.reset(Rotation2d.kZero);
 
-    mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
-    mTranslationalXController.setTolerance(0.01 * kTranslationalFeedbackTolerance.get());
-
     mAngularController.enableContinuousInput(0.0, 2 * Math.PI);
 
     mF2d = new Field2d();
@@ -229,20 +261,22 @@ public class DriveSubsystem extends SubsystemBase {
 
     // Update tunables
     if (kTranslationalFeedbackKp.hasChanged(hashCode())
+        || kTranslationalFeedbackKi.hasChanged(hashCode())
         || kTranslationalFeedbackKd.hasChanged(hashCode())
-        || kTranslationalFeedbackTolerance.hasChanged(hashCode())
         || kAngularFeedbackKp.hasChanged(hashCode())
-        || kAngularFeedbackKd.hasChanged(hashCode())
-        || kAngularFeebackToleranceDeg.hasChanged(hashCode())) {
+        || kAngularFeedbackKi.hasChanged(hashCode())
+        || kAngularFeedbackKd.hasChanged(hashCode())) {
       mTranslationalXController.setPID(
-          kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
+          kTranslationalFeedbackKp.get(),
+          kTranslationalFeedbackKi.get(),
+          kTranslationalFeedbackKd.get());
       mTranslationalYController.setPID(
-          kTranslationalFeedbackKp.get(), 0.0, kTranslationalFeedbackKd.get());
-      mTranslationalXController.setTolerance(kTranslationalFeedbackTolerance.get() * 0.01);
+          kTranslationalFeedbackKp.get(),
+          kTranslationalFeedbackKi.get(),
+          kTranslationalFeedbackKd.get());
 
-      mAngularController.setPID(kAngularFeedbackKp.get(), 0.0, kAngularFeedbackKd.get());
-
-      mTranslationalYController.setTolerance(kTranslationalFeedbackTolerance.get() * 0.01);
+      mAngularController.setPID(
+          kAngularFeedbackKp.get(), kAngularFeedbackKi.get(), kAngularFeedbackKd.get());
 
       resetFeedbackControllers();
     }
@@ -381,9 +415,12 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public void resetFeedbackControllers() {
-    mTranslationalXController.reset();
-    mTranslationalYController.reset();
-    mAngularController.reset();
+    mTranslationalXController.reset(
+        getPose2d().getX(), getChassisSpeedsWrtField().vxMetersPerSecond);
+    mTranslationalYController.reset(
+        getPose2d().getY(), getChassisSpeedsWrtField().vyMetersPerSecond);
+    mAngularController.reset(
+        getRotation2d().getRadians(), getChassisSpeedsWrtField().omegaRadiansPerSecond);
   }
 
   /**
@@ -523,9 +560,11 @@ public class DriveSubsystem extends SubsystemBase {
             vx,
             vy,
             () ->
-                mAngularController.calculate(
-                    getRotation2d().getRadians(), angle.get().getRadians()))
-        .beforeStarting(() -> mAngularController.reset());
+                mAngularController.calculate(getRotation2d().getRadians(), angle.get().getRadians())
+                    + mAngularController.getSetpoint().velocity)
+        // mAngularController.calculate(
+        //     getRotation2d().getRadians(), angle.get().getRadians()))
+        .beforeStarting(() -> resetFeedbackControllers());
   }
 
   public Command driveTeleoperated(DoubleSupplier vx, DoubleSupplier vy, DoubleSupplier omega) {
