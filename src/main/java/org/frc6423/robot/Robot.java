@@ -16,7 +16,6 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -57,25 +56,46 @@ public class Robot extends CommandRobot {
 
   // * ~~~~~~~~ SUBSYSTEMS ~~~~~~~~
 
+  @Logged(name = "Drive Subsystem")
   private final DriveSubsystem mDrive = DriveSubsystem.create();
+
+  @Logged(name = "Intake Subsystem")
   private final IntakeSubsystem mIntake = IntakeSubsystem.create();
+
+  @Logged(name = "Indexer Subsystem")
   private final IndexerSubsystem mIndexer = IndexerSubsystem.create();
+
+  @Logged(name = "Feeder Subsystem")
   private final FeederSubsystem mFeeder = FeederSubsystem.create();
+
+  @Logged(name = "Shooter Subsystem")
   private final ShooterSubsystem mShooter = ShooterSubsystem.create();
+
+  @Logged(name = "Vision Subsystem")
   private final VisionSubsystem mVision = VisionSubsystem.create();
 
   // * ~~~~~~~~ CONTROLLERS ~~~~~~~~
 
   private final AutoBuilder mAutoBuilder =
       new AutoBuilder(mDrive, mIntake, mIndexer, mFeeder, mShooter);
+
   private final CommandXboxController mDriverController = new CommandXboxController(0);
 
   // * ~~~~~~~~ DRIVER TRIGGERS ~~~~~~~~
 
+  @Logged(name = "Operator Triggers/Request Intake")
   private final Trigger mTriggerIsIntaking = mDriverController.leftTrigger(0.1);
+
+  @Logged(name = "Operator Triggers/Request Outake")
   private final Trigger mTriggerIsOutaking = mDriverController.leftBumper();
+
+  @Logged(name = "Operator Triggers/Request Spinup")
   private final Trigger mTriggerIsSpinningUp = mDriverController.rightTrigger(0.1);
+
+  @Logged(name = "Operator Triggers/Request Lock")
   private final Trigger mTriggerIsLocking = mDriverController.rightTrigger(0.5);
+
+  @Logged(name = "Operator Triggers/Request Fire")
   private final Trigger mTriggerIsFiring = mDriverController.rightBumper();
 
   // * ~~~~~~~~ ROBOT TRIGGERS ~~~~~~~~
@@ -147,11 +167,6 @@ public class Robot extends CommandRobot {
     configureSimulation();
   }
 
-  @Logged
-  public Pose2d getTarget() {
-    return new Pose2d(FireControlSystem.getVirtualTarget(), Rotation2d.kZero);
-  }
-
   /** Configure driver bindings */
   public void configureBindings() {
 
@@ -181,8 +196,14 @@ public class Robot extends CommandRobot {
 
     // ~~~ Drive Controls ~~~
 
-    InputStream rawX = InputStream.of(mDriverController::getLeftY).negate();
-    InputStream rawY = InputStream.of(mDriverController::getLeftX).negate();
+    InputStream rawX =
+        InputStream.of(mDriverController::getLeftY)
+            .negate()
+            .log("Telemetry/Operator Triggers/Raw Vx Vec");
+    InputStream rawY =
+        InputStream.of(mDriverController::getLeftX)
+            .negate()
+            .log("Telemetry/Operator Triggers/Raw Vy Vec");
 
     InputStream r =
         InputStream.hypot(rawX, rawY)
@@ -190,12 +211,13 @@ public class Robot extends CommandRobot {
             .deadband(0.02, 1.0)
             .signedPow(2.0)
             .scale(() -> mTriggerIsLocking.getAsBoolean() ? 0.2 : 1.0)
-            .scale(() -> Flags.kDrivetrainContants.getMaxLinearVelocityMetersPerSecond());
+            .scale(() -> Flags.kDrivetrainContants.getMaxLinearVelocityMetersPerSecond())
+            .log("Telemetry/Operator Triggers/V Vec");
 
     InputStream theta = InputStream.atan(rawX, rawY);
 
-    InputStream x = r.scale(theta.map(Math::cos));
-    InputStream y = r.scale(theta.map(Math::sin));
+    InputStream x = r.scale(theta.map(Math::cos)).log("Telemetry/Operator Triggers/Vx Vec");
+    InputStream y = r.scale(theta.map(Math::sin)).log("Telemetry/Operator Triggers/Vy Vec");
 
     InputStream omega =
         InputStream.of(mDriverController::getRightX)
@@ -203,7 +225,8 @@ public class Robot extends CommandRobot {
             .clamp(1.0)
             .deadband(0.02, 1.0)
             .signedPow(2.0)
-            .scale(() -> Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec());
+            .scale(() -> Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec())
+            .log("Telemetry/Operator Triggers/Omega");
 
     RobotModeTriggers.teleop()
         .and(mTriggerIsLocking.negate())
