@@ -417,6 +417,7 @@ public class DriveSubsystem extends SubsystemBase {
    *
    * @return {@link Consumer} of {@link SwerveSample}
    */
+  @SuppressWarnings("resource")
   public Consumer<SwerveSample> getChoreoSwerveSampleConsumer() {
     final PIDController xController = new PIDController(10.0, 0.0, 0.0);
     final PIDController yController = new PIDController(10.0, 0.0, 0.0);
@@ -425,17 +426,18 @@ public class DriveSubsystem extends SubsystemBase {
 
     return (sample) -> {
       // Get sample velocities & feedback velocities
-      var ffSpeedsWrtField = sample.getChassisSpeeds();
       var fbSpeedsWrtField =
           new ChassisSpeeds(
               xController.calculate(getPose2d().getX(), sample.x),
               yController.calculate(getPose2d().getY(), sample.y),
               angularController.calculate(getRotation2d().getRadians(), sample.heading));
 
-      // Create full velocities & convert to states
-      var speeds = ffSpeedsWrtField;
-      // ChassisSpeeds.fromFieldRelativeSpeeds(
-      //     ffSpeedsWrtField.plus(fbSpeedsWrtField), getRotation2d());
+      var speeds =
+          ChassisSpeeds.fromFieldRelativeSpeeds(
+              sample.getChassisSpeeds().plus(fbSpeedsWrtField), getRotation2d());
+
+      // var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(fbSpeedsWrtField, getRotation2d());
+      // ffSpeedsWrtField.plus(fbSpeedsWrtField), getRotation2d());
 
       var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
 
