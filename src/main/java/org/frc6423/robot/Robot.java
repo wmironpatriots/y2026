@@ -218,7 +218,11 @@ public class Robot extends CommandRobot {
 
   /** Configure driver dashboard */
   public void configureDashboard() {
-    // RobotModeTriggers.autonomous().onTrue(Commands.runOnce(() -> ShiftWatcher.initialize()));
+    RobotModeTriggers.teleop().onTrue(Commands.runOnce(() -> MatchInfo.initialize()));
+    RobotModeTriggers.autonomous().onTrue(Commands.runOnce(() -> MatchInfo.initialize()));
+    RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> MatchInfo.stop()));
+
+    addPeriodic(() -> MatchInfo.log(), 0.02);
   }
 
   /** Configure simulation */
