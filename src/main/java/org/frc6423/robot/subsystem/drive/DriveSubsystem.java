@@ -458,6 +458,7 @@ public class DriveSubsystem extends SubsystemBase {
 
         // Send setpoint
         // mModules[i].setSetpoint(states[i], torque);
+        // TODO fix and use torque
         mModules[i].setSetpoint(states[i], true);
       }
 
