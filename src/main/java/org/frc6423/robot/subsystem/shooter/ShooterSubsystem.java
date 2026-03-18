@@ -113,7 +113,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public static final double kHoodCurrentZeroingThreshold = 5.0;
 
-  public static final double kRotationalInertiaKgSquaredMeters = 402.290096 * 0.0002926397;
+  public static final double kRotationalInertiaKgSquaredMeters = 0.01; // 402.290096 * 0.0002926397;
 
   public static final double kHoodArmLengthMeters = 0.5;
 
@@ -199,7 +199,7 @@ public class ShooterSubsystem extends SubsystemBase {
       kHoodKv.initDefault(0.0);
       kHoodKa.initDefault(0.0);
       kHoodKp.initDefault(10000.0);
-      kHoodKd.initDefault(4100.0);
+      kHoodKd.initDefault(5500.0); // yeah these values seem very cooked ik
 
       kHoodCruiseVelocity.initDefault(3);
       kHoodAcceleration.initDefault(4);
@@ -209,7 +209,7 @@ public class ShooterSubsystem extends SubsystemBase {
       kFlywheelKs.initDefault(3.035);
       kFlywheelKv.initDefault(0.75631);
       kFlywheelKa.initDefault(7.4852);
-      kFlywheelKp.initDefault(15.9);
+      kFlywheelKp.initDefault(80.0);
       kFlywheelKd.initDefault(0.0);
 
       kFlywheelToleranceMetersPerSec.initDefault(0.3);

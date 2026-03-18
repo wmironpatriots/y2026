@@ -83,16 +83,16 @@ public class DriveSubsystem extends SubsystemBase {
   private static final TunableNumber kTranslationalFeedbackKp =
       new TunableNumber(kTunablesPrefix + "/Trans kP");
   private static final TunableNumber kTranslationalFeedbackKd =
-      new TunableNumber(kTunablesPrefix + "Trans kD");
+      new TunableNumber(kTunablesPrefix + "/Trans kD");
   private static final TunableNumber kTranslationalFeedbackTolerance =
-      new TunableNumber(kTunablesPrefix + "tolerance (centimeters)");
+      new TunableNumber(kTunablesPrefix + "/tolerance (centimeters)");
 
   private static final TunableNumber kAngularFeedbackKp =
-      new TunableNumber(kTunablesPrefix + "Angular kP");
+      new TunableNumber(kTunablesPrefix + "/Angular kP");
   private static final TunableNumber kAngularFeedbackKd =
-      new TunableNumber(kTunablesPrefix + "Angular kd");
+      new TunableNumber(kTunablesPrefix + "/Angular kd");
   private static final TunableNumber kAngularFeebackToleranceDeg =
-      new TunableNumber(kTunablesPrefix + "tolerance (degrees)");
+      new TunableNumber(kTunablesPrefix + "/tolerance (degrees)");
 
   static {
     if (Robot.isReal()) {
