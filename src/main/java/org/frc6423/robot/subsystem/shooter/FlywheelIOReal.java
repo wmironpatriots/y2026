@@ -24,7 +24,8 @@ public class FlywheelIOReal extends FlywheelIO {
   protected final BaseStatusSignal mMeasuredVoltage,
       mMeasuredStatorCurrent,
       mMeasuredSupplyCurrent,
-      mMeasuredTemperature,
+      mMeasuredLeftTemperature,
+      mMeasuredRightTemperature,
       mMeasuredPosition,
       mMeasuredVelocity,
       mMeasuredAcceleration;
@@ -33,7 +34,8 @@ public class FlywheelIOReal extends FlywheelIO {
   protected final MotionMagicVelocityTorqueCurrentFOC mVelocityRequest =
       new MotionMagicVelocityTorqueCurrentFOC(0.0);
 
-  protected boolean mIsConnected = false;
+  protected boolean mIsLeftConnected = true;
+  protected boolean mIsRightConnected = true;
 
   public FlywheelIOReal(
       int leftCanDeviceId, int rightCanDeviceId, CANBus canBus, TalonFXConfiguration config) {
@@ -49,29 +51,38 @@ public class FlywheelIOReal extends FlywheelIO {
     mMeasuredVoltage = mLeft.getMotorVoltage();
     mMeasuredStatorCurrent = mLeft.getStatorCurrent();
     mMeasuredSupplyCurrent = mLeft.getSupplyCurrent();
-    mMeasuredTemperature = mLeft.getDeviceTemp();
+    mMeasuredLeftTemperature = mLeft.getDeviceTemp();
     mMeasuredPosition = mLeft.getPosition();
     mMeasuredVelocity = mLeft.getVelocity();
     mMeasuredAcceleration = mLeft.getAcceleration();
+
+    mMeasuredRightTemperature = mRight.getDeviceTemp();
   }
 
   @Override
-  public boolean isConnected() {
-    return mIsConnected;
+  public boolean isLeftConnected() {
+    return mIsLeftConnected;
+  }
+
+  @Override
+  public boolean isRightConnected() {
+    return mIsRightConnected;
   }
 
   @Override
   public void periodic() {
-    mIsConnected =
+    mIsLeftConnected =
         BaseStatusSignal.refreshAll(
                 mMeasuredVoltage,
                 mMeasuredStatorCurrent,
                 mMeasuredSupplyCurrent,
-                mMeasuredTemperature,
+                mMeasuredLeftTemperature,
                 mMeasuredPosition,
                 mMeasuredVelocity,
                 mMeasuredAcceleration)
             .isOK();
+
+    mIsRightConnected = BaseStatusSignal.refreshAll(mMeasuredRightTemperature).isOK();
   }
 
   @Override
@@ -90,8 +101,13 @@ public class FlywheelIOReal extends FlywheelIO {
   }
 
   @Override
-  public double getTemperatureCelsius() {
-    return mMeasuredTemperature.getValueAsDouble();
+  public double getLeftTemperatureCelsius() {
+    return mMeasuredLeftTemperature.getValueAsDouble();
+  }
+
+  @Override
+  public double getRightTemperatureCelsius() {
+    return mMeasuredRightTemperature.getValueAsDouble();
   }
 
   @Override
@@ -111,7 +127,7 @@ public class FlywheelIOReal extends FlywheelIO {
 
   @Override
   public void setTargetTorqueCurrent(double amps) {
-    mLeft.setControl(mCurrentRequest.withOutput(amps));
+    mIsLeftConnected = mLeft.setControl(mCurrentRequest.withOutput(amps)).isOK();
   }
 
   @Override
@@ -121,7 +137,10 @@ public class FlywheelIOReal extends FlywheelIO {
 
   @Override
   public void setTargetVelocity(double revsPerSec, double feedforwardAmps) {
-    mLeft.setControl(mVelocityRequest.withVelocity(revsPerSec).withFeedForward(feedforwardAmps));
+    mIsLeftConnected =
+        mLeft
+            .setControl(mVelocityRequest.withVelocity(revsPerSec).withFeedForward(feedforwardAmps))
+            .isOK();
   }
 
   @Override

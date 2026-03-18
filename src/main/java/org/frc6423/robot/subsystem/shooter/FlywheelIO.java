@@ -10,8 +10,11 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 
 public abstract class FlywheelIO {
-  @Logged(name = "Is Connected (bool)", importance = Importance.CRITICAL)
-  public abstract boolean isConnected();
+  @Logged(name = "Is Left Connected (bool)", importance = Importance.CRITICAL)
+  public abstract boolean isLeftConnected();
+
+  @Logged(name = "Is Right Connected (bool)", importance = Importance.CRITICAL)
+  public abstract boolean isRightConnected();
 
   /** Update Logged Signals */
   public abstract void periodic();
@@ -25,8 +28,11 @@ public abstract class FlywheelIO {
   @Logged(name = "Supply Current (amps)", importance = Importance.DEBUG)
   public abstract double getSupplyCurrentAmps();
 
-  @Logged(name = "Temperature (celsius)", importance = Importance.DEBUG)
-  public abstract double getTemperatureCelsius();
+  @Logged(name = "Left Temperature (celsius)", importance = Importance.DEBUG)
+  public abstract double getLeftTemperatureCelsius();
+
+  @Logged(name = "Right Temperature (celsius)", importance = Importance.DEBUG)
+  public abstract double getRightTemperatureCelsius();
 
   @Logged(name = "Position (revolutions)", importance = Importance.DEBUG)
   public abstract double getPositionRevs();

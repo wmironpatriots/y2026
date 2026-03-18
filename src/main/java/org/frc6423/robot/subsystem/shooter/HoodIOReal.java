@@ -88,12 +88,12 @@ public class HoodIOReal extends HoodIO {
 
   @Override
   public void setTargetVoltage(double volts) {
-    mServo.setControl(mVoltageRequest.withOutput(volts).withEnableFOC(true));
+    mIsConnected = mServo.setControl(mVoltageRequest.withOutput(volts).withEnableFOC(true)).isOK();
   }
 
   @Override
   public void setTargetPosition(double positionRevs) {
-    mServo.setControl(mPositionRequest.withPosition(positionRevs));
+    mIsConnected = mServo.setControl(mPositionRequest.withPosition(positionRevs)).isOK();
   }
 
   @Override
@@ -103,7 +103,7 @@ public class HoodIOReal extends HoodIO {
 
   @Override
   public void resetEncoder(double positionRevs) {
-    mServo.setPosition(positionRevs);
+    mIsConnected = mServo.setPosition(positionRevs).isOK();
   }
 
   @Override

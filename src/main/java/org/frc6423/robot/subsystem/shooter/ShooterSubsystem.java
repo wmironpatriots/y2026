@@ -28,6 +28,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -112,6 +114,8 @@ public class ShooterSubsystem extends SubsystemBase {
   public static final double kMaxAngleRevs = Units.degreesToRotations(75.3);
 
   public static final double kHoodCurrentZeroingThreshold = 5.0;
+
+  public static final double kWarningTemperatureCelsius = 60.0;
 
   public static final double kRotationalInertiaKgSquaredMeters = 0.01; // 402.290096 * 0.0002926397;
 
@@ -235,6 +239,14 @@ public class ShooterSubsystem extends SubsystemBase {
   private Debouncer mIsNearAngle = new Debouncer(0.1, DebounceType.kRising);
   private Debouncer mIsNearSpeed = new Debouncer(0.05, DebounceType.kRising);
 
+  private final Alert mLeftIsDisconnected =
+      new Alert("LEFT FLYWHEEL UNRESPONSIVE", AlertType.kError);
+  private final Alert mRightIsDisconnected =
+      new Alert("LEFT FLYWHEEL UNRESPONSIVE", AlertType.kError);
+  private final Alert mLeftIsOverheated = new Alert("Left Flywheel Overheated", AlertType.kWarning);
+  private final Alert mRightIsOverheated =
+      new Alert("Right Flywheel Overheated", AlertType.kWarning);
+
   protected ShooterSubsystem(HoodIO hood, FlywheelIO flywheel) {
     mHood = hood;
     mFlywheel = flywheel;
@@ -292,6 +304,12 @@ public class ShooterSubsystem extends SubsystemBase {
     if (kHoodCruiseVelocity.hasChanged(hashCode()) || kHoodAcceleration.hasChanged(hashCode())) {
       mHood.setProfilingConstraints(kHoodCruiseVelocity.get(), kHoodAcceleration.get());
     }
+
+    // Update Alerts
+    mLeftIsDisconnected.set(mFlywheel.isLeftConnected());
+    mRightIsDisconnected.set(mFlywheel.isRightConnected());
+    mLeftIsOverheated.set(mFlywheel.getLeftTemperatureCelsius() > kWarningTemperatureCelsius);
+    mRightIsOverheated.set(mFlywheel.getRightTemperatureCelsius() > kWarningTemperatureCelsius);
   }
 
   // * ~~~~~~~~ GETTERS/SETTERS ~~~~~~~~
