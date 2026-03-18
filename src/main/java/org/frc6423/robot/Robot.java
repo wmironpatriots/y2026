@@ -220,7 +220,8 @@ public class Robot extends CommandRobot {
   public void configureDashboard() {
     RobotModeTriggers.teleop().onTrue(Commands.runOnce(() -> MatchInfo.initialize()));
     RobotModeTriggers.autonomous().onTrue(Commands.runOnce(() -> MatchInfo.initialize()));
-    RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> MatchInfo.stop()));
+    RobotModeTriggers.disabled()
+        .onTrue(Commands.runOnce(() -> MatchInfo.stop()).ignoringDisable(true));
 
     addPeriodic(() -> MatchInfo.log(), 0.02);
   }

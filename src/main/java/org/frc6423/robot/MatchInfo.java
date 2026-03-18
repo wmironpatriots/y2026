@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import java.text.DecimalFormat;
 import org.frc6423.robot.Constants.Flags;
 
 /** Static watcher for keeping track of the state of match */
@@ -45,6 +46,7 @@ public class MatchInfo {
 
   private static final Timer kShiftTimer = new Timer();
   private static double kShiftTimerOffset = 0.0;
+  private static DecimalFormat kDf = new DecimalFormat("##.#");
 
   public static void initialize() {
     if (DriverStation.isAutonomousEnabled()) {
@@ -63,7 +65,7 @@ public class MatchInfo {
     SmartDashboard.putString("Match/Current Shift", getActiveShift().toString());
     SmartDashboard.putString("Match/Starting Alliance", getStartingAlliance().toString());
     SmartDashboard.putBoolean("Match/Is Hub Active (bool)", isActive());
-    SmartDashboard.putNumber("Match/Remaining Shift Time", getRemainingShiftTime());
+    SmartDashboard.putString("Match/Remaining Shift Time", kDf.format(getRemainingShiftTime()));
   }
 
   public static double getMatchTime() {
