@@ -81,7 +81,7 @@ public class AutoBuilder {
 
   public AutoRoutine getMidEmptyRoutine() {
     var routine = mFactory.newRoutine("Mid Empty");
-    var trajectory = routine.trajectory("S1_F1");
+    var trajectory = routine.trajectory("S2_F1");
 
     routine
         .active()
