@@ -30,6 +30,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.frc6423.lib.util.Tracer;
@@ -412,50 +413,58 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Run a {@link SwerveSample} setpoint
+   * Get a {@link Consumer} for driving based off {@link SwerveSample}
    *
-   * @param sample {@link SwerveSample} Desired state
+   * @return {@link Consumer} of {@link SwerveSample}
    */
-  public void runSwerveSample(SwerveSample sample) {
-    // Get sample velocities & feedback velocities
-    var ffSpeedsWrtField = sample.getChassisSpeeds();
-    var fbSpeedsWrtField =
-        new ChassisSpeeds(
-            mTranslationalXController.calculate(getPose2d().getX(), sample.x),
-            mTranslationalYController.calculate(getPose2d().getY(), sample.y),
-            mAngularController.calculate(getRotation2d().getRadians(), sample.heading));
+  public Consumer<SwerveSample> getChoreoSwerveSampleConsumer() {
+    final PIDController xController = new PIDController(10.0, 0.0, 0.0);
+    final PIDController yController = new PIDController(10.0, 0.0, 0.0);
+    final PIDController angularController = new PIDController(6.0, 0.0, 0.0);
+    angularController.enableContinuousInput(-Math.PI, Math.PI);
 
-    // Create full velocities & convert to states
-    var speeds =
-        ChassisSpeeds.fromFieldRelativeSpeeds(
-            ffSpeedsWrtField.plus(fbSpeedsWrtField), getRotation2d());
+    return (sample) -> {
+      // Get sample velocities & feedback velocities
+      var ffSpeedsWrtField = sample.getChassisSpeeds();
+      var fbSpeedsWrtField =
+          new ChassisSpeeds(
+              xController.calculate(getPose2d().getX(), sample.x),
+              yController.calculate(getPose2d().getY(), sample.y),
+              angularController.calculate(getPose2d().getRotation().getRadians(), sample.heading));
 
-    var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
+      // Create full velocities & convert to states
+      var speeds = ffSpeedsWrtField;
+      // ChassisSpeeds.fromFieldRelativeSpeeds(
+      //     ffSpeedsWrtField.plus(fbSpeedsWrtField), getRotation2d());
 
-    // Get desired Module forces
-    var xForces = sample.moduleForcesX();
-    var yForces = sample.moduleForcesY();
+      var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
 
-    for (int i = 0; i < mModules.length; i++) {
-      // Get desired angle of module
-      var angle = states[i].angle;
+      // Get desired Module forces
+      var xForces = sample.moduleForcesX();
+      var yForces = sample.moduleForcesY();
 
-      // Calculate desired force vector of module and account for chassis orientation
-      var force =
-          new Translation2d(xForces[i], yForces[i])
-              .rotateBy(Rotation2d.fromRadians(sample.heading).unaryMinus())
-              .toVector();
-      var forceDirection = VecBuilder.fill(angle.getCos(), angle.getSin());
+      for (int i = 0; i < mModules.length; i++) {
+        // Get desired angle of module
+        var angle = states[i].angle;
 
-      // Convert desired force vector into wheel torque
-      var torque = force.dot(forceDirection) * kConstants.getWheelRadiusMeters();
+        // Calculate desired force vector of module and account for chassis orientation
+        var force =
+            new Translation2d(xForces[i], yForces[i])
+                .rotateBy(Rotation2d.fromRadians(sample.heading).unaryMinus())
+                .toVector();
+        var forceDirection = VecBuilder.fill(angle.getCos(), angle.getSin());
 
-      // Send setpoint
-      mModules[i].setSetpoint(states[i], torque);
-    }
+        // Convert desired force vector into wheel torque
+        var torque = force.dot(forceDirection) * kConstants.getWheelRadiusMeters();
 
-    // Log setpoints
-    mSetpointWheelStates = states;
+        // Send setpoint
+        // mModules[i].setSetpoint(states[i], torque);
+        mModules[i].setSetpoint(states[i], true);
+      }
+
+      // Log setpoints
+      mSetpointWheelStates = states;
+    };
   }
 
   public void setSetpointWheelStates(SwerveModuleState[] desiredStates, double[] wheelTorquesNm) {

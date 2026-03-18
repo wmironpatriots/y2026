@@ -65,7 +65,7 @@ public class Robot extends CommandRobot {
 
   // * ~~~~~~~~ CONTROLLERS ~~~~~~~~
 
-  private final AutoBuilder mAutoBuilder = new AutoBuilder(mDrive);
+  private final AutoBuilder mAutoBuilder = new AutoBuilder(mDrive, mIndexer, mFeeder, mShooter);
   private final CommandXboxController mDriverController = new CommandXboxController(0);
 
   // * ~~~~~~~~ DRIVER TRIGGERS ~~~~~~~~
@@ -191,6 +191,7 @@ public class Robot extends CommandRobot {
             .clamp(1.0)
             .deadband(0.02, 1.0)
             .signedPow(2.0)
+            .scale(() -> mTriggerIsLocking.getAsBoolean() ? 0.2 : 1.0)
             .scale(() -> Flags.kDrivetrainContants.getMaxLinearVelocityMetersPerSecond());
 
     InputStream theta = InputStream.atan(rawX, rawY);
