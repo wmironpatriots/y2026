@@ -80,10 +80,6 @@ public class Robot extends CommandRobot {
 
   // * ~~~~~~~~ ROBOT TRIGGERS ~~~~~~~~
 
-  private final Trigger mIsLocked =
-      new Trigger(() -> mShooter.isHoldingSetpoint())
-          .and(new Trigger(() -> mDrive.isFacingAngularTarget()));
-
   private final Optional<FuelSimulation> mFuelSim =
       (isSimulation()) ? Optional.of(new FuelSimulation()) : Optional.empty();
 
@@ -181,7 +177,7 @@ public class Robot extends CommandRobot {
                 FireControlSystem.calculateParameters(
                     mDrive.getPose2d(), mDrive.getChassisSpeedsWrtField())));
 
-    mTriggerIsFiring.and(mIsLocked).whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
+    mTriggerIsFiring.whileTrue(mIndexer.index()).whileTrue(mFeeder.feed());
 
     // ~~~ Drive Controls ~~~
 
