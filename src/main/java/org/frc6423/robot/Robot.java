@@ -33,6 +33,7 @@ import org.frc6423.robot.Constants.Field;
 import org.frc6423.robot.Constants.Flags;
 import org.frc6423.robot.fcs.FireControlSystem;
 import org.frc6423.robot.simulation.FuelSimulation;
+import org.frc6423.robot.subsystem.AutonBuilder;
 import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 import org.frc6423.robot.subsystem.feeder.FeederSubsystem;
 import org.frc6423.robot.subsystem.indexer.IndexerSubsystem;
@@ -63,6 +64,8 @@ public class Robot extends CommandRobot {
   private final FeederSubsystem mFeeder = FeederSubsystem.create();
   private final ShooterSubsystem mShooter = ShooterSubsystem.create();
   private final VisionSubsystem mVision = VisionSubsystem.create();
+
+  private final AutonBuilder mAuto = new AutonBuilder(mDrive);
 
   private final Trigger mIntakeTrigger = mDriverController.leftTrigger(0.1);
   private final Trigger mOutakeTrigger = mDriverController.leftBumper();
@@ -214,7 +217,9 @@ public class Robot extends CommandRobot {
   }
 
   /** Configure driver dashboard */
-  public void configureDashboard() {}
+  public void configureDashboard() {
+    // RobotModeTriggers.autonomous().onTrue(Commands.runOnce(() -> ShiftWatcher.initialize()));
+  }
 
   /** Configure simulation */
   public void configureSimulation() {

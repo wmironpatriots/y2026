@@ -125,7 +125,9 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return {@link Double}
    */
   public static double flywheelVelocityRpsToMuzzleVelocityMps(double flywheelVelocityRps) {
-    return flywheelVelocityRps * Math.PI * 2 * kFlywheelRadiusMeters * 0.6;
+    // return flywheelVelocityRps * Math.PI * 2 * kFlywheelRadiusMeters * 0.625;
+    // return flywheelVelocityRps * Math.PI * 2 * kFlywheelRadiusMeters * 0.5;
+    return flywheelVelocityRps * (kFlywheelRadiusMeters * 2 * Math.PI);
   }
 
   /**
@@ -135,7 +137,9 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return {@link Double}
    */
   public static double muzzleVelocityMpsToFlywheelVelocityRps(double muzzleVelocityMps) {
-    return muzzleVelocityMps * 1.65 / kFlywheelRadiusMeters / (2 * Math.PI);
+    // return muzzleVelocityMps * 1.625 / kFlywheelRadiusMeters / (2 * Math.PI);
+    // return muzzleVelocityMps * 2 / kFlywheelRadiusMeters / (2 * Math.PI);
+    return muzzleVelocityMps / (kFlywheelRadiusMeters * 2 * Math.PI);
   }
 
   // * ~~~~~~~~ TUNABLES ~~~~~~~~

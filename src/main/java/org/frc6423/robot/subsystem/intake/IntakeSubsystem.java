@@ -137,7 +137,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     kStowedSpeedVolts.initDefault(0.0);
     kStowingSpeedVolts.initDefault(4.5);
-    kIntakingSpeedVolts.initDefault(7.0);
+    kIntakingSpeedVolts.initDefault(9.0);
     kOutakingSpeedVolts.initDefault(9.0);
   }
 

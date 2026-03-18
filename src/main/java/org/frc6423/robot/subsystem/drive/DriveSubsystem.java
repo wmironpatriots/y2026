@@ -178,6 +178,8 @@ public class DriveSubsystem extends SubsystemBase {
   /** {@link Rotation2d} Simulated robot rotation for sim */
   private Rotation2d mSimRotation = Rotation2d.kZero;
 
+  public Object resetFeedbackControllers;
+
   protected DriveSubsystem(
       GyroIO gyro,
       SwerveModuleIO frontRight,
@@ -470,6 +472,10 @@ public class DriveSubsystem extends SubsystemBase {
     for (int i = 0; i < mModules.length; i++) {
       mModules[i].setSetpoint(desiredStates[i], focEnabled);
     }
+  }
+
+  public void reset(Pose2d pose) {
+    mPoseEstimator.resetPose(pose);
   }
 
   /** Stop drivetrain completely */
