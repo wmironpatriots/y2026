@@ -255,7 +255,7 @@ public class Robot extends CommandRobot {
                   Commands.runOnce(
                       () -> {
                         sim.clearFuel();
-                        // sim.spawnStartingFuel();
+                        sim.spawnStartingFuel();
                       }));
 
           // Start sim
