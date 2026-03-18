@@ -345,7 +345,6 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   public void setHoodAngle(Rotation2d angle) {
-    System.out.println(angle.getDegrees());
     mTargetAngle =
         Rotation2d.fromRotations(
             MathUtil.clamp(angle.getRotations(), kMinAngleRevs, kMaxAngleRevs));
