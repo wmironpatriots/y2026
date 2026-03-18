@@ -436,9 +436,6 @@ public class DriveSubsystem extends SubsystemBase {
           ChassisSpeeds.fromFieldRelativeSpeeds(
               sample.getChassisSpeeds().plus(fbSpeedsWrtField), getRotation2d());
 
-      // var speeds = ChassisSpeeds.fromFieldRelativeSpeeds(fbSpeedsWrtField, getRotation2d());
-      // ffSpeedsWrtField.plus(fbSpeedsWrtField), getRotation2d());
-
       var states = kConstants.getKinematics().toSwerveModuleStates(speeds);
 
       // Get desired Module forces
