@@ -183,6 +183,7 @@ public class DriveSubsystem extends SubsystemBase {
   /**
    * {@link ProfiledPIDController} Feedback controller for translational assists in the x direction
    */
+  @Logged(name = "Translational X")
   private final ProfiledPIDController mTranslationalXController =
       new ProfiledPIDController(
           kTranslationalFeedbackKp.get(),
@@ -195,6 +196,7 @@ public class DriveSubsystem extends SubsystemBase {
   /**
    * {@link ProfiledPIDController} Feedback controller for translational assists in the y direction
    */
+  @Logged(name = "Translational Y")
   private final ProfiledPIDController mTranslationalYController =
       new ProfiledPIDController(
           kTranslationalFeedbackKp.get(),
@@ -205,14 +207,17 @@ public class DriveSubsystem extends SubsystemBase {
               kConstants.getMaxLinearAccelerationMetersPerSecondPerSecond()));
 
   /** {@link ProfiledPIDController} Feedback controller for angular assists */
+  @Logged(name = "Angular")
   private final ProfiledPIDController mAngularController =
       new ProfiledPIDController(
           kAngularFeedbackKp.get(),
           kAngularFeedbackKi.get(),
           kAngularFeedbackKd.get(),
-          new Constraints(
-              kConstants.getMaxAngularVelocityRadsPerSec(),
-              kConstants.getAngularAccelerationRadsPerSecPerSec()));
+          new Constraints(8.989, 90.090));
+
+  // new Constraints(
+  //     kConstants.getMaxAngularVelocityRadsPerSec(),
+  //     kConstants.getAngularAccelerationRadsPerSecPerSec()));
 
   protected DriveSubsystem(
       GyroIO gyro,
