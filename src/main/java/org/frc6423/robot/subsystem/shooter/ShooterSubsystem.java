@@ -91,10 +91,6 @@ public class ShooterSubsystem extends SubsystemBase {
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimit(20.0)
                   .withStatorCurrentLimitEnable(true))
-          .withTorqueCurrent(
-              new TorqueCurrentConfigs()
-                  .withPeakForwardTorqueCurrent(40.0)
-                  .withPeakReverseTorqueCurrent(0.0))
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(kHoodSensorToMechRatio));
 
   public static final TalonFXConfiguration kFlywheelTalonConfig =
@@ -110,6 +106,7 @@ public class ShooterSubsystem extends SubsystemBase {
                   .withStatorCurrentLimitEnable(true)
                   .withSupplyCurrentLimit(80.0)
                   .withSupplyCurrentLimitEnable(true))
+          .withTorqueCurrent(new TorqueCurrentConfigs().withPeakReverseTorqueCurrent(0.0))
           .withMotionMagic(new MotionMagicConfigs().withMotionMagicAcceleration(100.0))
           .withFeedback(
               new FeedbackConfigs().withSensorToMechanismRatio(kFlywheelSensorToMechRatio));
@@ -141,9 +138,9 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return {@link Double}
    */
   public static double flywheelVelocityRpsToMuzzleVelocityMps(double flywheelVelocityRps) {
-    // return flywheelVelocityRps * Math.PI * 2 * kFlywheelRadiusMeters * 0.625;
+    return flywheelVelocityRps * Math.PI * 2 * kFlywheelRadiusMeters * 0.625;
     // return flywheelVelocityRps * Math.PI * 2 * kFlywheelRadiusMeters * 0.5;
-    return flywheelVelocityRps * (kFlywheelRadiusMeters * 2 * Math.PI);
+    // return flywheelVelocityRps * (kFlywheelRadiusMeters * 2 * Math.PI);
   }
 
   /**
@@ -153,9 +150,9 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return {@link Double}
    */
   public static double muzzleVelocityMpsToFlywheelVelocityRps(double muzzleVelocityMps) {
-    // return muzzleVelocityMps * 1.625 / kFlywheelRadiusMeters / (2 * Math.PI);
+    return muzzleVelocityMps * 1.625 / kFlywheelRadiusMeters / (2 * Math.PI);
     // return muzzleVelocityMps * 2 / kFlywheelRadiusMeters / (2 * Math.PI);
-    return muzzleVelocityMps / (kFlywheelRadiusMeters * 2 * Math.PI);
+    // return muzzleVelocityMps / (kFlywheelRadiusMeters * 2 * Math.PI);
   }
 
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
@@ -188,18 +185,18 @@ public class ShooterSubsystem extends SubsystemBase {
       kHoodKs.initDefault(0.0);
       kHoodKv.initDefault(0.0);
       kHoodKa.initDefault(0.0);
-      kHoodKp.initDefault(999999.0);
-      kHoodKd.initDefault(0.0);
+      kHoodKp.initDefault(4000.0);
+      kHoodKd.initDefault(25.0);
 
       kHoodCruiseVelocity.initDefault(3);
       kHoodAcceleration.initDefault(4);
 
       kHoodToleranceDeg.initDefault(0.75);
 
-      kFlywheelKs.initDefault(3.035);
-      kFlywheelKv.initDefault(0.75631);
-      kFlywheelKa.initDefault(7.4852);
-      kFlywheelKp.initDefault(15.9);
+      kFlywheelKs.initDefault(0.0);
+      kFlywheelKv.initDefault(0.0);
+      kFlywheelKa.initDefault(0.0);
+      kFlywheelKp.initDefault(999999.0);
       kFlywheelKd.initDefault(0.0);
 
       kFlywheelToleranceMetersPerSec.initDefault(0.3);
@@ -215,10 +212,10 @@ public class ShooterSubsystem extends SubsystemBase {
 
       kHoodToleranceDeg.initDefault(0.75);
 
-      kFlywheelKs.initDefault(3.035);
-      kFlywheelKv.initDefault(0.75631);
-      kFlywheelKa.initDefault(7.4852);
-      kFlywheelKp.initDefault(80.0);
+      kFlywheelKs.initDefault(0.0);
+      kFlywheelKv.initDefault(0.0);
+      kFlywheelKa.initDefault(0.0);
+      kFlywheelKp.initDefault(999999.0);
       kFlywheelKd.initDefault(0.0);
 
       kFlywheelToleranceMetersPerSec.initDefault(0.3);

@@ -10,7 +10,6 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.MotionMagicVelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -32,8 +31,6 @@ public class FlywheelIOReal extends FlywheelIO {
       mMeasuredAcceleration;
 
   protected final TorqueCurrentFOC mCurrentRequest = new TorqueCurrentFOC(0.0);
-  protected final MotionMagicVelocityTorqueCurrentFOC mVelocityRequest =
-      new MotionMagicVelocityTorqueCurrentFOC(0.0);
 
   protected boolean mIsLeftConnected = true;
   protected boolean mIsRightConnected = true;
@@ -138,12 +135,6 @@ public class FlywheelIOReal extends FlywheelIO {
 
   @Override
   public void setTargetVelocity(double revsPerSec, double feedforwardAmps) {
-    // mIsLeftConnected =
-    //     mLeft
-    //
-    // .setControl(mVelocityRequest.withVelocity(revsPerSec).withFeedForward(feedforwardAmps))
-    //         .isOK();
-
     mIsLeftConnected = mLeft.setControl(new VelocityTorqueCurrentFOC(revsPerSec)).isOK();
   }
 
