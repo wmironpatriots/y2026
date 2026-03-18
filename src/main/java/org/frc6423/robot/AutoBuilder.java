@@ -71,10 +71,7 @@ public class AutoBuilder {
     mChooser = new AutoChooser();
 
     mChooser.addRoutine("Mid Empty", this::getMidEmptyRoutine);
-    mChooser.addRoutine("Neutral Rush 1", () -> getNeutralRoutine(1));
     mChooser.addRoutine("Neutral Rush 2", () -> getNeutralRoutine(2));
-    mChooser.addRoutine("Neutral Rush 3", () -> getNeutralRoutine(3));
-    mChooser.addRoutine("Neutral Rush 4", () -> getNeutralRoutine(4));
 
     SmartDashboard.putData("Auto Chooser", mChooser);
   }
