@@ -48,12 +48,19 @@ public class ShooterSubsystem extends SubsystemBase {
             new FlywheelIOReal(
                 kFlywheelLeftCanDeviceId, kFlywheelRightCanDeviceId, kCanBus, kFlywheelTalonConfig))
         : new ShooterSubsystem(
-            new HoodIOReal(kHoodCanDeviceId, kCanBus, kHoodTalonConfig),
-            new FlywheelIOReal(
+            new HoodIOSim(
+                kHoodCanDeviceId,
+                kCanBus,
+                kHoodTalonConfig,
+                kHoodTalonConfig.Feedback.RotorToSensorRatio,
+                Rotation2d.fromRotations(kMinAngleRevs),
+                Rotation2d.fromRotations(kMaxAngleRevs)),
+            new FlywheelIOSim(
                 kFlywheelLeftCanDeviceId,
                 kFlywheelRightCanDeviceId,
                 kCanBus,
-                kFlywheelTalonConfig));
+                kFlywheelTalonConfig,
+                kFlywheelTalonConfig.Feedback.RotorToSensorRatio));
   }
 
   // * ~~~~~~~~ CONSTANTS ~~~~~~~~

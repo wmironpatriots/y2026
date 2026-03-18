@@ -18,10 +18,10 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import org.frc6423.lib.util.PhoneixUtils;
 
 public class FlywheelIOReal extends FlywheelIO {
-  private final TalonFX mLeft, mRight;
-  private final TalonFXConfiguration mConfig;
+  protected final TalonFX mLeft, mRight;
+  protected final TalonFXConfiguration mConfig;
 
-  private final BaseStatusSignal mMeasuredVoltage,
+  protected final BaseStatusSignal mMeasuredVoltage,
       mMeasuredStatorCurrent,
       mMeasuredSupplyCurrent,
       mMeasuredTemperature,
@@ -29,11 +29,11 @@ public class FlywheelIOReal extends FlywheelIO {
       mMeasuredVelocity,
       mMeasuredAcceleration;
 
-  private final TorqueCurrentFOC mCurrentRequest = new TorqueCurrentFOC(0.0);
-  private final MotionMagicVelocityTorqueCurrentFOC mVelocityRequest =
+  protected final TorqueCurrentFOC mCurrentRequest = new TorqueCurrentFOC(0.0);
+  protected final MotionMagicVelocityTorqueCurrentFOC mVelocityRequest =
       new MotionMagicVelocityTorqueCurrentFOC(0.0);
 
-  private boolean mIsConnected = false;
+  protected boolean mIsConnected = false;
 
   public FlywheelIOReal(
       int leftCanDeviceId, int rightCanDeviceId, CANBus canBus, TalonFXConfiguration config) {

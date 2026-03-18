@@ -16,19 +16,20 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import org.frc6423.lib.util.PhoneixUtils;
 
 public class HoodIOReal extends HoodIO {
-  private final TalonFX mServo;
-  private final TalonFXConfiguration mConfig;
+  protected final TalonFX mServo;
+  protected final TalonFXConfiguration mConfig;
 
-  private final BaseStatusSignal mMeasuredVoltage,
+  protected final BaseStatusSignal mMeasuredVoltage,
       mMeasuredStatorCurrent,
       mMeasuredSupplyCurrent,
       mMeasuredTemperature,
       mMeasuredPosition;
 
-  private final VoltageOut mVoltageRequest = new VoltageOut(0.0).withEnableFOC(true);
-  private final MotionMagicTorqueCurrentFOC mPositionRequest = new MotionMagicTorqueCurrentFOC(0.0);
+  protected final VoltageOut mVoltageRequest = new VoltageOut(0.0).withEnableFOC(true);
+  protected final MotionMagicTorqueCurrentFOC mPositionRequest =
+      new MotionMagicTorqueCurrentFOC(0.0);
 
-  private boolean mIsConnected = false;
+  protected boolean mIsConnected = false;
 
   public HoodIOReal(int canDeviceId, CANBus canBus, TalonFXConfiguration config) {
     mServo = new TalonFX(canDeviceId, canBus);
