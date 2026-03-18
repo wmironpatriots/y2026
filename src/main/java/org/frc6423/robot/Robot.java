@@ -54,6 +54,7 @@ import org.frc6423.robot.subsystem.vision.VisionSubsystem;
  */
 @Logged
 public class Robot extends CommandRobot {
+
   // * ~~~~~~~~ SUBSYSTEMS ~~~~~~~~
 
   private final DriveSubsystem mDrive = DriveSubsystem.create();
@@ -65,7 +66,8 @@ public class Robot extends CommandRobot {
 
   // * ~~~~~~~~ CONTROLLERS ~~~~~~~~
 
-  private final AutoBuilder mAutoBuilder = new AutoBuilder(mDrive, mIndexer, mFeeder, mShooter);
+  private final AutoBuilder mAutoBuilder =
+      new AutoBuilder(mDrive, mIntake, mIndexer, mFeeder, mShooter);
   private final CommandXboxController mDriverController = new CommandXboxController(0);
 
   // * ~~~~~~~~ DRIVER TRIGGERS ~~~~~~~~

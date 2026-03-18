@@ -9,7 +9,6 @@ package org.frc6423.robot;
 import choreo.auto.AutoChooser;
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
-import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -22,24 +21,6 @@ import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
 
 public class AutoBuilder {
   // * ~~~~~~~~ COMMON ~~~~~~~~
-
-  public enum Path {
-    MID_EMPTY("S2_F1"),
-    RIGHT_NEUTRAL_1("S1_N1"),
-    RIGHT_NEUTRAL_2("S1_N2"),
-    RIGHT_NEUTRAL_3("S1_N3"),
-    RIGHT_NEUTRAL_4("S1_N4");
-
-    private final String mName;
-
-    private Path(String name) {
-      mName = name;
-    }
-
-    public AutoTrajectory getTrajectory(AutoRoutine routine) {
-      return routine.trajectory(mName);
-    }
-  }
 
   private static Command empty(
       AutoRoutine routine,
@@ -90,13 +71,17 @@ public class AutoBuilder {
     mChooser = new AutoChooser();
 
     mChooser.addRoutine("Mid Empty", this::getMidEmptyRoutine);
+    mChooser.addRoutine("Neutral Rush 1", () -> getNeutralRoutine(1));
+    mChooser.addRoutine("Neutral Rush 2", () -> getNeutralRoutine(2));
+    mChooser.addRoutine("Neutral Rush 3", () -> getNeutralRoutine(3));
+    mChooser.addRoutine("Neutral Rush 4", () -> getNeutralRoutine(4));
 
     SmartDashboard.putData("Auto Chooser", mChooser);
   }
 
   public AutoRoutine getMidEmptyRoutine() {
-    var routine = mFactory.newRoutine("test");
-    var trajectory = Path.MID_EMPTY.getTrajectory(routine);
+    var routine = mFactory.newRoutine("Mid Empty");
+    var trajectory = routine.trajectory("S1_F1");
 
     routine
         .active()
@@ -105,6 +90,24 @@ public class AutoBuilder {
                 trajectory.resetOdometry(),
                 trajectory.cmd().until(trajectory.done()),
                 empty(routine, mDrive, mIndexer, mFeeder, mShooter)));
+
+    return routine;
+  }
+
+  public AutoRoutine getNeutralRoutine(int length) {
+    var routine = mFactory.newRoutine("Mid Empty");
+    var trajectory = routine.trajectory("S1_N" + length);
+
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                trajectory.resetOdometry(),
+                trajectory.cmd().until(trajectory.done()),
+                empty(routine, mDrive, mIndexer, mFeeder, mShooter)));
+
+    trajectory.atTime("intake_start").whileTrue(mIntake.intake());
+    trajectory.atTime("intake_end").whileTrue(mIntake.stow());
 
     return routine;
   }
