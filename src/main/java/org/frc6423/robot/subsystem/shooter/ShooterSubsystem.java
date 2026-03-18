@@ -16,6 +16,7 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.epilogue.Logged;
@@ -90,6 +91,10 @@ public class ShooterSubsystem extends SubsystemBase {
               new CurrentLimitsConfigs()
                   .withStatorCurrentLimit(20.0)
                   .withStatorCurrentLimitEnable(true))
+          .withTorqueCurrent(
+              new TorqueCurrentConfigs()
+                  .withPeakForwardTorqueCurrent(40.0)
+                  .withPeakReverseTorqueCurrent(0.0))
           .withFeedback(new FeedbackConfigs().withSensorToMechanismRatio(kHoodSensorToMechRatio));
 
   public static final TalonFXConfiguration kFlywheelTalonConfig =
@@ -183,8 +188,8 @@ public class ShooterSubsystem extends SubsystemBase {
       kHoodKs.initDefault(0.0);
       kHoodKv.initDefault(0.0);
       kHoodKa.initDefault(0.0);
-      kHoodKp.initDefault(4000.0);
-      kHoodKd.initDefault(25.0);
+      kHoodKp.initDefault(999999.0);
+      kHoodKd.initDefault(0.0);
 
       kHoodCruiseVelocity.initDefault(3);
       kHoodAcceleration.initDefault(4);
