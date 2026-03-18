@@ -256,8 +256,8 @@ public class Robot extends CommandRobot {
               Commands.runOnce(
                       () ->
                           sim.launchFuel(
-                              MetersPerSecond.of(mShooter.getTargetMuzzleVelocityMps()),
-                              mShooter.getTargetRotation2d().getMeasure(),
+                              MetersPerSecond.of(mShooter.getApproximatedMuzzleVelocityMps()),
+                              mShooter.getRotation2d().getMeasure(),
                               Rotation2d.k180deg.getMeasure(),
                               ShooterSubsystem.kRobotToShooter.getMeasureZ()))
                   .andThen(Commands.waitSeconds(0.5))

@@ -9,21 +9,25 @@ package org.frc6423.robot.subsystem.shooter;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState.MotorType;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 public class HoodIOSim extends HoodIOReal {
-  private final SingleJointedArmSim mPhysicsModel;
+  private final DCMotorSim mPhysicsModel;
 
   private final Notifier mSimulationNotifier;
   private double mPreviousUpdateTimestamp = 0.0;
+
+  private final PositionTorqueCurrentFOC mPoseReq = new PositionTorqueCurrentFOC(0.0);
 
   public HoodIOSim(
       int canDeviceId,
@@ -36,15 +40,12 @@ public class HoodIOSim extends HoodIOReal {
 
     // Setup physics model
     mPhysicsModel =
-        new SingleJointedArmSim(
-            DCMotor.getKrakenX60Foc(1),
-            gearRatio,
-            0.1,
-            Units.inchesToMeters(10),
-            minAngle.getRadians(),
-            maxAngle.getRadians(),
-            true,
-            minAngle.getRadians());
+        new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(
+                DCMotor.getKrakenX60Foc(2),
+                ShooterSubsystem.kRotationalInertiaKgSquaredMeters,
+                gearRatio),
+            DCMotor.getKrakenX60Foc(2));
 
     // Setup talonfx sim
     mServo.getSimState().setMotorType(MotorType.KrakenX44);
@@ -73,13 +74,19 @@ public class HoodIOSim extends HoodIOReal {
               mServo
                   .getSimState()
                   .setRawRotorPosition(
-                      Units.radiansToRotations(mPhysicsModel.getAngleRads()) * gearRatio);
+                      Units.radiansToRotations(mPhysicsModel.getAngularPositionRad()) * gearRatio);
               mServo
                   .getSimState()
                   .setRotorVelocity(
-                      Units.radiansToRotations(mPhysicsModel.getVelocityRadPerSec()) * gearRatio);
+                      Units.radiansToRotations(mPhysicsModel.getAngularVelocityRadPerSec())
+                          * gearRatio);
             });
 
     mSimulationNotifier.startPeriodic(0.002);
+  }
+
+  @Override
+  public void setTargetPosition(double positionRevs) {
+    mServo.setControl(mPoseReq.withPosition(positionRevs));
   }
 }

@@ -198,8 +198,8 @@ public class ShooterSubsystem extends SubsystemBase {
       kHoodKs.initDefault(0.0);
       kHoodKv.initDefault(0.0);
       kHoodKa.initDefault(0.0);
-      kHoodKp.initDefault(4000.0);
-      kHoodKd.initDefault(25.0);
+      kHoodKp.initDefault(10000.0);
+      kHoodKd.initDefault(4100.0);
 
       kHoodCruiseVelocity.initDefault(3);
       kHoodAcceleration.initDefault(4);
