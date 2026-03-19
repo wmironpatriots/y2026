@@ -46,7 +46,7 @@ public class VisionSubsystem extends SubsystemBase {
           "bessie",
           new Transform3d(
               new Translation3d(-0.1908, 0, 0.3609),
-              new Rotation3d(Degrees.of(0.0), Degrees.of(-10.0), Degrees.of(180))));
+              new Rotation3d(Degrees.of(0.0), Degrees.of(10.0), Degrees.of(180))));
   // public static final CameraConfig kElsie =
   //    new CameraConfig(
   //        "elsie",

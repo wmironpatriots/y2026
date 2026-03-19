@@ -16,6 +16,7 @@ import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.LazyBackend;
 import edu.wpi.first.epilogue.logging.NTEpilogueBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -237,6 +238,8 @@ public class Robot extends CommandRobot {
         .whileTrue(
             mDrive.driveTeleoperatedFacingTarget(
                 x, y, () -> FireControlSystem.getVirtualTarget(), true));
+
+    mDriverController.x().onTrue(Commands.runOnce(() -> mDrive.reset(new Pose2d()), mDrive));
   }
 
   /** Configure driver dashboard */

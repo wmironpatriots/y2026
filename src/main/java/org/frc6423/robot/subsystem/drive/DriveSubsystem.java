@@ -97,7 +97,7 @@ public class DriveSubsystem extends SubsystemBase {
   private static final TunableNumber kAngularFeedbackKi =
       new TunableNumber(kTunablesPrefix + "/Angular kI");
   private static final TunableNumber kAngularFeedbackKd =
-      new TunableNumber(kTunablesPrefix + "/Angular kd");
+      new TunableNumber(kTunablesPrefix + "/Angular kD");
   private static final TunableNumber kAngularFeebackToleranceDeg =
       new TunableNumber(kTunablesPrefix + "/tolerance (degrees)");
 
@@ -108,9 +108,12 @@ public class DriveSubsystem extends SubsystemBase {
       kTranslationalFeedbackKd.initDefault(0.02);
       kTranslationalFeedbackTolerance.initDefault(2.54);
 
-      kAngularFeedbackKp.initDefault(5.0);
+      // kAngularFeedbackKp.initDefault(5.0);
+      // kAngularFeedbackKi.initDefault(0.0);
+      // kAngularFeedbackKd.initDefault(0.08);
+      kAngularFeedbackKp.initDefault(6.0);
       kAngularFeedbackKi.initDefault(0.0);
-      kAngularFeedbackKd.initDefault(0.08);
+      kAngularFeedbackKd.initDefault(0.0);
       kAngularFeebackToleranceDeg.initDefault(2.0);
     } else {
       kTranslationalFeedbackKp.initDefault(10.0);
@@ -208,12 +211,16 @@ public class DriveSubsystem extends SubsystemBase {
 
   /** {@link ProfiledPIDController} Feedback controller for angular assists */
   @Logged(name = "Angular")
-  private final ProfiledPIDController mAngularController =
-      new ProfiledPIDController(
-          kAngularFeedbackKp.get(),
-          kAngularFeedbackKi.get(),
-          kAngularFeedbackKd.get(),
-          new Constraints(8.989, 90.090));
+  private final PIDController mAngularController =
+      new PIDController(
+          kAngularFeedbackKp.get(), kAngularFeedbackKi.get(), kAngularFeedbackKd.get());
+
+  // private final ProfiledPIDController mAngularController =
+  //     new ProfiledPIDController(
+  //         kAngularFeedbackKp.get(),
+  //         kAngularFeedbackKi.get(),
+  //         kAngularFeedbackKd.get(),
+  //         new Constraints(8.989, 90.090));
 
   // new Constraints(
   //     kConstants.getMaxAngularVelocityRadsPerSec(),
@@ -424,8 +431,9 @@ public class DriveSubsystem extends SubsystemBase {
         getPose2d().getX(), getChassisSpeedsWrtField().vxMetersPerSecond);
     mTranslationalYController.reset(
         getPose2d().getY(), getChassisSpeedsWrtField().vyMetersPerSecond);
-    mAngularController.reset(
-        getRotation2d().getRadians(), getChassisSpeedsWrtField().omegaRadiansPerSecond);
+    mAngularController.reset();
+    // mAngularController.reset(
+    //     getRotation2d().getRadians(), getChassisSpeedsWrtField().omegaRadiansPerSecond);
   }
 
   /**
@@ -565,10 +573,11 @@ public class DriveSubsystem extends SubsystemBase {
             vx,
             vy,
             () ->
-                mAngularController.calculate(getRotation2d().getRadians(), angle.get().getRadians())
-                    + mAngularController.getSetpoint().velocity)
-        // mAngularController.calculate(
-        //     getRotation2d().getRadians(), angle.get().getRadians()))
+                // mAngularController.calculate(getRotation2d().getRadians(),
+                // angle.get().getRadians())
+                //     + mAngularController.getSetpoint().velocity)
+                mAngularController.calculate(
+                    getRotation2d().getRadians(), angle.get().getRadians()))
         .beforeStarting(() -> resetFeedbackControllers());
   }
 
