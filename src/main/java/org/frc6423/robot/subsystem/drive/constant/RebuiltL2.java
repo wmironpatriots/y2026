@@ -155,7 +155,7 @@ public class RebuiltL2 extends SwerveConstants {
                 .withNeutralMode(NeutralModeValue.Brake))
         .withCurrentLimits(
             new CurrentLimitsConfigs()
-                .withStatorCurrentLimit(120.0)
+                .withStatorCurrentLimit(20.0)
                 .withStatorCurrentLimitEnable(true))
         .withTorqueCurrent(new TorqueCurrentConfigs().withTorqueNeutralDeadband(10.0))
         // .withPeakForwardTorqueCurrent(120.0)

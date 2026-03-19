@@ -243,6 +243,7 @@ public class ShooterSubsystem extends SubsystemBase {
       new Alert("LEFT FLYWHEEL UNRESPONSIVE", AlertType.kError);
   private final Alert mRightIsDisconnected =
       new Alert("LEFT FLYWHEEL UNRESPONSIVE", AlertType.kError);
+  private final Alert mHoodIsDisconnected = new Alert("HOOD UNRESPONSIVE", AlertType.kError);
   private final Alert mLeftIsOverheated = new Alert("Left Flywheel Overheated", AlertType.kWarning);
   private final Alert mRightIsOverheated =
       new Alert("Right Flywheel Overheated", AlertType.kWarning);
@@ -306,8 +307,10 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     // Update Alerts
-    mLeftIsDisconnected.set(mFlywheel.isLeftConnected());
-    mRightIsDisconnected.set(mFlywheel.isRightConnected());
+    mLeftIsDisconnected.set(!mFlywheel.isLeftConnected());
+    mRightIsDisconnected.set(!mFlywheel.isRightConnected());
+    mHoodIsDisconnected.set(!mHood.isConnected());
+
     mLeftIsOverheated.set(mFlywheel.getLeftTemperatureCelsius() > kWarningTemperatureCelsius);
     mRightIsOverheated.set(mFlywheel.getRightTemperatureCelsius() > kWarningTemperatureCelsius);
   }

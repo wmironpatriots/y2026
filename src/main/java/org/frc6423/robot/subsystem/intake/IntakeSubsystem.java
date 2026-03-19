@@ -70,7 +70,7 @@ public class IntakeSubsystem extends SubsystemBase {
                   .withNeutralMode(NeutralModeValue.Brake))
           .withCurrentLimits(
               new CurrentLimitsConfigs()
-                  .withStatorCurrentLimit(40.0)
+                  .withStatorCurrentLimit(20.0)
                   .withStatorCurrentLimitEnable(true))
           .withFeedback(
               new FeedbackConfigs()
@@ -82,7 +82,11 @@ public class IntakeSubsystem extends SubsystemBase {
                   .withMotionMagicAcceleration(3));
 
   public static final TalonFXConfiguration kRollerTalonFxConfig =
-      RollerIOTalonFx.createGenericRollerConfig(true);
+      RollerIOTalonFx.createGenericRollerConfig(true)
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimit(60.0) // OOOOO SHIVERS OOOOO :cold_face:
+                  .withStatorCurrentLimitEnable(true));
 
   public static final double kMinAngleRevs = Units.degreesToRotations(0.0);
 
