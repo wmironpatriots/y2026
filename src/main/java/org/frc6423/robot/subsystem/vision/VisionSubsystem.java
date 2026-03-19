@@ -127,6 +127,9 @@ public class VisionSubsystem extends SubsystemBase {
       var unreadResults = bundle.camera.getAllUnreadResults();
 
       for (PhotonPipelineResult res : unreadResults) {
+        res.targets = res.targets.stream().filter(t -> t.poseAmbiguity < 0.2).toList();
+        res.multitagResult = res.multitagResult.filter(r -> r.estimatedPose.ambiguity < 0.2);
+
         if (!res.hasTargets()) {
           continue;
         }
@@ -139,6 +142,19 @@ public class VisionSubsystem extends SubsystemBase {
                   estimates.add(est);
                   stdDevs.add(estimationStdDevs(est.estimatedPose.toPose2d(), res));
                 });
+
+        // if (!res.hasTargets()) {
+        //   continue;
+        // }
+        // bundle
+        //     .poseEstimator
+        //     .update(res)
+        //     .filter(est -> isEstimateUsable(est, res))
+        //     .ifPresent(
+        //         (est) -> {
+        //           estimates.add(est);
+        //           stdDevs.add(estimationStdDevs(est.estimatedPose.toPose2d(), res));
+        //         });
       }
     }
 
@@ -171,8 +187,8 @@ public class VisionSubsystem extends SubsystemBase {
       estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
     else estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
 
-    return VecBuilder.fill(0.0, 0.0, 0.0);
-    // return estStdDevs.times(avgWeight);
+    // return VecBuilder.fill(0.0, 0.0, 0.0);
+    return estStdDevs.times(avgWeight);
   }
 
   public List<EstimatedRobotPose> getLatestPoseEstimates() {
