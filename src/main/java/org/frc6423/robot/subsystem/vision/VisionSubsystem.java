@@ -7,8 +7,6 @@
 package org.frc6423.robot.subsystem.vision;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Radians;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -38,7 +36,7 @@ public class VisionSubsystem extends SubsystemBase {
    * @return {@link VisionSubsystem}
    */
   public static VisionSubsystem create() {
-    return new VisionSubsystem(kBessie);
+    return new VisionSubsystem(kBessie, kBeatrice, kBelinda);
   }
 
   // * ~~~~~~~~ CONSTANTS ~~~~~~~~
@@ -47,8 +45,26 @@ public class VisionSubsystem extends SubsystemBase {
       new CameraConfig(
           "bessie",
           new Transform3d(
-              new Translation3d(Inches.of(-12.255), Inches.of(0), Inches.of(14.207)),
-              new Rotation3d(Radians.of(0.0), Radians.of(0.523599), Degrees.of(180))));
+              new Translation3d(-0.1908, 0, 0.3609),
+              new Rotation3d(Degrees.of(0.0), Degrees.of(-10.0), Degrees.of(180))));
+  // public static final CameraConfig kElsie =
+  //    new CameraConfig(
+  //        "elsie",
+  //        new Transform3d(
+  //            new Translation3d(0.2006, -0.16, 0.5094),
+  //            new Rotation3d(Degrees.of(0.0), Degrees.of(-15.0), Degrees.of(0))));
+  public static final CameraConfig kBeatrice =
+      new CameraConfig(
+          "beatrice",
+          new Transform3d(
+              new Translation3d(0.2006, -0.3114, 0.5094),
+              new Rotation3d(Degrees.of(0.0), Degrees.of(-10.0), Degrees.of(-75.0))));
+  public static final CameraConfig kBelinda =
+      new CameraConfig(
+          "belinda",
+          new Transform3d(
+              new Translation3d(0.2006, 0.3114, 0.5094),
+              new Rotation3d(Degrees.of(0.0), Degrees.of(-10.0), Degrees.of(75.0))));
 
   public static class CameraConfig {
     public final String cameraName;
