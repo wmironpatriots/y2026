@@ -177,8 +177,6 @@ public class Robot extends CommandRobot {
 
     mTriggerIsOutaking.whileTrue(mIntake.outake());
 
-    mTriggerIsOutaking.whileTrue(mIntake.intakeAgitated());
-
     // ~~~ Indexer/Feeder Controls ~~~
 
     mTriggerIsOutaking.and(mTriggerIsIntaking.negate()).whileTrue(mIndexer.feedInverse());
@@ -226,6 +224,7 @@ public class Robot extends CommandRobot {
             .clamp(1.0)
             .deadband(0.02, 1.0)
             .signedPow(2.0)
+            .scale(0.85)
             .scale(() -> Flags.kDrivetrainContants.getMaxAngularVelocityRadsPerSec())
             .log("Telemetry/Operator Triggers/Omega");
 

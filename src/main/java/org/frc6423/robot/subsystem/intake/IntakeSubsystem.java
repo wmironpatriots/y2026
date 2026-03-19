@@ -92,7 +92,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public static final double kMaxAngleRevs = Units.degreesToRotations(56.425800397);
 
-  public static final double kPivotCurrentZeroingThreshold = 30.0;
+  public static final double kPivotCurrentZeroingThreshold = 10.0;
 
   public static final double kRotationalInertiaKgSquaredMeters = 402.290096 * 0.0002926397;
 
@@ -142,7 +142,7 @@ public class IntakeSubsystem extends SubsystemBase {
     kStowedSpeedVolts.initDefault(0.0);
     kStowingSpeedVolts.initDefault(4.5);
     kIntakingSpeedVolts.initDefault(9.0);
-    kOutakingSpeedVolts.initDefault(9.0);
+    kOutakingSpeedVolts.initDefault(-9.0);
   }
 
   // * ~~~~~~~~ MEMBERS ~~~~~~~~
@@ -317,7 +317,7 @@ public class IntakeSubsystem extends SubsystemBase {
                               * Math.sin(Timer.getTimestamp())
                               * kPositionAgitatingDeg.get()));
           mPivot.setTargetPosition(mTarget.getRotations());
-          mRoller.setVoltageOutput(kOutakingSpeedVolts.get() * -1);
+          mRoller.setVoltageOutput(kOutakingSpeedVolts.get());
         });
   }
 
@@ -331,7 +331,7 @@ public class IntakeSubsystem extends SubsystemBase {
         () -> {
           mTarget = Rotation2d.fromDegrees(kPositionDeployedDeg.getAsDouble());
           mPivot.setTargetPosition(mTarget.getRotations());
-          mRoller.setVoltageOutput(kOutakingSpeedVolts.get() * -1);
+          mRoller.setVoltageOutput(kOutakingSpeedVolts.get());
         });
   }
 
