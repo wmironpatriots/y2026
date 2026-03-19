@@ -36,7 +36,7 @@ public class VisionSubsystem extends SubsystemBase {
    * @return {@link VisionSubsystem}
    */
   public static VisionSubsystem create() {
-    return new VisionSubsystem(kBessie, kElsie, kBeatrice, kBelinda);
+    return new VisionSubsystem(kBessie, kBeatrice, kBelinda);
   }
 
   // * ~~~~~~~~ CONSTANTS ~~~~~~~~
@@ -47,12 +47,12 @@ public class VisionSubsystem extends SubsystemBase {
           new Transform3d(
               new Translation3d(-0.1908, 0, 0.3609),
               new Rotation3d(Degrees.of(0.0), Degrees.of(-10.0), Degrees.of(180))));
-  public static final CameraConfig kElsie =
-      new CameraConfig(
-          "elsie",
-          new Transform3d(
-              new Translation3d(0.2006, -0.16, 0.5094),
-              new Rotation3d(Degrees.of(0.0), Degrees.of(-15.0), Degrees.of(0))));
+  //public static final CameraConfig kElsie =
+  //    new CameraConfig(
+  //        "elsie",
+  //        new Transform3d(
+  //            new Translation3d(0.2006, -0.16, 0.5094),
+  //            new Rotation3d(Degrees.of(0.0), Degrees.of(-15.0), Degrees.of(0))));
   public static final CameraConfig kBeatrice =
       new CameraConfig(
           "beatrice",
