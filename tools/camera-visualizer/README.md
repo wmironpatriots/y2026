@@ -17,20 +17,20 @@ The default input file is `cameras.json` in this folder.
 
 ```json
 {
-	"cameras": [
-		{
-			"name": "FrontCam",
-			"transform3d": {
-				"x": 0.35,
-				"y": 0.18,
-				"z": 0.62,
-				"roll": 0.0,
-				"pitch": -15.0,
-				"yaw": 0.0,
-				"degrees": true
-			}
-		}
-	]
+    "cameras": [
+        {
+            "name": "FrontCam",
+            "transform3d": {
+                "x": 0.35,
+                "y": 0.18,
+                "z": 0.62,
+                "roll": 0.0,
+                "pitch": -15.0,
+                "yaw": 0.0,
+                "degrees": true
+            }
+        }
+    ]
 }
 ```
 
