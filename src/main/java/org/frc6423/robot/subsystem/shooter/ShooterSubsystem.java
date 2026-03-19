@@ -419,7 +419,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public Command runSetpoint(Supplier<ProjectileParameters> parameters) {
     return runSetpoint(
-        () -> Rotation2d.fromRadians(parameters.get().pitch()).plus(Rotation2d.fromDegrees(9)),
+        () -> Rotation2d.fromRadians(parameters.get().pitch()).plus(Rotation2d.fromDegrees(10)),
         () -> parameters.get().velocity());
   }
 }
