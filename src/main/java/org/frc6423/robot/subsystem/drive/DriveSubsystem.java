@@ -103,15 +103,19 @@ public class DriveSubsystem extends SubsystemBase {
 
   static {
     if (Robot.isReal()) {
-      kTranslationalFeedbackKp.initDefault(10.0);
-      kTranslationalFeedbackKi.initDefault(0.01);
-      kTranslationalFeedbackKd.initDefault(0.02);
+      // kTranslationalFeedbackKp.initDefault(10.0);
+      // kTranslationalFeedbackKi.initDefault(0.01);
+      // kTranslationalFeedbackKd.initDefault(0.02);
+      // kTranslationalFeedbackTolerance.initDefault(2.54);
+      kTranslationalFeedbackKp.initDefault(8.0);
+      kTranslationalFeedbackKi.initDefault(0.0);
+      kTranslationalFeedbackKd.initDefault(0.0);
       kTranslationalFeedbackTolerance.initDefault(2.54);
 
       // kAngularFeedbackKp.initDefault(5.0);
       // kAngularFeedbackKi.initDefault(0.0);
       // kAngularFeedbackKd.initDefault(0.08);
-      kAngularFeedbackKp.initDefault(6.0);
+      kAngularFeedbackKp.initDefault(4.0);
       kAngularFeedbackKi.initDefault(0.0);
       kAngularFeedbackKd.initDefault(0.0);
       kAngularFeebackToleranceDeg.initDefault(2.0);
@@ -474,9 +478,9 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @SuppressWarnings("resource")
   public Consumer<SwerveSample> getChoreoSwerveSampleConsumer() {
-    final PIDController xController = new PIDController(10.0, 0.0, 0.0);
-    final PIDController yController = new PIDController(10.0, 0.0, 0.0);
-    final PIDController angularController = new PIDController(6.0, 0.0, 0.0);
+    final PIDController xController = new PIDController(8.0, 0.0, 0.0);
+    final PIDController yController = new PIDController(8.0, 0.0, 0.0);
+    final PIDController angularController = new PIDController(4.0, 0.0, 0.0);
     angularController.enableContinuousInput(-Math.PI, Math.PI);
 
     return (sample) -> {
