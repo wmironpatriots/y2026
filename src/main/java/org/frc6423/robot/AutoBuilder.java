@@ -136,7 +136,7 @@ public class AutoBuilder {
   }
 
   public AutoRoutine getMirroredNeutralTankRoutine() {
-    var routine = mFactory.newRoutine("Neutral Tank");
+    var routine = mFactory.newRoutine("Neutral Tank mirrored");
     var trajectory = routine.trajectory("S1_N2_tank_mirror");
 
     routine

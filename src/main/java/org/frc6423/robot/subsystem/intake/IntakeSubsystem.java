@@ -239,7 +239,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command kick() {
     return this.run(
             () -> {
-              mTarget = Rotation2d.fromDegrees(kPositionDeployedDeg.get() / 4);
+              mTarget = Rotation2d.fromDegrees(kPositionDeployedDeg.get() / 2);
               mPivot.setTargetPosition(mTarget.getRotations());
             })
         .until(this::isNearPosition)
