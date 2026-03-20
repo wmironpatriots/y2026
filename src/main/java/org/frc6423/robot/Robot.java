@@ -21,6 +21,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -245,10 +246,19 @@ public class Robot extends CommandRobot {
   public void configureDashboard() {
     RobotModeTriggers.teleop().onTrue(Commands.runOnce(() -> MatchInfo.initialize()));
     RobotModeTriggers.autonomous().onTrue(Commands.runOnce(() -> MatchInfo.initialize()));
-    RobotModeTriggers.disabled()
-        .onTrue(Commands.runOnce(() -> MatchInfo.stop()).ignoringDisable(true));
 
-    addPeriodic(() -> MatchInfo.log(), 0.02);
+    addPeriodic(
+        () -> {
+          SmartDashboard.putNumber("Match Time", DriverStation.getMatchTime());
+          SmartDashboard.putString(
+              "Shifts/Current Shift", MatchInfo.getOfficialShiftInfo().currentShift().toString());
+          SmartDashboard.putBoolean("Shifts/Is Active", MatchInfo.getOfficialShiftInfo().active());
+          SmartDashboard.putString(
+              "Shifts/Remaining Shift Time",
+              String.format(
+                  "%.1f", Math.max(MatchInfo.getOfficialShiftInfo().remainingTime(), 0.0), 0.0));
+        },
+        0.01);
   }
 
   /** Configure simulation */

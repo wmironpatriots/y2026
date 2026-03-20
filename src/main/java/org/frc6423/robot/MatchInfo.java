@@ -9,123 +9,144 @@ package org.frc6423.robot;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import java.text.DecimalFormat;
-import org.frc6423.robot.Constants.Flags;
 
-/** Static watcher for keeping track of the state of match */
 public class MatchInfo {
-  /** Period of match */
-  public static enum Shift {
-    /** Disabled (no time) (no active) */
-    DISABLED(0.0),
-    /** Autonomous Period (20 seconds) (both active) */
-    AUTONOMOUS(20.0),
-    /** Transition Shift (10 seconds) (both active) */
-    TRANSITION(30.0),
-    /** Shift 1 (25 seconds) (loosing alliance active) */
-    SHIFT_1(55.0),
-    /** Shift 2 (25 seconds) (winning alliance active) */
-    SHIFT_2(80.0),
-    /** Shift 3 (25 seconds) (loosing alliance active) */
-    SHIFT_3(105.0),
-    /** Shift 4 (25 seconds) (winning alliance active) */
-    SHIFT_4(130.0),
-    /** Endgame (30 seconds) (both active) */
-    END_GAME(160.0);
-
-    public final double startingTimestamp;
-
-    private Shift(double startTimestamp) {
-      this.startingTimestamp = startTimestamp;
-    }
+  public enum ShiftEnum {
+    TRANSITION,
+    SHIFT1,
+    SHIFT2,
+    SHIFT3,
+    SHIFT4,
+    ENDGAME,
+    AUTO,
+    DISABLED;
   }
 
-  static {
-  }
+  public record ShiftInfo(
+      ShiftEnum currentShift, double elapsedTime, double remainingTime, boolean active) {}
 
-  private static final Timer kShiftTimer = new Timer();
-  private static double kShiftTimerOffset = 0.0;
-  private static DecimalFormat kDf = new DecimalFormat("##.#");
+  private static Timer shiftTimer = new Timer();
+  private static final ShiftEnum[] shiftsEnums = ShiftEnum.values();
 
-  public static void initialize() {
-    if (DriverStation.isAutonomousEnabled()) {
-      kShiftTimer.reset();
-      kShiftTimerOffset = 0.0;
-    }
-    if (DriverStation.isTeleopEnabled()) {
-      kShiftTimer.start();
-      kShiftTimer.restart();
-      kShiftTimerOffset = Shift.AUTONOMOUS.startingTimestamp;
-    }
-  }
+  private static final double[] shiftStartTimes = {0.0, 10.0, 35.0, 60.0, 85.0, 110.0};
+  private static final double[] shiftEndTimes = {10.0, 35.0, 60.0, 85.0, 110.0, 140.0};
 
-  public static void log() {
-    SmartDashboard.putNumber("Match/Match Time", getMatchTime());
-    SmartDashboard.putString("Match/Current Shift", getActiveShift().toString());
-    SmartDashboard.putString("Match/Starting Alliance", getStartingAlliance().toString());
-    SmartDashboard.putBoolean("Match/Is Hub Active (bool)", isActive());
-    SmartDashboard.putString("Match/Remaining Shift Time", kDf.format(getRemainingShiftTime()));
-  }
+  public static final double autoEndTime = 20.0;
+  public static final double teleopDuration = 140.0;
+  private static final boolean[] activeSchedule = {true, true, false, true, false, true};
+  private static final boolean[] inactiveSchedule = {true, false, true, false, true, true};
+  private static final double timeResetThreshold = 3.0;
+  private static double shiftTimerOffset = 0.0;
 
-  public static double getMatchTime() {
-    return DriverStation.getMatchTime();
-  }
+  public static Alliance getFirstActiveAlliance() {
+    var alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
 
-  public static void stop() {
-    kShiftTimer.stop();
-  }
-
-  public static double getShiftTime() {
-    return kShiftTimer.get() + kShiftTimerOffset;
-  }
-
-  public static boolean isActive() {
-    var activeShift = getActiveShift();
-    var isStartingAlliance = getStartingAlliance().equals(Flags.getRobotAlliance());
-
-    if (activeShift == Shift.AUTONOMOUS
-        || activeShift == Shift.TRANSITION
-        || activeShift == Shift.END_GAME) {
-      return true;
-    }
-    if (activeShift == Shift.SHIFT_1 || activeShift == Shift.SHIFT_3) {
-      return isStartingAlliance;
-    } else {
-      return !isStartingAlliance;
-    }
-  }
-
-  public static Alliance getStartingAlliance() {
-    var robotAlliance = Flags.getRobotAlliance();
-
-    var fmsData = DriverStation.getGameSpecificMessage();
-    if (fmsData.length() > 0) {
-      if (fmsData.charAt(0) == 'R') {
+    // Return FMS value
+    String message = DriverStation.getGameSpecificMessage();
+    if (message.length() > 0) {
+      char character = message.charAt(0);
+      if (character == 'R') {
         return Alliance.Blue;
-      } else if (fmsData.charAt(0) == 'B') {
+      } else if (character == 'B') {
         return Alliance.Red;
       }
     }
 
-    return (robotAlliance == Alliance.Blue) ? Alliance.Red : Alliance.Blue;
+    // Return default value
+    return alliance == Alliance.Blue ? Alliance.Red : Alliance.Blue;
   }
 
-  public static double getRemainingShiftTime() {
-    var activeShift = getActiveShift();
-    var recordedShiftTime = getShiftTime();
-
-    return activeShift.startingTimestamp - recordedShiftTime;
+  /** Starts the timer at the begining of teleop. */
+  public static void initialize() {
+    shiftTimerOffset = 0;
+    shiftTimer.restart();
   }
 
-  public static Shift getActiveShift() {
-    for (int i = 0; i < Shift.values().length; i++) {
-      var recordedShiftTime = getShiftTime();
-      if (recordedShiftTime < Shift.values()[i].startingTimestamp) {
-        return Shift.values()[i];
+  private static boolean[] getSchedule() {
+    boolean[] currentSchedule;
+    Alliance startAlliance = getFirstActiveAlliance();
+    currentSchedule =
+        startAlliance == DriverStation.getAlliance().orElse(Alliance.Blue)
+            ? activeSchedule
+            : inactiveSchedule;
+    return currentSchedule;
+  }
+
+  private static ShiftInfo getShiftInfo(
+      boolean[] currentSchedule, double[] shiftStartTimes, double[] shiftEndTimes) {
+    double timerValue = shiftTimer.get();
+    double currentTime = timerValue - shiftTimerOffset;
+    double stateTimeElapsed = currentTime;
+    double stateTimeRemaining = 0.0;
+    boolean active = false;
+    ShiftEnum currentShift = ShiftEnum.DISABLED;
+    double fieldTeleopTime = 140.0 - DriverStation.getMatchTime();
+
+    if (DriverStation.isAutonomousEnabled()) {
+      stateTimeElapsed = currentTime;
+      stateTimeRemaining = autoEndTime - currentTime;
+      active = true;
+      currentShift = ShiftEnum.AUTO;
+    } else if (DriverStation.isEnabled()) {
+      // Adjust the current offset if the time difference above the theshold
+      if (Math.abs(fieldTeleopTime - currentTime) >= timeResetThreshold
+          && fieldTeleopTime <= 135
+          && DriverStation.isFMSAttached()) {
+        shiftTimerOffset += currentTime - fieldTeleopTime;
+        currentTime = timerValue + shiftTimerOffset;
       }
-    }
+      int currentShiftIndex = -1;
+      for (int i = 0; i < shiftStartTimes.length; i++) {
+        if (currentTime >= shiftStartTimes[i] && currentTime < shiftEndTimes[i]) {
+          currentShiftIndex = i;
+          break;
+        }
+      }
+      if (currentShiftIndex < 0) {
+        // After last shift, so assume endgame
+        currentShiftIndex = shiftStartTimes.length - 1;
+      }
 
-    return Shift.DISABLED;
+      // Calculate elapsed and remaining time in the current shift, ignoring combined shifts
+      stateTimeElapsed = currentTime - shiftStartTimes[currentShiftIndex];
+      stateTimeRemaining = shiftEndTimes[currentShiftIndex] - currentTime;
+
+      // If the state is the same as the last shift, combine the elapsed time
+      if (currentShiftIndex > 0) {
+        if (currentSchedule[currentShiftIndex] == currentSchedule[currentShiftIndex - 1]) {
+          stateTimeElapsed = currentTime - shiftStartTimes[currentShiftIndex - 1];
+        }
+      }
+
+      // If the state is the same as the next shift, combine the remaining time
+      if (currentShiftIndex < shiftEndTimes.length - 1) {
+        if (currentSchedule[currentShiftIndex] == currentSchedule[currentShiftIndex + 1]) {
+          stateTimeRemaining = shiftEndTimes[currentShiftIndex + 1] - currentTime;
+        }
+      }
+
+      active = currentSchedule[currentShiftIndex];
+      currentShift = shiftsEnums[currentShiftIndex];
+    }
+    ShiftInfo shiftInfo = new ShiftInfo(currentShift, stateTimeElapsed, stateTimeRemaining, active);
+    return shiftInfo;
+  }
+
+  public static ShiftInfo getOfficialShiftInfo() {
+    return getShiftInfo(getSchedule(), shiftStartTimes, shiftEndTimes);
+  }
+
+  public static ShiftInfo getShiftedShiftInfo() {
+    boolean[] shiftSchedule = getSchedule();
+    // Starting active
+    if (shiftSchedule[1] == true) {
+      double[] shiftedShiftStartTimes = {0.0, 10.0, 35.0, 60.0, 85.0, 110.0};
+      double[] shiftedShiftEndTimes = {10.0, 35.0, 60.0, 85.0, 110.0, 140.0};
+      return getShiftInfo(shiftSchedule, shiftedShiftStartTimes, shiftedShiftEndTimes);
+    }
+    double[] shiftedShiftStartTimes = {0.0, 10.0, 35.0, 60.0, 85.0, 110.0};
+    double[] shiftedShiftEndTimes = {10.0, 35.0, 60.0, 85.0, 110.0, 140.0};
+    return getShiftInfo(shiftSchedule, shiftedShiftStartTimes, shiftedShiftEndTimes);
+    // }
   }
 }
