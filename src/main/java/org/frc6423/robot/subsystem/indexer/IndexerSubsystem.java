@@ -7,6 +7,7 @@
 package org.frc6423.robot.subsystem.indexer;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -43,7 +44,11 @@ public class IndexerSubsystem extends SubsystemBase {
 
   /** {@link TalonFXConfiguration} Hardware config of servo */
   public static final TalonFXConfiguration kTalonConfig =
-      RollerIOTalonFx.createGenericRollerConfig(true);
+      RollerIOTalonFx.createGenericRollerConfig(true)
+          .withCurrentLimits(
+              new CurrentLimitsConfigs()
+                  .withStatorCurrentLimit(30.0)
+                  .withStatorCurrentLimitEnable(true));
 
   // * ~~~~~~~~ TUNABLES ~~~~~~~~
   /** {@link TunableNumber} Voltage speed to index at */

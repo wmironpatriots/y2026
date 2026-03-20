@@ -161,7 +161,9 @@ public class IntakeSubsystem extends SubsystemBase {
     mRoller = roller;
     mPivot = pivot;
 
-    setDefaultCommand(runCurrentHoming().unless(this::isHomed).andThen(stow()));
+    mPivot.resetEncoder(kMinAngleRevs);
+    // setDefaultCommand(runCurrentHoming().unless(this::isHomed).andThen(stow()));
+    setDefaultCommand(stow());
   }
 
   @Override
@@ -237,7 +239,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command kick() {
     return this.run(
             () -> {
-              mTarget = Rotation2d.fromDegrees(kPositionStowedDeg.get() / 4);
+              mTarget = Rotation2d.fromDegrees(kPositionDeployedDeg.get() / 4);
               mPivot.setTargetPosition(mTarget.getRotations());
             })
         .until(this::isNearPosition)

@@ -123,8 +123,13 @@ public class AutoBuilder {
                 empty(routine, mDrive, mIndexer, mFeeder, mShooter)));
 
     trajectory.atTime("kick").onTrue(mIntake.kick());
-    trajectory.atTime("intake_start").whileTrue(mIntake.intake());
-    trajectory.atTime("intake_end").whileTrue(mIntake.stow());
+    trajectory
+        .atTime("intake_start")
+        .onTrue(
+            mIntake
+                .intake()
+                .until(trajectory.atTime("intake_end"))
+                .andThen(mIntake.stow().until(mIntake::isNearPosition)));
 
     return routine;
   }
