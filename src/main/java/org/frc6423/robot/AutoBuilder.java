@@ -73,6 +73,7 @@ public class AutoBuilder {
     mChooser.addRoutine("Bro Playing Eight Ball", this::getMidEmptyRoutine);
     mChooser.addRoutine("Neutral Rush norm", () -> getNeutralRoutine());
     mChooser.addRoutine("Neutral Rush tank", () -> getNeutralTankRoutine());
+    mChooser.addRoutine("Neutral Rush tank mirror", () -> getMirroredNeutralTankRoutine());
 
     SmartDashboard.putData("Auto Chooser", mChooser);
   }
@@ -113,6 +114,30 @@ public class AutoBuilder {
   public AutoRoutine getNeutralTankRoutine() {
     var routine = mFactory.newRoutine("Neutral Tank");
     var trajectory = routine.trajectory("S1_N2_tank");
+
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                trajectory.resetOdometry(),
+                trajectory.cmd().until(trajectory.done()),
+                empty(routine, mDrive, mIndexer, mFeeder, mShooter)));
+
+    trajectory.atTime("kick").onTrue(mIntake.kick());
+    trajectory
+        .atTime("intake_start")
+        .onTrue(
+            mIntake
+                .intake()
+                .until(trajectory.atTime("intake_end"))
+                .andThen(mIntake.stow().until(mIntake::isNearPosition)));
+
+    return routine;
+  }
+
+  public AutoRoutine getMirroredNeutralTankRoutine() {
+    var routine = mFactory.newRoutine("Neutral Tank");
+    var trajectory = routine.trajectory("S1_N2_tank_mirror");
 
     routine
         .active()
