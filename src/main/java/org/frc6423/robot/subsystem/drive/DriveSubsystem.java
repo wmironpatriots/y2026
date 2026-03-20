@@ -247,8 +247,6 @@ public class DriveSubsystem extends SubsystemBase {
     mPoseEstimator =
         new SwerveDrivePoseEstimator(
             kConstants.getKinematics(), getGyroRotation2d(), getWheelPositions(), new Pose2d());
-    // VecBuilder.fill(0.6, 0.6, 0.07),
-    // VecBuilder.fill(0.9, 0.9, 0.4));
     mGyro.reset(Rotation2d.kZero);
 
     mAngularController.enableContinuousInput(0.0, 2 * Math.PI);
