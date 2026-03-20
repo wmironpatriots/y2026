@@ -119,7 +119,7 @@ public class AutoBuilder {
         .onTrue(
             Commands.sequence(
                 trajectory.resetOdometry(),
-                trajectory.cmd().until(trajectory.done()),
+                trajectory.cmd().until(trajectory.done()).alongWith(mIntake.kick()),
                 empty(routine, mDrive, mIndexer, mFeeder, mShooter)));
 
     trajectory.atTime("intake_start").whileTrue(mIntake.intake());

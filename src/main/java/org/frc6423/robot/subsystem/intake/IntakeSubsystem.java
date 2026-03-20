@@ -234,6 +234,16 @@ public class IntakeSubsystem extends SubsystemBase {
         Commands.print("Intake Homed"));
   }
 
+  public Command kick() {
+    return this.run(
+            () -> {
+              mTarget = Rotation2d.fromDegrees(kPositionStowedDeg.get() / 4);
+              mPivot.setTargetPosition(mTarget.getRotations());
+            })
+        .until(this::isNearPosition)
+        .andThen(stow());
+  }
+
   /**
    * Stow and stop once completely folded
    *
