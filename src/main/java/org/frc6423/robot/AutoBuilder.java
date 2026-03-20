@@ -74,6 +74,7 @@ public class AutoBuilder {
     mChooser.addRoutine("Neutral Rush norm", () -> getNeutralRoutine());
     mChooser.addRoutine("Neutral Rush tank", () -> getNeutralTankRoutine());
     mChooser.addRoutine("Neutral Rush tank mirror", () -> getMirroredNeutralTankRoutine());
+    mChooser.addRoutine("Ball", () -> getBallRoutine());
 
     SmartDashboard.putData("Auto Chooser", mChooser);
   }
@@ -89,6 +90,24 @@ public class AutoBuilder {
                 trajectory.resetOdometry(),
                 trajectory.cmd().until(trajectory.done()),
                 empty(routine, mDrive, mIndexer, mFeeder, mShooter)));
+
+    return routine;
+  }
+
+  public AutoRoutine getBallRoutine() {
+    var routine = mFactory.newRoutine("Ball");
+    var trajectory = routine.trajectory("ball");
+
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                trajectory.resetOdometry(),
+                trajectory.cmd().until(trajectory.done()),
+                empty(routine, mDrive, mIndexer, mFeeder, mShooter)));
+
+    trajectory.atTime("intake_start").whileTrue(mIntake.intake());
+    trajectory.atTime("intake_end").whileTrue(mIntake.stow());
 
     return routine;
   }
