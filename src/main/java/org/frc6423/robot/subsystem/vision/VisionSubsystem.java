@@ -187,8 +187,7 @@ public class VisionSubsystem extends SubsystemBase {
       estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
     else estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
 
-    return VecBuilder.fill(0.0, 0.0, 0.0);
-    // return estStdDevs.times(avgWeight);
+    return estStdDevs.times(avgWeight);
   }
 
   public List<EstimatedRobotPose> getLatestPoseEstimates() {
