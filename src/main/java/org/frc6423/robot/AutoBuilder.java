@@ -70,14 +70,15 @@ public class AutoBuilder {
             mDrive::getPose2d, mDrive::reset, mDrive.getChoreoSwerveSampleConsumer(), true, drive);
     mChooser = new AutoChooser();
 
-    mChooser.addRoutine("Mid Empty", this::getMidEmptyRoutine);
-    mChooser.addRoutine("Neutral Rush 2", () -> getNeutralRoutine(2));
+    mChooser.addRoutine("Bro Playing Eight Ball", this::getMidEmptyRoutine);
+    mChooser.addRoutine("Neutral Rush 2", () -> getNeutralRoutine());
+    mChooser.addRoutine("Neutral Rush 2", () -> getNeutralTankRoutine());
 
     SmartDashboard.putData("Auto Chooser", mChooser);
   }
 
   public AutoRoutine getMidEmptyRoutine() {
-    var routine = mFactory.newRoutine("Mid Empty");
+    var routine = mFactory.newRoutine("Bro Playing Eight Ball");
     var trajectory = routine.trajectory("S2_F1");
 
     routine
@@ -91,9 +92,27 @@ public class AutoBuilder {
     return routine;
   }
 
-  public AutoRoutine getNeutralRoutine(int length) {
-    var routine = mFactory.newRoutine("Mid Empty");
-    var trajectory = routine.trajectory("S1_N" + length);
+  public AutoRoutine getNeutralRoutine() {
+    var routine = mFactory.newRoutine("Neutral Normal");
+    var trajectory = routine.trajectory("S1_N2");
+
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                trajectory.resetOdometry(),
+                trajectory.cmd().until(trajectory.done()),
+                empty(routine, mDrive, mIndexer, mFeeder, mShooter)));
+
+    trajectory.atTime("intake_start").whileTrue(mIntake.intake());
+    trajectory.atTime("intake_end").whileTrue(mIntake.stow());
+
+    return routine;
+  }
+
+  public AutoRoutine getNeutralTankRoutine() {
+    var routine = mFactory.newRoutine("Neutral Tank");
+    var trajectory = routine.trajectory("S1_N2_tank");
 
     routine
         .active()
