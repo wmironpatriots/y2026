@@ -314,5 +314,6 @@
  "events":[
    {"name":"intake_start", "from":{"target":2, "targetTimestamp":1.18785, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
    {"name":"intake_end", "from":{"target":5, "targetTimestamp":2.68637, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
-   {"name":"score", "from":{"target":null, "targetTimestamp":null, "offset":{"exp":"0 s", "val":0.0}}, "event":null}]
+   {"name":"score", "from":{"target":null, "targetTimestamp":null, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+   {"name":"kick", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null}]
 }

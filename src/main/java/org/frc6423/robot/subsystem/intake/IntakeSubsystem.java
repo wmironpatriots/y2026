@@ -241,7 +241,7 @@ public class IntakeSubsystem extends SubsystemBase {
               mPivot.setTargetPosition(mTarget.getRotations());
             })
         .until(this::isNearPosition)
-        .andThen(stow());
+        .andThen(stow().until(this::isNearPosition));
   }
 
   /**
