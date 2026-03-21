@@ -22,6 +22,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -37,6 +38,7 @@ import org.frc6423.robot.subsystem.drive.DriveSubsystem;
 import org.frc6423.robot.subsystem.feeder.FeederSubsystem;
 import org.frc6423.robot.subsystem.indexer.IndexerSubsystem;
 import org.frc6423.robot.subsystem.intake.IntakeSubsystem;
+import org.frc6423.robot.subsystem.led.Led;
 import org.frc6423.robot.subsystem.shooter.ShooterSubsystem;
 import org.frc6423.robot.subsystem.vision.VisionSubsystem;
 
@@ -57,6 +59,8 @@ import org.frc6423.robot.subsystem.vision.VisionSubsystem;
 public class Robot extends CommandRobot {
 
   // * ~~~~~~~~ SUBSYSTEMS ~~~~~~~~
+
+  private final Led mLed = new Led();
 
   @Logged(name = "Drive Subsystem")
   private final DriveSubsystem mDrive = DriveSubsystem.create();
@@ -167,6 +171,40 @@ public class Robot extends CommandRobot {
     configureBindings();
     configureDashboard();
     configureSimulation();
+    configureBehavior();
+  }
+
+  public void configureBehavior() {
+    var estopTrigger = new Trigger(() -> DriverStation.isEStopped());
+    var isActiveTrigger = new Trigger(() -> MatchInfo.getOfficialShiftInfo().active());
+    var isLocked = new Trigger(() -> mDrive.isFacingAngularTarget());
+
+    RobotModeTriggers.disabled().whileTrue(mLed.breath(Color.kDarkRed, 2).ignoringDisable(true));
+
+    RobotModeTriggers.disabled()
+        .and(estopTrigger)
+        .whileTrue(mLed.solid(Color.kRed).ignoringDisable(true));
+
+    RobotModeTriggers.autonomous().whileTrue(mLed.rainbow(MetersPerSecond.of(10)));
+
+    RobotModeTriggers.teleop().whileTrue(mLed.solid(Color.kWhite));
+
+    RobotModeTriggers.teleop().and(isActiveTrigger).whileTrue(mLed.solid(Color.kGreen));
+
+    RobotModeTriggers.teleop()
+        .and(mTriggerIsIntaking)
+        .whileTrue(mLed.chase(MetersPerSecond.of(2.5), Color.kGreen, Color.kGold));
+
+    RobotModeTriggers.teleop().and(mTriggerIsLocking).whileTrue(mLed.strobe(Color.kBlue, 0.05));
+
+    RobotModeTriggers.teleop()
+        .and(mTriggerIsLocking)
+        .and(isLocked)
+        .whileTrue(mLed.solid(Color.kBlue));
+
+    RobotModeTriggers.teleop()
+        .and(mTriggerIsFiring)
+        .whileTrue(mLed.strobe(Color.kBlue, Color.kGreen, 0.5));
   }
 
   /** Configure driver bindings */
