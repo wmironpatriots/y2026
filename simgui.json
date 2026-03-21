@@ -58,9 +58,23 @@
       "/SmartDashboard/Auto Chooser": "String Chooser",
       "/SmartDashboard/Choreo Alerts": "Alerts",
       "/SmartDashboard/Field": "Field2d",
-      "/SmartDashboard/Flywheel Characterization": "Command"
+      "/SmartDashboard/Flywheel Characterization": "Command",
+      "/SmartDashboard/PhotonAlerts": "Alerts",
+      "Telemetry/mDrive/Angular": "ProfiledPIDController",
+      "Telemetry/mDrive/Translational X": "ProfiledPIDController",
+      "Telemetry/mDrive/Translational Y": "ProfiledPIDController"
     },
     "windows": {
+      "/SmartDashboard/Alerts": {
+        "window": {
+          "visible": true
+        }
+      },
+      "/SmartDashboard/Auto Chooser": {
+        "window": {
+          "visible": true
+        }
+      },
       "/SmartDashboard/Field": {
         "bottom": 1914,
         "height": 8.069275856018066,
@@ -79,11 +93,7 @@
       "SmartDashboard": {
         "Auto Chooser": {
           "open": true
-        },
-        "Field": {
-          "open": true
-        },
-        "open": true
+        }
       },
       "Telemetry": {
         "io": {
@@ -113,8 +123,7 @@
                 "open": true
               },
               "open": true
-            },
-            "open": true
+            }
           },
           "mRoller": {
             "mLeader": {
@@ -122,10 +131,8 @@
                 "open": true
               },
               "open": true
-            },
-            "open": true
-          },
-          "open": true
+            }
+          }
         },
         "mModule": {
           "SwerveModulePosition##v_Telemetry/mModule/Module Pose": {
@@ -157,7 +164,14 @@
           },
           "open": true
         },
-        "open": true,
+        "mShooter": {
+          "Rotation2d##v_Telemetry/mShooter/Rotation2d": {
+            "open": true
+          },
+          "Rotation2d##v_Telemetry/mShooter/Target Rotation2d": {
+            "open": true
+          }
+        },
         "roller": {
           "mLeader": {
             "Setpoint": {
@@ -185,9 +199,6 @@
           },
           "open": true
         }
-      },
-      "Tuning": {
-        "open": true
       }
     }
   },
@@ -201,13 +212,19 @@
     "Plot <0>": {
       "plots": [
         {
+          "axis": [
+            {
+              "label": "looptime (sec)"
+            }
+          ],
           "backgroundColor": [
             0.05999999865889549,
             0.05999999865889549,
             0.05999999865889549,
             0.9399999976158142
           ],
-          "height": 761,
+          "height": 374,
+          "name": "MAIN",
           "series": [
             {
               "color": [
@@ -219,10 +236,37 @@
               "id": "NT:/Tracer/robot main/CommandScheduler"
             }
           ]
+        },
+        {
+          "axis": [
+            {
+              "label": "looptime (sec)"
+            }
+          ],
+          "backgroundColor": [
+            0.05999999865889549,
+            0.05999999865889549,
+            0.05999999865889549,
+            0.9399999976158142
+          ],
+          "height": 374,
+          "lockPrevX": true,
+          "name": "SUB",
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:/Tracer/robot main/CommandScheduler/Update Odometry"
+            }
+          ]
         }
       ],
       "window": {
-        "name": "tracers"
+        "name": "TRACERS"
       }
     },
     "Plot <1>": {
@@ -234,11 +278,153 @@
             0.05999999865889549,
             0.9399999976158142
           ],
-          "height": 761
+          "height": 749
         }
       ],
       "window": {
-        "name": "Tuning Window (CAN EDIT)"
+        "name": "Tuning Window (CAN EDIT)",
+        "visible": false
+      }
+    },
+    "Plot <2>": {
+      "plots": [
+        {
+          "axis": [
+            {
+              "label": "muzzle velocity (m/s)"
+            }
+          ],
+          "backgroundColor": [
+            0.05999999865889549,
+            0.05999999865889549,
+            0.05999999865889549,
+            0.9399999976158142
+          ],
+          "height": 374,
+          "name": "FLYWHEEL",
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:Telemetry/mShooter/Approximated Muzzle Velocity (meters per second)"
+            },
+            {
+              "color": [
+                0.8666667342185974,
+                0.5176470875740051,
+                0.32156863808631897,
+                1.0
+              ],
+              "id": "NT:Telemetry/mShooter/Target Muzzle Velocity (meters per second)"
+            },
+            {
+              "color": [
+                0.3333333432674408,
+                0.658823549747467,
+                0.4078431725502014,
+                1.0
+              ],
+              "id": "NT:Telemetry/mShooter/Is Holding Speed (bool)"
+            }
+          ]
+        },
+        {
+          "axis": [
+            {
+              "label": "angle (rads)"
+            }
+          ],
+          "backgroundColor": [
+            0.05999999865889549,
+            0.05999999865889549,
+            0.05999999865889549,
+            0.9399999976158142
+          ],
+          "height": 374,
+          "lockPrevX": true,
+          "name": "HOOD",
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:Telemetry/mShooter/Rotation2d/value"
+            },
+            {
+              "color": [
+                0.8666667342185974,
+                0.5176470875740051,
+                0.32156863808631897,
+                1.0
+              ],
+              "id": "NT:Telemetry/mShooter/Target Rotation2d/value"
+            },
+            {
+              "color": [
+                0.3333333432674408,
+                0.658823549747467,
+                0.4078431725502014,
+                1.0
+              ],
+              "id": "NT:Telemetry/mShooter/Is Holding Angle (bool)"
+            }
+          ]
+        }
+      ],
+      "window": {
+        "name": "SHOOTER"
+      }
+    },
+    "Plot <3>": {
+      "plots": [
+        {
+          "backgroundColor": [
+            0.05999999865889549,
+            0.05999999865889549,
+            0.05999999865889549,
+            0.9399999976158142
+          ],
+          "height": 753,
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:Telemetry/mDrive/Angular/goal"
+            },
+            {
+              "color": [
+                0.8666667342185974,
+                0.5176470875740051,
+                0.32156863808631897,
+                1.0
+              ],
+              "id": "NT:Telemetry/mDrive/Field Position (Pose2d)/rotation/value"
+            },
+            {
+              "color": [
+                0.3333333432674408,
+                0.658823549747467,
+                0.4078431725502014,
+                1.0
+              ],
+              "id": "NT:Telemetry/mDrive/Within Angular Tolerance (bool)"
+            }
+          ]
+        }
+      ],
+      "window": {
+        "name": "DRIVE ANGULAR"
       }
     }
   }

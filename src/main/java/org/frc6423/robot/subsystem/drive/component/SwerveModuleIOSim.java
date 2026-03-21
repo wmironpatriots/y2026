@@ -13,7 +13,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
+import org.frc6423.robot.subsystem.drive.constant.SwerveConstants.ModuleConfig;
 
 public class SwerveModuleIOSim extends SwerveModuleIO {
   private static final DCMotor kDriveModel = DCMotor.getKrakenX60Foc(1);

@@ -6,9 +6,13 @@
 
 package org.frc6423.robot.subsystem.drive.component;
 
-/** Interface for interacting with gyro hardware */
+import edu.wpi.first.math.geometry.Rotation2d;
+
+/** Abstract Interface for interacting with a Gyro */
 public abstract class GyroIO {
   public abstract void periodic();
 
-  public abstract double getYawDegrees();
+  public abstract void reset(Rotation2d angle);
+
+  public abstract Rotation2d getYawRotation2d();
 }

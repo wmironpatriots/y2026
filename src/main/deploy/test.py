@@ -1,3 +1,4 @@
+# temp conversion script until i figure out json parsers :P
 import json
 
 def generate_java_map(file_path, map_name):

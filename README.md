@@ -1,5 +1,12 @@
 # y2026
-> I'm building it
+> Oh I'm building it
 
-![img-info](./assets/banner.png)
 A repository containing FRC 6423's Robot code for the 2026 FRC game: Rebuilt
+
+![img-info](./resources/ROBOT-FLR.JPG)
+
+## Setup Instructions
+
+## Packages
+
+## Naming Conventions

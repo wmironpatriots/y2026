@@ -1,0 +1,52 @@
+{
+	"cameras": [
+		{
+			"name": "BackCam",
+			"transform3d": {
+				"x": -0.1908,
+				"y": 0.0,
+				"z": 0.3609,
+				"roll": 0.0,
+				"pitch": -10.0,
+				"yaw": 180.0,
+				"degrees": true
+			}
+		},
+		{
+			"name": "FrontCam",
+			"transform3d": {
+				"x": 0.2006,
+				"y": -0.16,
+				"z": 0.5094,
+				"roll": 0.0,
+				"pitch": -15.0,
+				"yaw": 0,
+				"degrees": true
+			}
+		},
+		{
+			"name": "rightCam",
+			"transform3d": {
+				"x": 0.2006,
+				"y": -0.3114,
+				"z": 0.5094,
+				"roll": 0.0,
+				"pitch": -10.0,
+				"yaw": -75.0,
+				"degrees": true
+			}
+		},
+		{
+			"name": "leftCam",
+			"transform3d": {
+				"x": 0.2006,
+				"y": 0.3114,
+				"z": 0.5094,
+				"roll": 0.0,
+				"pitch": -10.0,
+				"yaw": 75.0,
+				"degrees": true
+			}
+		}
+	]
+}

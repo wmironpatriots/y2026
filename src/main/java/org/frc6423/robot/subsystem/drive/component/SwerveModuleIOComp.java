@@ -17,7 +17,7 @@ import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 import org.frc6423.lib.util.PhoneixUtils;
 import org.frc6423.robot.Constants.Flags;
-import org.frc6423.robot.subsystem.drive.constants.SwerveConstants.ModuleConfig;
+import org.frc6423.robot.subsystem.drive.constant.SwerveConstants.ModuleConfig;
 
 public class SwerveModuleIOComp extends SwerveModuleIO {
   protected final CANcoder mEncoder;
@@ -221,7 +221,7 @@ public class SwerveModuleIOComp extends SwerveModuleIO {
     mDrive.setControl(
         mVelocityFocReq
             .withVelocity(speedRevsPerSec)
-            .withFeedForward(Flags.kDriveConstants.getDriveGearboxKt() / torqueNm)
+            .withFeedForward(Flags.kDrivetrainContants.getDriveGearboxKt() / torqueNm)
             .withSlot(0));
   }
 

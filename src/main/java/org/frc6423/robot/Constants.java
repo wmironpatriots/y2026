@@ -6,64 +6,72 @@
 
 package org.frc6423.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+
 import com.ctre.phoenix6.CANBus;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import org.frc6423.lib.util.GeometryUtil;
-import org.frc6423.robot.subsystem.drive.constants.RebuiltL2;
-import org.frc6423.robot.subsystem.drive.constants.SwerveConstants;
+import org.frc6423.robot.subsystem.drive.constant.RebuiltL2;
+import org.frc6423.robot.subsystem.drive.constant.SwerveConstants;
 
-/**
- * This is a globally accessible class for storing immutable values.
- *
- * <p>All values in this class are public, static, and final
- *
- * <p>To utilize values in this class, you should statically import the entire class or its
- * subclasses
- */
 public final class Constants {
-  /** Runtime flags determining the robots initialization */
   public static final class Flags {
-    /** {@link SwerveConstants} Drivetrain characterization */
-    public static final SwerveConstants kDriveConstants = new RebuiltL2();
+    public static final boolean kInitializeTunables = true;
 
-    /** When true, subsystems will not be initialized */
-    public static final boolean kSubsystemDisabled = false;
+    public static final boolean kInitializeSimulatedFuelPools = true;
 
-    /** When true, drive will not be initialized */
-    public static final boolean kDriveDisabled = false;
+    public static final SwerveConstants kDrivetrainContants = new RebuiltL2();
 
-    /** When true, tunables/characterization commands will appear on dashboard */
-    public static final boolean kTuningModeEnabled = true;
+    public static final Importance kLowestLoggingLevel = Importance.DEBUG;
 
-    /** {@link Importance} Minimum Epilogue importance to be logged */
-    public static final Importance kLoggingLevel = Importance.DEBUG;
-
-    /** {@link Alliance} Alliance robot is currently on */
     public static Alliance getRobotAlliance() {
       return DriverStation.getAlliance().orElse(Alliance.Blue);
     }
 
-    public static final boolean kSpawnStartingFuel = false;
-
-    /**
-     * Get yaw offset based on {@link #kRobotAlliance}
-     *
-     * @return {@link getAllianceRotation}
-     */
     public static Rotation2d getAllianceRotation() {
       return Rotation2d.fromRotations(getRobotAlliance() == Alliance.Blue ? 0.0 : 0.5);
     }
+  }
+
+  public static final class Field {
+    public static final Distance kFieldLength = Inches.of(651.22);
+
+    public static final Distance kFieldWidth = Inches.of(317.69);
+
+    public static final Distance kAllianceZoneLength = Inches.of(182.11);
+
+    public static final Pose2d kMidPose =
+        new Pose2d(kFieldLength.div(2), kFieldWidth.div(2), Rotation2d.kZero);
+
+    public static Pose2d kBlueAllianceZonePose2d =
+        new Pose2d(kAllianceZoneLength.div(2), kFieldWidth.div(2), Rotation2d.kZero);
+
+    public static Pose2d kBlueAllianceHubPose2d =
+        new Pose2d(Inches.of(182.11), Inches.of(158.84), Rotation2d.kZero);
+
+    public static Pose2d getHubPose2d() {
+      return getRobotAlliancePose2d(kBlueAllianceHubPose2d);
+    }
+
+    public static Rectangle2d getAllianceZone() {
+      return new Rectangle2d(
+          getRobotAlliancePose2d(kBlueAllianceZonePose2d), kAllianceZoneLength, kFieldWidth);
+    }
 
     public static Pose2d getRobotAlliancePose2d(Pose2d pose) {
-      return GeometryUtil.allianceFlipPose2d(Rebuilt.kMidPose, pose);
+      return (Flags.getRobotAlliance() == DriverStation.Alliance.Blue)
+          ? pose
+          : new Pose2d(
+              pose.getTranslation().rotateAround(kMidPose.getTranslation(), Rotation2d.k180deg),
+              pose.getRotation().plus(Rotation2d.k180deg));
     }
   }
 
-  /** The matrix contains the CAN identification information for all devices */
   public static final class Matrix {
     public static final CANBus kDriveCanBus = new CANBus("DRIVE");
 

@@ -6,12 +6,18 @@
 
 package org.frc6423.robot.subsystem.drive.component;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+
+/** {@link GyroIO} extension for no gyro hardware */
 public class GyroIONone extends GyroIO {
   @Override
-  public double getYawDegrees() {
-    return 0.0;
-  }
+  public void periodic() {}
 
   @Override
-  public void periodic() {}
+  public void reset(Rotation2d angle) {}
+
+  @Override
+  public Rotation2d getYawRotation2d() {
+    return Rotation2d.kZero;
+  }
 }
