@@ -175,6 +175,9 @@ public class ShooterSubsystem extends SubsystemBase {
   public static final TunableNumber kFlywheelKp = new TunableNumber("Shooter/Flywheel/kP");
   public static final TunableNumber kFlywheelKd = new TunableNumber("Shooter/Flywheel/kD");
 
+  public static final TunableNumber kFlywheelSpeedSetpointDisplacementRevsPerSec =
+      new TunableNumber("Shooter/Flywheel/Speed Setpoint Displacement (revolutions per second)", 0.0);
+
   public static final TunableNumber kFlywheelToleranceMetersPerSec =
       new TunableNumber("Shooter/Flywheel/Tolerance (meters per second)");
 
@@ -393,6 +396,7 @@ public class ShooterSubsystem extends SubsystemBase {
           setHoodAngle(Rotation2d.fromRotations(kMaxAngleRevs));
 
           mFlywheel.enableBrake(false);
+          mTargetMuzzleVelocityMps = 0.0;
           mFlywheel.stop();
         });
   }
@@ -402,7 +406,7 @@ public class ShooterSubsystem extends SubsystemBase {
         () -> {
           setHoodAngle(Rotation2d.fromRotations(kMaxAngleRevs));
 
-          mFlywheel.setTargetVelocity(0.0);
+          setFlywheelMuzzleVelocity(0.0);
         });
   }
 
@@ -411,10 +415,20 @@ public class ShooterSubsystem extends SubsystemBase {
         () -> {
           setHoodAngle(angle.get());
 
-          mTargetMuzzleVelocityMps = muzzleVelocityMps.getAsDouble();
-          mFlywheel.setTargetVelocity(
-              muzzleVelocityMpsToFlywheelVelocityRps(muzzleVelocityMps.getAsDouble()));
+          setFlywheelMuzzleVelocity(muzzleVelocityMps.getAsDouble());
         });
+  }
+
+  private void setFlywheelMuzzleVelocity(double muzzleVelocityMps) {
+    double targetRevsPerSec =
+        muzzleVelocityMps == 0.0
+            ? 0.0
+            : Math.max(
+                0.0,
+                muzzleVelocityMpsToFlywheelVelocityRps(muzzleVelocityMps)
+                    + kFlywheelSpeedSetpointDisplacementRevsPerSec.get());
+    mTargetMuzzleVelocityMps = flywheelVelocityRpsToMuzzleVelocityMps(targetRevsPerSec);
+    mFlywheel.setTargetVelocity(targetRevsPerSec);
   }
 
   public Command runSetpoint(Supplier<ProjectileParameters> parameters) {
