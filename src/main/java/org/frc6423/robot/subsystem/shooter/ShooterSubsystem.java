@@ -176,7 +176,8 @@ public class ShooterSubsystem extends SubsystemBase {
   public static final TunableNumber kFlywheelKd = new TunableNumber("Shooter/Flywheel/kD");
 
   public static final TunableNumber kFlywheelSpeedSetpointDisplacementRevsPerSec =
-      new TunableNumber("Shooter/Flywheel/Speed Setpoint Displacement (revolutions per second)", 0.0);
+      new TunableNumber(
+          "Shooter/Flywheel/Speed Setpoint Displacement (revolutions per second)", 0.0);
 
   public static final TunableNumber kFlywheelToleranceMetersPerSec =
       new TunableNumber("Shooter/Flywheel/Tolerance (meters per second)");

@@ -97,7 +97,8 @@ public class VisionSubsystem extends SubsystemBase {
   // }
 
   public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(0.6, 0.6, 1155);
-  public static final Matrix<N3, N1> MULTIPLE_TAG_STD_DEVS = VecBuilder.fill(0.3, 0.3, Math.toRadians(30));
+  public static final Matrix<N3, N1> MULTIPLE_TAG_STD_DEVS =
+      VecBuilder.fill(0.3, 0.3, Math.toRadians(30));
   public static final Matrix<N3, N1> SUPERTRUST_TAG_STD_DEVS = VecBuilder.fill(0.001, 0.001, 0.001);
   private static AprilTagFieldLayout layout =
       AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
